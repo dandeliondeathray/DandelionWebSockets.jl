@@ -40,13 +40,21 @@ immutable FrameTestCase
     expected::Frame
 end
 
+nomask = Array{UInt8}()
+
 frame_test_cases = [
     FrameTestCase("A single frame unmasked text message, body Hello",
         b"\x81\x05\x48\x65\x6c\x6c\x6f",
-        Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, Array{UInt8}(), b"Hello")),
+        Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")),
     FrameTestCase("A single-frame masked text message",
         b"\x81\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58",
-        Frame(true, false, false, false, OPCODE_TEXT, true, 5, 0, b"\x37\xfa\x21\x3d", b"Hello"))
+        Frame(true, false, false, false, OPCODE_TEXT, true, 5, 0, b"\x37\xfa\x21\x3d", b"Hello")),
+    FrameTestCase("Fragmented unmasked text message, first fragment",
+        b"\x01\x03\x48\x65\x6c",
+        Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")),
+    FrameTestCase("Fragmented unmasked text message, last fragment",
+        b"\x80\x02\x6c\x6f",
+        Frame(true, false, false, false, OPCODE_TEXT, false, 2, 0, nomask, b"lo"))
 ]
 
 facts("Reading frames") do
