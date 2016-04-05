@@ -56,5 +56,38 @@ immutable Frame
     payload::Array{UInt8}
 end
 
-Base.read(s::IO, ::Type{Frame}) = nothing
-Base.write(s::IO, Frame) = nothing
+==(a::Frame, b::Frame) = a.fin == b.fin && a.rsv1 == b.rsv1 && a.rsv2 == b.rsv2 && 
+  a.opcode == b.opcode && a.ismasked == b.ismasked && a.len == b.len && a.extended_len == b.extended_len &&
+  a.mask == b.mask && a.payload == b.payload
+
+function Base.read(s::IO, ::Type{Frame}) 
+  x    = read(s, UInt8)
+  fin  = x & 0b1000_0000 != 0
+  rsv1 = x & 0b0100_0000 != 0
+  rsv2 = x & 0b0010_0000 != 0
+  rsv3 = x & 0b0001_0000 != 0
+  op   = x & 0b0000_1111
+
+  y        = read(s, UInt8)
+  ismasked = y & 0b1000_0000 != 0
+  len      = y & 0b0111_1111
+
+  extended_len::UInt64 = 0
+  if len == 126
+    extended_len = ntoh(read(s, UInt16))
+  elseif len == 127
+    extended_len = ntoh(read(s, UInt64))
+  end
+
+  mask = Array{UInt8,1}()
+  if ismasked
+    mask = read(s, UInt8, 4)
+  end
+
+  payload_length = extended_len != 0 ? extended_len : len
+  payload = read(s, UInt8, payload_length)
+
+  Frame(fin, rsv1, rsv2, rsv3, Opcode(op), ismasked, len, extended_len, mask, payload)
+end
+
+Base.write(s::IO, frame::Frame) = nothing
