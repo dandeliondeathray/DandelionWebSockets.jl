@@ -88,12 +88,12 @@ facts("Reading frames") do
     end
 end
 
-#facts("Writing frames") do
-#    for tc in frame_test_cases
-#        context(tc.description) do
-#            s = IOBuffer()
-#            write(s, tc.frame)
-#            @fact takebuf_array(s) --> tc.serialized_frame
-#        end
-#    end
-#end
+facts("Writing frames") do
+    for tc in frame_test_cases
+        context(tc.description) do
+            s = IOBuffer()
+            write(s, tc.frame)
+            @fact takebuf_array(s) --> tc.serialized_frame
+        end
+    end
+end

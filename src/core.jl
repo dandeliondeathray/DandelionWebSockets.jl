@@ -90,4 +90,29 @@ function Base.read(s::IO, ::Type{Frame})
   Frame(fin, rsv1, rsv2, rsv3, Opcode(op), ismasked, len, extended_len, mask, payload)
 end
 
-Base.write(s::IO, frame::Frame) = nothing
+function Base.write(s::IO, frame::Frame)
+  x1 = 
+    UInt8(frame.fin)  << 7 |
+    UInt8(frame.rsv1) << 6 |
+    UInt8(frame.rsv2) << 5 |
+    UInt8(frame.rsv3) << 4 |
+    frame.opcode.op & 0b0000_1111
+
+  x2 = UInt8(frame.ismasked) << 7 |
+       frame.len & 0b0111_1111
+
+  write(s, x1)
+  write(s, x2)
+
+  if frame.len == 126
+    write(s, hton(UInt16(frame.extended_len)))
+  elseif frame.len == 127
+    write(s, hton(frame.extended_len))
+  end
+
+  if frame.ismasked
+    write(s, frame.mask)
+  end
+
+  write(s, frame.payload)
+end
