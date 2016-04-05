@@ -36,8 +36,8 @@
 
 immutable FrameTestCase
     description::AbstractString
-    input::Array{UInt8}
-    expected::Frame
+    serialized_frame::Array{UInt8}
+    frame::Frame
 end
 
 nomask = Array{UInt8}()
@@ -82,8 +82,18 @@ frame_test_cases = [
 facts("Reading frames") do
     for tc in frame_test_cases
         context(tc.description) do
-            s = IOBuffer(tc.input)
-            @fact read(s, Frame) --> tc.expected
+            s = IOBuffer(tc.serialized_frame)
+            @fact read(s, Frame) --> tc.frame
+        end
+    end
+end
+
+facts("Writing frames") do
+    for tc in frame_test_cases
+        context(tc.description) do
+            s = IOBuffer()
+            write(s, tc.frame)
+            @fact takebuf_array(s) --> tc.serialized_frame
         end
     end
 end

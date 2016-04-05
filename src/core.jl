@@ -57,3 +57,4 @@ immutable Frame
 end
 
 Base.read(s::IO, ::Type{Frame}) = nothing
+Base.write(s::IO, Frame) = nothing
