@@ -56,11 +56,11 @@ immutable Frame
     payload::Array{UInt8}
 end
 
-==(a::Frame, b::Frame) = a.fin == b.fin && a.rsv1 == b.rsv1 && a.rsv2 == b.rsv2 && 
+==(a::Frame, b::Frame) = a.fin == b.fin && a.rsv1 == b.rsv1 && a.rsv2 == b.rsv2 &&
   a.opcode == b.opcode && a.ismasked == b.ismasked && a.len == b.len && a.extended_len == b.extended_len &&
   a.mask == b.mask && a.payload == b.payload
 
-function Base.read(s::IO, ::Type{Frame}) 
+function Base.read(s::IO, ::Type{Frame})
   x    = read(s, UInt8)
   fin  = x & 0b1000_0000 != 0
   rsv1 = x & 0b0100_0000 != 0
@@ -91,7 +91,7 @@ function Base.read(s::IO, ::Type{Frame})
 end
 
 function Base.write(s::IO, frame::Frame)
-  x1 = 
+  x1 =
     UInt8(frame.fin)  << 7 |
     UInt8(frame.rsv1) << 6 |
     UInt8(frame.rsv2) << 5 |
