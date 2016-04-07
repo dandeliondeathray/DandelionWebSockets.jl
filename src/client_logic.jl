@@ -64,6 +64,7 @@ const STATE_CLOSED     = SocketState(:closed)
 type ClientLogic
 	state::SocketState
 	executor::ClientLogicExecutor
+	rng::AbstractRNG
 end
 
 handle(logic::ClientLogic, req::SendTextFrame)     = nothing
