@@ -3,6 +3,10 @@
 # function, which is defined for the different input types below. It performs internal logic and
 # produces a call to its outbound interface.
 
+export ClientLogicExecutor,
+       ClientLogic
+
+
 #
 # These types define the input interface for the client logic.
 #
@@ -59,9 +63,13 @@ const STATE_CLOSED     = SocketState(:closed)
 
 type ClientLogic
 	state::SocketState
+	executor::ClientLogicExecutor
 end
 
 handle(logic::ClientLogic, req::SendTextFrame)     = nothing
 handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
-handle(logic::ClientLogic, req::FrameFromServer)   = nothing
+
+function handle(logic::ClientLogic, req::FrameFromServer)
+	text_received(logic.executor, utf8(req.frame.payload))
+end
