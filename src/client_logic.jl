@@ -13,11 +13,13 @@ export ClientLogicExecutor,
 immutable SendTextFrame
 	data::UTF8String
 	isfinal::Bool
+	opcode::Opcode
 end
 
 immutable SendBinaryFrame
 	data::Array{UInt8, 1}
 	isfinal::Bool
+	opcode::Opcode
 end
 
 immutable ClientPingRequest end
@@ -67,10 +69,42 @@ type ClientLogic
 	rng::AbstractRNG
 end
 
-handle(logic::ClientLogic, req::SendTextFrame)     = nothing
+function handle(logic::ClientLogic, req::SendTextFrame)
+	payload = Vector{UInt8}(req.data)
+	mask    = rand(logic.rng, UInt8, 4)
+	masking!(payload, mask)
+	len::UInt64  = length(payload)
+	extended_len = 0
+
+	if 128 <= len <= 65536
+		extended_len = len
+		len = 126
+	elseif 65536 + 1 <= len
+		extended_len = len
+		len = 127
+	end
+
+	frame = Frame(
+		req.isfinal, false, false, false, req.opcode, true, len, extended_len, mask, payload)
+
+	send_frame(logic.executor, frame)
+end
+
 handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 
 function handle(logic::ClientLogic, req::FrameFromServer)
 	text_received(logic.executor, utf8(req.frame.payload))
+end
+
+#
+# Utilities
+#
+
+function masking!(input::Vector{UInt8}, mask::Vector{UInt8})
+	m = 1
+	for i in 1:length(input)
+		input[i] = input[i] $ mask[(m - 1) % 4 + 1]
+		m += 1
+	end
 end
