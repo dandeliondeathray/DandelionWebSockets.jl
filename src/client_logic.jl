@@ -6,7 +6,6 @@
 export ClientLogicExecutor,
        ClientLogic
 
-
 #
 # These types define the input interface for the client logic.
 #
@@ -98,7 +97,19 @@ handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 
 function handle(logic::ClientLogic, req::FrameFromServer)
-	text_received(logic.executor, utf8(req.frame.payload))
+	if req.frame.opcode == OPCODE_CLOSE
+		handle_close(logic, req.frame)
+	elseif req.frame.opcode == OPCODE_TEXT
+		text_received(logic.executor, utf8(req.frame.payload))
+	end
+end
+
+#
+# Internal handle functions
+#
+
+function handle_close(logic::ClientLogic, frame::Frame)
+	logic.state = STATE_CLOSING
 end
 
 #
