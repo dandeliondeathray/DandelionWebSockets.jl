@@ -34,7 +34,7 @@ end
 
 abstract ClientLogicExecutor
 
-# `send_frame` is called when a frame should be sent to the server. 
+# `send_frame` is called when a frame should be sent to the server.
 send_frame(t::ClientLogicExecutor, ::Frame) = error("send_frame undefined for $(t)")
 
 # These are callbacks for state changes to the WebSocket.
@@ -70,6 +70,10 @@ type ClientLogic
 end
 
 function handle(logic::ClientLogic, req::SendTextFrame)
+	if logic.state != STATE_OPEN
+		return
+	end
+
 	payload = Vector{UInt8}(req.data)
 	mask    = rand(logic.rng, UInt8, 4)
 	masking!(payload, mask)

@@ -139,6 +139,21 @@ facts("ClientLogic") do
 		check_mock(m)
 	end
 
+	context("Frames are not sent when in CLOSED") do
+		m = MockExecutor([])
+		rng = FakeRNG()
+
+		c = ClientLogic(WebSocketClient.STATE_CLOSED, m, rng)
+		WebSocketClient.handle(c, WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT))
+		WebSocketClient.handle(c,
+			WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT))
+		WebSocketClient.handle(c,
+			WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION))
+
+		check_mock(m)
+	end
+
+
 	#
 	# Utilities
 	#
