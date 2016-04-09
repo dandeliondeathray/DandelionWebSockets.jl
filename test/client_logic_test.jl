@@ -5,6 +5,7 @@ immutable LogicTestCase
 	#frames::Dict{AbstractString, Frame}
 	input::Vector{Any} # This will contain types such as FrameFromServer or SendTextFrame
 	expected_calls::Vector{MockCall}
+	final_state::WebSocketClient.SocketState
 end
 
 function LogicTestCase(;
@@ -12,9 +13,10 @@ function LogicTestCase(;
 	initial_state=WebSocketClient.STATE_CONNECTING,
 	rng=FakeRNG(),
 	input=[],
-	expected_calls=[])
+	expected_calls=[],
+	final_state=initial_state)
 
-	LogicTestCase(description, initial_state, rng, input, expected_calls)
+	LogicTestCase(description, initial_state, rng, input, expected_calls, final_state)
 end
 
 test_frame1 = Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")
@@ -33,6 +35,8 @@ test_frame5 = Frame(false, false, false, false, OPCODE_TEXT, true, 3, 0,
 test_frame6 = Frame(true, false, false, false, OPCODE_CONTINUATION, true, 2, 0,
 	mask2, b"\x7b\x2d")
 
+server_close_frame = Frame(true, false, false, false, OPCODE_CLOSE, false, 0, 0, nomask, b"")
+
 logic_tests = [
 
 	#
@@ -45,6 +49,14 @@ logic_tests = [
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(test_frame1)],
 		expected_calls = [(:text_received, [utf8("Hello")])]),
+
+	LogicTestCase(
+		description    = "A close control frame is received from the server",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(b""),
+		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
+		expected_calls = [],
+		final_state    = WebSocketClient.STATE_CLOSING),
 
 	#
 	# Client to server tests
@@ -107,6 +119,8 @@ facts("ClientLogic") do
 			for x in test.input
 				WebSocketClient.handle(logic, x)
 			end
+
+			@fact logic.state --> test.final_state
 
 			check_mock(executor)
 		end
