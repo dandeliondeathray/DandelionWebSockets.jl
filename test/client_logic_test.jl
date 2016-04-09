@@ -1,45 +1,23 @@
-
-typealias MockCall Tuple{Symbol,Array{Any, 1}}
-
-type MockExecutor <: ClientLogicExecutor
-	expected_calls::Array{MockCall}
+immutable LogicTestCase
+	description::AbstractString
+	initial_state::WebSocketClient.SocketState
+	rng::FakeRNG
+	#frames::Dict{AbstractString, Frame}
+	input::Vector{Any} # This will contain types such as FrameFromServer or SendTextFrame
+	expected_calls::Vector{MockCall}
 end
 
-type UnexpectedCallException <: Exception end
+function LogicTestCase(;
+	description="",
+	initial_state=WebSocketClient.STATE_CONNECTING,
+	rng=FakeRNG(),
+	input=[],
+	expected_calls=[])
 
-function mockcall(m::MockExecutor, s::Symbol, args...)
-	if length(m.expected_calls) == 0
-		throw(UnexpectedCallException())
-	end
-	expected_symbol, expected_args = shift!(m.expected_calls)
-
-	@fact s --> expected_symbol
-	@fact [args...] --> expected_args
-end
-
-WebSocketClient.send_frame(m::MockExecutor, f::Frame) = mockcall(m, :send_frame, f)
-WebSocketClient.text_received(m::MockExecutor, s::UTF8String) = mockcall(m, :text_received, s)
-
-expect(m::MockExecutor, s::Symbol, args...) = push!(m.expected_calls, tuple(s, [args...]))
-check_mock(m::MockExecutor) = @fact m.expected_calls --> isempty
-
-type FakeRNG <: AbstractRNG
-	values::Array{UInt8, 1}
-
-	FakeRNG(v::Array{UInt8, 1}) = new(copy(v))
-end
-
-FakeRNG() = FakeRNG(Array{UInt8, 1}())
-
-function Base.rand(rng::FakeRNG, ::Type{UInt8}, n::Int)
-	if length(rng.values) < n
-		throw(UnexpectedCallException())
-	end
-	splice!(rng.values, 1:n)
+	LogicTestCase(description, initial_state, rng, input, expected_calls)
 end
 
 test_frame1 = Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")
-
 test_frame2 = Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")
 test_frame3 = Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
 
@@ -55,102 +33,83 @@ test_frame5 = Frame(false, false, false, false, OPCODE_TEXT, true, 3, 0,
 test_frame6 = Frame(true, false, false, false, OPCODE_CONTINUATION, true, 2, 0,
 	mask2, b"\x7b\x2d")
 
-facts("ClientLogic") do
+logic_tests = [
+
 	#
 	# Server to client tests
 	#
-	context("Server message is received") do
-		# Create a mock executor, and expect a single call to
-		# text_received(::ClientExecutor, ::Frame)
-		# with the frame we send in to handle(::ClientLogic, ::FrameFromServer).
-		m = MockExecutor([])
-		expect(m, :text_received, utf8("Hello"))
 
-		# The RNG is not expected to be used in this case, since no frames will be sent.
-		rng = FakeRNG()
-
-		# Create a client in a open state, and tell it we got a frame from the server.
-		c = ClientLogic(WebSocketClient.STATE_OPEN, m, rng)
-		WebSocketClient.handle(c, WebSocketClient.FrameFromServer(test_frame1))
-
-		# Check that all expected calls were made.
-		check_mock(m)
-	end
+	LogicTestCase(
+		description    = "A message from the server is received",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(b""),
+		input          = [WebSocketClient.FrameFromServer(test_frame1)],
+		expected_calls = [(:text_received, [utf8("Hello")])]),
 
 	#
 	# Client to server tests
 	#
 
-	context("Client sends a message") do
-		m = MockExecutor([])
-		expect(m, :send_frame, test_frame4)
+	LogicTestCase(
+		description    = "Client sends a message",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT)],
+		expected_calls = [(:send_frame, [test_frame4])]),
 
-		# Seed the fake RNG with the mask value we want for this test
-		rng = FakeRNG(mask)
+	LogicTestCase(
+		description    = "Client sends two fragments",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(vcat(mask, mask2)),
+		input          = [WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
+		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		expected_calls = [(:send_frame, [test_frame5]),
+		                  (:send_frame, [test_frame6])]),
 
-		c = ClientLogic(WebSocketClient.STATE_OPEN, m, rng)
-		WebSocketClient.handle(c, WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT))
+	LogicTestCase(
+		description    = "Frames are not sent when in CLOSING",
+		initial_state  = WebSocketClient.STATE_CLOSING,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
+						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
+		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		expected_calls = []),
 
-		check_mock(m)
-	end
+	LogicTestCase(
+		description    = "Frames are not sent when in CONNECTING",
+		initial_state  = WebSocketClient.STATE_CONNECTING,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
+						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
+		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		expected_calls = []),
 
-	context("Client sends two fragments") do
-		m = MockExecutor([])
-		expect(m, :send_frame, test_frame5)
-		expect(m, :send_frame, test_frame6)
+	LogicTestCase(
+		description    = "Frames are not sent when in CLOSED",
+		initial_state  = WebSocketClient.STATE_CLOSED,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
+						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
+		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		expected_calls = []),
+]
 
-		# Seed the fake RNG with the mask value we want for this test
-		rng = FakeRNG(vcat(mask, mask2))
+facts("ClientLogic") do
+	#
+	# Declarative tests
+	#
 
-		c = ClientLogic(WebSocketClient.STATE_OPEN, m, rng)
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION))
+	for test in logic_tests
+		context(test.description) do
+			executor = MockExecutor(test.expected_calls)
+			logic = ClientLogic(test.initial_state, executor, test.rng)
 
-		check_mock(m)
-	end
+			for x in test.input
+				WebSocketClient.handle(logic, x)
+			end
 
-	context("Frames are not sent when in CLOSING") do
-		m = MockExecutor([])
-		rng = FakeRNG()
-
-		c = ClientLogic(WebSocketClient.STATE_CLOSING, m, rng)
-		WebSocketClient.handle(c, WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION))
-
-		check_mock(m)
-	end
-
-	context("Frames are not sent when in CONNECTING") do
-		m = MockExecutor([])
-		rng = FakeRNG()
-
-		c = ClientLogic(WebSocketClient.STATE_CONNECTING, m, rng)
-		WebSocketClient.handle(c, WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION))
-
-		check_mock(m)
-	end
-
-	context("Frames are not sent when in CLOSED") do
-		m = MockExecutor([])
-		rng = FakeRNG()
-
-		c = ClientLogic(WebSocketClient.STATE_CLOSED, m, rng)
-		WebSocketClient.handle(c, WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT))
-		WebSocketClient.handle(c,
-			WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION))
-
-		check_mock(m)
+			check_mock(executor)
+		end
 	end
 
 
