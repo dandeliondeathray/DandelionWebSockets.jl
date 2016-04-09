@@ -36,6 +36,7 @@ test_frame6 = Frame(true, false, false, false, OPCODE_CONTINUATION, true, 2, 0,
 	mask2, b"\x7b\x2d")
 
 server_close_frame = Frame(true, false, false, false, OPCODE_CLOSE, false, 0, 0, nomask, b"")
+client_close_reply = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0, mask, b"")
 
 logic_tests = [
 
@@ -53,9 +54,9 @@ logic_tests = [
 	LogicTestCase(
 		description    = "A close control frame is received from the server",
 		initial_state  = WebSocketClient.STATE_OPEN,
-		rng            = FakeRNG(b""),
+		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
-		expected_calls = [],
+		expected_calls = [(:send_frame, [client_close_reply])],
 		final_state    = WebSocketClient.STATE_CLOSING),
 
 	#

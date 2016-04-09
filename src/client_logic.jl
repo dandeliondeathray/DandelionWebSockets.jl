@@ -110,6 +110,10 @@ end
 
 function handle_close(logic::ClientLogic, frame::Frame)
 	logic.state = STATE_CLOSING
+	mask = rand(logic.rng, UInt8, 4)
+	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
+		mask, frame.payload)
+	send_frame(logic.executor, frame)
 end
 
 #
