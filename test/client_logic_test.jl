@@ -38,6 +38,13 @@ test_frame6 = Frame(true, false, false, false, OPCODE_CONTINUATION, true, 2, 0,
 server_close_frame = Frame(true, false, false, false, OPCODE_CLOSE, false, 0, 0, nomask, b"")
 client_close_reply = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0, mask, b"")
 
+server_ping_frame = Frame(true, false, false, false, OPCODE_PING, false, 0, 0, nomask, b"")
+client_pong_frame = Frame(true, false, false, false, OPCODE_PONG, true, 0, 0, mask, b"")
+server_ping_frame_w_pay =
+	Frame(true, false, false, false, OPCODE_PING, false, 5, 0, nomask, b"Hello")
+client_pong_frame_w_pay =
+	Frame(true, false, false, false, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
+
 logic_tests = [
 
 	#
@@ -58,6 +65,42 @@ logic_tests = [
 		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
 		expected_calls = [(:send_frame, [client_close_reply])],
 		final_state    = WebSocketClient.STATE_CLOSING),
+
+	LogicTestCase(
+		description    = "Two fragments are received from the server",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.FrameFromServer(test_frame2),
+		                  WebSocketClient.FrameFromServer(test_frame3)],
+		expected_calls = [(:text_received, [utf8("Hello")])]),
+
+	LogicTestCase(
+		description    = "Buffer is cleared between two separate multi-fragment messages",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.FrameFromServer(test_frame2),
+		                  WebSocketClient.FrameFromServer(test_frame3),
+		                  WebSocketClient.FrameFromServer(test_frame2),
+		                  WebSocketClient.FrameFromServer(test_frame3)],
+		expected_calls = [(:text_received, [utf8("Hello")]),
+		                  (:text_received, [utf8("Hello")])]),
+
+	LogicTestCase(
+		description    = "A ping request is received between two fragments",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.FrameFromServer(test_frame2),
+						  WebSocketClient.FrameFromServer(server_ping_frame),
+		                  WebSocketClient.FrameFromServer(test_frame3)],
+		expected_calls = [(:send_frame, [client_pong_frame]),
+		                  (:text_received, [utf8("Hello")])]),
+
+	LogicTestCase(
+		description    = "A pong response has the same payload as the ping",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.FrameFromServer(server_ping_frame_w_pay)],
+		expected_calls = [(:send_frame, [client_pong_frame_w_pay])]),
 
 	#
 	# Client to server tests

@@ -66,14 +66,14 @@ type ClientLogic
 	state::SocketState
 	executor::ClientLogicExecutor
 	rng::AbstractRNG
+	buffer::Vector{UInt8}
 end
 
-function handle(logic::ClientLogic, req::SendTextFrame)
-	if logic.state != STATE_OPEN
-		return
-	end
+ClientLogic(state::SocketState,
+	        executor::ClientLogicExecutor,
+	        rng::AbstractRNG) = ClientLogic(state, executor, rng, Vector{UInt8}())
 
-	payload = Vector{UInt8}(req.data)
+function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
 	mask    = rand(logic.rng, UInt8, 4)
 	masking!(payload, mask)
 	len::UInt64  = length(payload)
@@ -88,9 +88,18 @@ function handle(logic::ClientLogic, req::SendTextFrame)
 	end
 
 	frame = Frame(
-		req.isfinal, false, false, false, req.opcode, true, len, extended_len, mask, payload)
+		isfinal, false, false, false, opcode, true, len, extended_len, mask, payload)
 
 	send_frame(logic.executor, frame)
+end
+
+function handle(logic::ClientLogic, req::SendTextFrame)
+	if logic.state != STATE_OPEN
+		return
+	end
+
+	payload = Vector{UInt8}(req.data)
+	send(logic, req.isfinal, req.opcode, payload)
 end
 
 handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
@@ -99,8 +108,12 @@ handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 function handle(logic::ClientLogic, req::FrameFromServer)
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
+	elseif req.frame.opcode == OPCODE_PING
+		handle_ping(logic, req.frame.payload)
 	elseif req.frame.opcode == OPCODE_TEXT
-		text_received(logic.executor, utf8(req.frame.payload))
+		handle_text(logic, req.frame)
+	elseif req.frame.opcode == OPCODE_CONTINUATION
+		handle_continuation(logic, req.frame)
 	end
 end
 
@@ -114,6 +127,33 @@ function handle_close(logic::ClientLogic, frame::Frame)
 	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
 		mask, frame.payload)
 	send_frame(logic.executor, frame)
+end
+
+function handle_ping(logic::ClientLogic, payload::Vector{UInt8})
+	send(logic, true, OPCODE_PONG, payload)
+end
+
+function handle_text(logic::ClientLogic, frame::Frame)
+	if frame.fin
+		text_received(logic.executor, utf8(frame.payload))
+	else
+		start_buffer(logic, frame.payload)
+	end
+end
+
+function handle_continuation(logic::ClientLogic, frame::Frame)
+	buffer(logic, frame.payload)
+	if frame.fin
+		text_received(logic.executor, utf8(logic.buffer))
+	end
+end
+
+function start_buffer(logic::ClientLogic, payload::Vector{UInt8})
+	logic.buffer = copy(payload)
+end
+
+function buffer(logic::ClientLogic, payload::Vector{UInt8})
+	append!(logic.buffer, payload)
 end
 
 #
