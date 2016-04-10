@@ -56,6 +56,10 @@ immutable Frame
     payload::Array{UInt8}
 end
 
+Frame(fin::Bool, opcode::Opcode, ismasked::Bool, len::Int,
+      extended_len::Int, mask::Vector{UInt8}, payload::Vector{UInt8}) =
+  Frame(fin, false, false, false, opcode, ismasked, len, extended_len, mask, payload)
+
 ==(a::Frame, b::Frame) = a.fin == b.fin && a.rsv1 == b.rsv1 && a.rsv2 == b.rsv2 &&
   a.opcode == b.opcode && a.ismasked == b.ismasked && a.len == b.len && a.extended_len == b.extended_len &&
   a.mask == b.mask && a.payload == b.payload

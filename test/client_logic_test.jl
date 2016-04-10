@@ -19,31 +19,25 @@ function LogicTestCase(;
 	LogicTestCase(description, initial_state, rng, input, expected_calls, final_state)
 end
 
-test_frame1 = Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")
-test_frame2 = Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")
-test_frame3 = Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
+test_frame1 = Frame(true,  OPCODE_TEXT,         false, 5, 0, nomask, b"Hello")
+test_frame2 = Frame(false, OPCODE_TEXT,         false, 3, 0, nomask, b"Hel")
+test_frame3 = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
 
 # A single text frame, masked, with body "Hello"
-test_frame4 = Frame(true, false, false, false, OPCODE_TEXT, true, 5, 0,
-	mask, b"\x7f\x9f\x4d\x51\x58")
+test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 
 mask2 = b"\x17\x42\x03\x7f"
 
 # Two masked fragments, one initial and one final. They are masked by two different masks.
-test_frame5 = Frame(false, false, false, false, OPCODE_TEXT, true, 3, 0,
-	mask, b"\x7f\x9f\x4d")
-test_frame6 = Frame(true, false, false, false, OPCODE_CONTINUATION, true, 2, 0,
-	mask2, b"\x7b\x2d")
+test_frame5 = Frame(false, OPCODE_TEXT, true, 3, 0,	mask, b"\x7f\x9f\x4d")
+test_frame6 = Frame(true, OPCODE_CONTINUATION, true, 2, 0,	mask2, b"\x7b\x2d")
 
-server_close_frame = Frame(true, false, false, false, OPCODE_CLOSE, false, 0, 0, nomask, b"")
-client_close_reply = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0, mask, b"")
-
-server_ping_frame = Frame(true, false, false, false, OPCODE_PING, false, 0, 0, nomask, b"")
-client_pong_frame = Frame(true, false, false, false, OPCODE_PONG, true, 0, 0, mask, b"")
-server_ping_frame_w_pay =
-	Frame(true, false, false, false, OPCODE_PING, false, 5, 0, nomask, b"Hello")
-client_pong_frame_w_pay =
-	Frame(true, false, false, false, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
+server_close_frame = Frame(true, OPCODE_CLOSE, false, 0, 0, nomask, b"")
+client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, mask, b"")
+server_ping_frame = Frame(true, OPCODE_PING, false, 0, 0, nomask, b"")
+client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, mask, b"")
+server_ping_frame_w_pay = Frame(true, OPCODE_PING, false, 5, 0, nomask, b"Hello")
+client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 
 logic_tests = [
 
