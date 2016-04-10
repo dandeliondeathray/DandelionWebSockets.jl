@@ -67,11 +67,12 @@ type ClientLogic
 	executor::ClientLogicExecutor
 	rng::AbstractRNG
 	buffer::Vector{UInt8}
+	buffered_type::Opcode
 end
 
 ClientLogic(state::SocketState,
 	        executor::ClientLogicExecutor,
-	        rng::AbstractRNG) = ClientLogic(state, executor, rng, Vector{UInt8}())
+	        rng::AbstractRNG) = ClientLogic(state, executor, rng, Vector{UInt8}(), OPCODE_TEXT)
 
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
 	mask    = rand(logic.rng, UInt8, 4)
@@ -112,6 +113,8 @@ function handle(logic::ClientLogic, req::FrameFromServer)
 		handle_ping(logic, req.frame.payload)
 	elseif req.frame.opcode == OPCODE_TEXT
 		handle_text(logic, req.frame)
+	elseif req.frame.opcode == OPCODE_BINARY
+		handle_binary(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_CONTINUATION
 		handle_continuation(logic, req.frame)
 	end
@@ -137,18 +140,32 @@ function handle_text(logic::ClientLogic, frame::Frame)
 	if frame.fin
 		text_received(logic.executor, utf8(frame.payload))
 	else
-		start_buffer(logic, frame.payload)
+		start_buffer(logic, frame.payload, OPCODE_TEXT)
+	end
+end
+
+function handle_binary(logic::ClientLogic, frame::Frame)
+	if frame.fin
+		data_received(logic.executor, frame.payload)
+	else
+		start_buffer(logic, frame.payload, OPCODE_BINARY)
 	end
 end
 
 function handle_continuation(logic::ClientLogic, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
-		text_received(logic.executor, utf8(logic.buffer))
+		if logic.buffered_type == OPCODE_TEXT
+			text_received(logic.executor, utf8(logic.buffer))
+		elseif logic.buffered_type == OPCODE_BINARY
+			data_received(logic.executor, logic.buffer)
+			logic.buffer = Vector{UInt8}()
+		end
 	end
 end
 
-function start_buffer(logic::ClientLogic, payload::Vector{UInt8})
+function start_buffer(logic::ClientLogic, payload::Vector{UInt8}, opcode::Opcode)
+	logic.buffered_type = opcode
 	logic.buffer = copy(payload)
 end
 

@@ -13,11 +13,12 @@ function mockcall(m::MockExecutor, s::Symbol, args...)
     expected_symbol, expected_args = shift!(m.expected_calls)
 
     @fact s --> expected_symbol
-    @fact [args...] --> expected_args
+    @fact Any[args...] --> expected_args
 end
 
 WebSocketClient.send_frame(m::MockExecutor, f::Frame) = mockcall(m, :send_frame, f)
 WebSocketClient.text_received(m::MockExecutor, s::UTF8String) = mockcall(m, :text_received, s)
+WebSocketClient.data_received(m::MockExecutor, s::Vector{UInt8}) = mockcall(m, :data_received, s)
 
 expect(m::MockExecutor, s::Symbol, args...) = push!(m.expected_calls, tuple(s, [args...]))
 check_mock(m::MockExecutor) = @fact m.expected_calls --> isempty

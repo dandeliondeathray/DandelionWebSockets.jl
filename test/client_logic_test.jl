@@ -32,6 +32,11 @@ mask2 = b"\x17\x42\x03\x7f"
 test_frame5 = Frame(false, OPCODE_TEXT, true, 3, 0,	mask, b"\x7f\x9f\x4d")
 test_frame6 = Frame(true, OPCODE_CONTINUATION, true, 2, 0,	mask2, b"\x7b\x2d")
 
+# Two binary fragments, one initial and one final.
+frame_bin_start = Frame(false, OPCODE_BINARY,       false, 3, 0, nomask, b"Hel")
+frame_bin_final = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
+frame_bin_1     = Frame(true,  OPCODE_BINARY,       false, 5, 0, nomask, b"Hello")
+
 server_close_frame = Frame(true, OPCODE_CLOSE, false, 0, 0, nomask, b"")
 client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, mask, b"")
 server_ping_frame = Frame(true, OPCODE_PING, false, 0, 0, nomask, b"")
@@ -46,7 +51,7 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "A message from the server is received",
+		description    = "A text message from the server is received",
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(test_frame1)],
@@ -61,7 +66,7 @@ logic_tests = [
 		final_state    = WebSocketClient.STATE_CLOSING),
 
 	LogicTestCase(
-		description    = "Two fragments are received from the server",
+		description    = "Two text fragments are received from the server",
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(test_frame2),
@@ -95,6 +100,22 @@ logic_tests = [
 		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.FrameFromServer(server_ping_frame_w_pay)],
 		expected_calls = [(:send_frame, [client_pong_frame_w_pay])]),
+
+
+	LogicTestCase(
+		description    = "A binary message from the server is received",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(b""),
+		input          = [WebSocketClient.FrameFromServer(frame_bin_1)],
+		expected_calls = [(:data_received, Array[b"Hello"])]),
+
+	LogicTestCase(
+		description    = "Two binary fragments are received from the server",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.FrameFromServer(frame_bin_start),
+		                  WebSocketClient.FrameFromServer(frame_bin_final)],
+		expected_calls = [(:data_received, Array[b"Hello"])]),
 
 	#
 	# Client to server tests
