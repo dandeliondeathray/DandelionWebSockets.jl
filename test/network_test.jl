@@ -56,15 +56,16 @@ facts("Reader task") do
         # Start async reader task
         # Check that it's running.
         s = BlockingStream(IOBuffer())
-        reader_task = WebSocketClient.start_reader(s)
+        chan = Channel{WebSocketClient.ClientLogicInput}(5)
+        reader = WebSocketClient.start_reader(s, chan)
         sleep(0.1)
-        @fact reader_task --> istaskstarted
-        @fact reader_task --> x -> !istaskdone(x)
+        @fact reader.task --> istaskstarted
+        @fact reader.task --> x -> !istaskdone(x)
 
         # Stop reader task
         # Check that it isn't running.
-        WebSocketClient.stop_reader(reader_task)
-        @fact istaskdone(reader_task) --> true
+        WebSocketClient.stop_reader(reader)
+        @fact istaskdone(reader.task) --> true
     end
 
     context("Read a frame and stop") do
@@ -72,17 +73,18 @@ facts("Reader task") do
         write(framebuf, test_frame1)
         iobuf = IOBuffer(takebuf_array(framebuf))
         s = BlockingStream(iobuf)
+        chan = Channel{WebSocketClient.ClientLogicInput}(32)
 
         @sync begin
-            reader_task = WebSocketClient.start_reader(s)
+            reader = WebSocketClient.start_reader(s, chan)
 
             @async begin
-                actual_frame = consume(reader_task)
-                @fact actual_frame --> test_frame1
+                actual_frame = take!(chan)
+                @fact actual_frame.frame --> test_frame1
 
-                WebSocketClient.stop_reader(reader_task)
-                sleep(0.1)
-                @fact reader_task --> istaskdone
+                WebSocketClient.stop_reader(reader)
+                sleep(0.2)
+                @fact reader.task --> istaskdone
             end
         end
     end
@@ -94,23 +96,24 @@ facts("Reader task") do
         write(framebuf, test_frame3)
         iobuf = IOBuffer(takebuf_array(framebuf))
         s = BlockingStream(iobuf)
+        chan = Channel{WebSocketClient.ClientLogicInput}(5)
 
         @sync begin
-            reader_task = WebSocketClient.start_reader(s)
+            reader = WebSocketClient.start_reader(s, chan)
 
             @async begin
-                actual_frame1 = consume(reader_task)
-                @fact actual_frame1 --> test_frame1
+                actual_frame1 = take!(chan)
+                @fact actual_frame1.frame --> test_frame1
 
-                actual_frame2 = consume(reader_task)
-                @fact actual_frame2 --> test_frame2
+                actual_frame2 = take!(chan)
+                @fact actual_frame2.frame --> test_frame2
 
-                actual_frame3 = consume(reader_task)
-                @fact actual_frame3 --> test_frame3
+                actual_frame3 = take!(chan)
+                @fact actual_frame3.frame --> test_frame3
 
-                WebSocketClient.stop_reader(reader_task)
+                WebSocketClient.stop_reader(reader)
                 sleep(0.1)
-                @fact reader_task --> istaskdone
+                @fact reader.task --> istaskdone
             end
         end
     end

@@ -1,17 +1,27 @@
 type StopTaskException <: Exception end
 
-function start_reader(s::IO)
-    @async begin
+immutable ServerReader
+    s::IO
+    chan::Channel
+    task::Task
+end
+
+function start_reader(s::IO, chan::Channel)
+    t = @async begin
         try
             while true
                 frame = read(s, Frame)
-                produce(frame)
+                put!(chan, FrameFromServer(frame))
             end
         end
     end
+    ServerReader(s, chan, t)
 end
 
 
-function stop_reader(t::Task)
-    Base.throwto(t, StopTaskException())
+function stop_reader(t::ServerReader)
+    try
+        close(t.chan)
+        Base.throwto(t.task, StopTaskException())
+    end
 end

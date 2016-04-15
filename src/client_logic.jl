@@ -9,21 +9,24 @@ export ClientLogicExecutor,
 #
 # These types define the input interface for the client logic.
 #
-immutable SendTextFrame
+
+abstract ClientLogicInput
+
+immutable SendTextFrame <: ClientLogicInput
 	data::UTF8String
 	isfinal::Bool
 	opcode::Opcode
 end
 
-immutable SendBinaryFrame
+immutable SendBinaryFrame <: ClientLogicInput
 	data::Array{UInt8, 1}
 	isfinal::Bool
 	opcode::Opcode
 end
 
-immutable ClientPingRequest end
+immutable ClientPingRequest  <: ClientLogicInput end
 
-immutable FrameFromServer
+immutable FrameFromServer <: ClientLogicInput
 	frame::Frame
 end
 
