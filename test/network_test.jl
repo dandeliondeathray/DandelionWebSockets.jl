@@ -46,6 +46,7 @@ function Base.read(s::BlockingStream, ::Type{UInt16})
     x
 end
 
+
 test_frame1 = Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")
 test_frame2 = Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")
 test_frame3 = Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
@@ -120,3 +121,56 @@ facts("Reader task") do
 end
 
 
+type MockFrameStream <: IO
+    frames::Vector{Frame}
+end
+
+Base.write(s::MockFrameStream, frame::Frame) = push!(s.frames, frame)
+
+function expect(s::MockFrameStream, frame::Frame)
+    @fact s.frames --> x -> !isempty(x)
+
+    actual = shift!(s.frames)
+    @fact actual --> frame
+end
+
+facts("Writer task") do
+    context("Stop and start writer") do
+        s = MockFrameStream(Vector{Frame}())
+        chan = Channel{Frame}(32)
+
+        writer = WebSocketClient.start_writer(s, chan)
+        sleep(0.05)
+        @fact writer.task --> x -> !istaskdone(x)
+
+        WebSocketClient.stop_writer(writer)
+        sleep(0.05)
+        @fact writer.task --> istaskdone
+    end
+
+    context("Write a few frames") do
+        s = MockFrameStream(Vector{Frame}())
+        chan = Channel{Frame}(32)
+
+        @sync begin
+            writer = WebSocketClient.start_writer(s, chan)
+            sleep(0.05)
+            @fact writer.task --> x -> !istaskdone(x)
+
+            @async begin
+                put!(chan, test_frame1)
+                put!(chan, test_frame2)
+                put!(chan, test_frame3)
+
+                sleep(0.1)
+                expect(s, test_frame1)
+                expect(s, test_frame2)
+                expect(s, test_frame3)
+
+                WebSocketClient.stop_writer(writer)
+                sleep(0.1)
+                @fact writer.task --> istaskdone
+            end
+        end
+    end
+end
