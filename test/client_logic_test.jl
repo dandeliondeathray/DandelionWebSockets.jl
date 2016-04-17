@@ -19,10 +19,6 @@ function LogicTestCase(;
 	LogicTestCase(description, initial_state, rng, input, expected_calls, final_state)
 end
 
-test_frame1 = Frame(true,  OPCODE_TEXT,         false, 5, 0, nomask, b"Hello")
-test_frame2 = Frame(false, OPCODE_TEXT,         false, 3, 0, nomask, b"Hel")
-test_frame3 = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
-
 # A single text frame, masked, with body "Hello"
 test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 

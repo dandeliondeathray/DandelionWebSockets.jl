@@ -37,3 +37,17 @@ function Base.rand(rng::FakeRNG, ::Type{UInt8}, n::Int)
     end
     splice!(rng.values, 1:n)
 end
+
+#
+# A lot of tests use WebSocket frames, naturally, so these are common frames that all tests can use.
+#
+
+nomask = Array{UInt8,1}()
+mask = b"\x37\xfa\x21\x3d"
+
+# A single frame with payload "Hello"
+test_frame1 = Frame(true,  OPCODE_TEXT,         false, 5, 0, nomask, b"Hello")
+
+# Two fragments of a text message with payload "Hello"
+test_frame2 = Frame(false, OPCODE_TEXT,         false, 3, 0, nomask, b"Hel")
+test_frame3 = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")

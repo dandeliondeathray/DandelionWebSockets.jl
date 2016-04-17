@@ -40,8 +40,7 @@ immutable FrameTestCase
     frame::Frame
 end
 
-nomask = Array{UInt8,1}()
-mask = b"\x37\xfa\x21\x3d"
+
 zero256 = [UInt8(0) for x in range(1, 256)]
 zero64k = [UInt8(0) for x in range(1, 65536)]
 
