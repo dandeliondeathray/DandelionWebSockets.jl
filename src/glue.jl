@@ -21,3 +21,25 @@ end
 function stop_client_logic_pump(t::ClientLogicPump)
     close(t.chan)
 end
+
+#
+# This pump takes messages from the executor and calls functions on the handler.
+#
+
+immutable HandlerPump
+    chan::Channel{HandlerType}
+    task::Task
+end
+
+handle(handler::WebSocketHandler, t::TextReceived) = text_received(handler, t.text)
+
+function start(::Type{HandlerPump}, handler::WebSocketHandler, chan::Channel{HandlerType})
+    t = @async begin
+        for x in chan
+            handle(handler, x)
+        end
+    end
+    HandlerPump(chan, t)
+end
+
+stop(h::HandlerPump) = close(h.chan)

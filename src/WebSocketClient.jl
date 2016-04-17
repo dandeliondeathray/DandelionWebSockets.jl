@@ -7,9 +7,9 @@ include("core.jl")
 include("network.jl")
 include("executor.jl")
 include("client_logic.jl")
+include("handler.jl")
 include("glue.jl")
 include("handshake.jl")
-include("handler.jl")
 
 immutable WSClient
     handler::WebSocketHandler
