@@ -29,6 +29,8 @@ immutable FrameFromServer <: ClientLogicInput
 	frame::Frame
 end
 
+immutable CloseRequest <: ClientLogicInput end
+immutable SocketClosed <: ClientLogicInput end
 #
 # ClientLogic
 #
@@ -37,10 +39,11 @@ immutable SocketState
 	v::Symbol
 end
 
-const STATE_CONNECTING = SocketState(:connecting)
-const STATE_OPEN       = SocketState(:open)
-const STATE_CLOSING    = SocketState(:closing)
-const STATE_CLOSED     = SocketState(:closed)
+const STATE_CONNECTING     = SocketState(:connecting)
+const STATE_OPEN           = SocketState(:open)
+const STATE_CLOSING        = SocketState(:closing)
+const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
+const STATE_CLOSED         = SocketState(:closed)
 
 type ClientLogic
 	state::SocketState
@@ -86,6 +89,20 @@ end
 handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 
+function handle(logic::ClientLogic, req::CloseRequest)
+	logic.state = STATE_CLOSING
+	mask = rand(logic.rng, UInt8, 4)
+	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0,
+		mask, b"")
+	send_frame(logic.executor, frame)
+	state_closing(logic.executor)
+end
+
+function handle(logic::ClientLogic, ::SocketClosed)
+	logic.state = STATE_CLOSED
+	state_closed(logic.executor)
+end
+
 function handle(logic::ClientLogic, req::FrameFromServer)
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
@@ -105,11 +122,18 @@ end
 #
 
 function handle_close(logic::ClientLogic, frame::Frame)
-	logic.state = STATE_CLOSING
-	mask = rand(logic.rng, UInt8, 4)
-	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
-		mask, frame.payload)
-	send_frame(logic.executor, frame)
+	# If the server initiates a closing handshake when we're in open, we should reply with a close
+	# frame. If the client initiated the closing handshake then we'll be in STATE_CLOSING when the
+	# reply comes, and we shouldn't send another close frame.
+	send_close_reply = logic.state == STATE_OPEN
+	logic.state = STATE_CLOSING_SOCKET
+	if send_close_reply
+		mask = rand(logic.rng, UInt8, 4)
+		frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
+			mask, frame.payload)
+		send_frame(logic.executor, frame)
+		state_closing(logic.executor)
+	end
 end
 
 function handle_ping(logic::ClientLogic, payload::Vector{UInt8})

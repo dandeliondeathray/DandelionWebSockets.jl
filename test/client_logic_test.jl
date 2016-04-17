@@ -54,14 +54,6 @@ logic_tests = [
 		expected_calls = [(:text_received, [utf8("Hello")])]),
 
 	LogicTestCase(
-		description    = "A close control frame is received from the server",
-		initial_state  = WebSocketClient.STATE_OPEN,
-		rng            = FakeRNG(mask),
-		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
-		expected_calls = [(:send_frame, [client_close_reply])],
-		final_state    = WebSocketClient.STATE_CLOSING),
-
-	LogicTestCase(
 		description    = "Two text fragments are received from the server",
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(),
@@ -159,6 +151,45 @@ logic_tests = [
 						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
 		expected_calls = []),
+
+	#
+	# Closing the connection
+	#
+
+	LogicTestCase(
+		description    = "The server initiates a closing handshake.",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
+		expected_calls = [(:send_frame,    [client_close_reply]),
+		                  (:state_closing, [])],
+		final_state    = WebSocketClient.STATE_CLOSING_SOCKET),
+
+	LogicTestCase(
+		description    = "The client initiates a closing handshake.",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.CloseRequest()],
+		expected_calls = [(:send_frame,    [client_close_reply]),
+		                  (:state_closing, [])],
+		final_state    = WebSocketClient.STATE_CLOSING),
+
+	LogicTestCase(
+		description    = "The server replies to a client initiated handshake",
+		initial_state  = WebSocketClient.STATE_CLOSING,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
+		expected_calls = [],
+		final_state    = WebSocketClient.STATE_CLOSING_SOCKET),
+
+	LogicTestCase(
+		description    = "The socket is closed cleanly",
+		initial_state  = WebSocketClient.STATE_CLOSING_SOCKET,
+		rng            = FakeRNG(),
+		input          = [WebSocketClient.SocketClosed()],
+		expected_calls = [(:state_closed, [])],
+		final_state    = WebSocketClient.STATE_CLOSED),
+
 ]
 
 facts("ClientLogic") do

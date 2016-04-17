@@ -7,9 +7,7 @@ end
 type UnexpectedCallException <: Exception end
 
 function mockcall(m::MockExecutor, s::Symbol, args...)
-    if length(m.expected_calls) == 0
-        throw(UnexpectedCallException())
-    end
+    @fact m.expected_calls --> x -> !isempty(x)
     expected_symbol, expected_args = shift!(m.expected_calls)
 
     @fact s --> expected_symbol
@@ -19,6 +17,8 @@ end
 WebSocketClient.send_frame(m::MockExecutor, f::Frame) = mockcall(m, :send_frame, f)
 WebSocketClient.text_received(m::MockExecutor, s::UTF8String) = mockcall(m, :text_received, s)
 WebSocketClient.data_received(m::MockExecutor, s::Vector{UInt8}) = mockcall(m, :data_received, s)
+WebSocketClient.state_closed(m::MockExecutor) = mockcall(m, :state_closed)
+WebSocketClient.state_closing(m::MockExecutor) = mockcall(m, :state_closing)
 
 expect(m::MockExecutor, s::Symbol, args...) = push!(m.expected_calls, tuple(s, [args...]))
 check_mock(m::MockExecutor) = @fact m.expected_calls --> isempty
@@ -32,9 +32,7 @@ end
 FakeRNG() = FakeRNG(Array{UInt8, 1}())
 
 function Base.rand(rng::FakeRNG, ::Type{UInt8}, n::Int)
-    if length(rng.values) < n
-        throw(UnexpectedCallException())
-    end
+    @fact rng.values --> x -> !isempty(x)
     splice!(rng.values, 1:n)
 end
 
