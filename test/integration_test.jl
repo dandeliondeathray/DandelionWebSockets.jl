@@ -8,7 +8,7 @@ function Base.read(s::FakeFrameStream, ::Type{Frame})
         sleep(100) # Block for a long time. Should really be block indefinitely.
         return
     end
-    sleep(0.5)
+    sleep(0.2)
     shift!(s.reading)
 end
 
@@ -26,10 +26,12 @@ headers = Dict(
 type TestHandler <: WebSocketHandler
     received_texts::Vector{UTF8String}
     stop_chan::Channel{Symbol}
+
+    TestHandler() = new(Vector{UTF8String}(), Channel{Symbol}(5))
 end
 
-text_received(h::TestHandler, text::UTF8String) = push!(h.received_texts, text)
-on_close(h::TestHandler) = put!(h.stop_chan, :stop)
+WebSocketClient.text_received(h::TestHandler, text::UTF8String) = push!(h.received_texts, text)
+WebSocketClient.on_close(h::TestHandler) = put!(h.stop_chan, :stop)
 
 wait(t::TestHandler) = take!(t.stop_chan)
 function expect_text(t::TestHandler, expected::UTF8String)
@@ -56,10 +58,10 @@ facts("Integration test") do
         do_handshake = () -> handshake_result
         handler = TestHandler()
 
-        client = WebSocketClient(handler, do_handshake)
+        client = WSClient(handler, do_handshake)
 
         # Sleep for a few seconds to let all the messages be sent and received
-        sleep(5.0)
+        sleep(2.0)
         # Request that the connection be closed.
         stop(client)
         # Wait for the handler to receive close confirmation.
@@ -67,7 +69,7 @@ facts("Integration test") do
 
         # We expect that the server sent two Hello messages, in three frames.
         # One frame was a complete Hello text message, the other two are fragmented into two parts.
-        expect_text(handler, "Hello")
-        expect_text(handler, "Hello")
+        expect_text(handler, utf8("Hello"))
+        expect_text(handler, utf8("Hello"))
     end
 end
