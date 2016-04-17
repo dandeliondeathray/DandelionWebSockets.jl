@@ -16,7 +16,6 @@ immutable WSClient
     handler_pump::HandlerPump
     logic_pump::ClientLogicPump
     reader::ServerReader
-    handler::WebSocketHandler # TODO: Remove when closing has been implemented
 
     function WSClient(handler::WebSocketHandler, do_handshake::Function)
         handshake_result = do_handshake()
@@ -36,7 +35,7 @@ immutable WSClient
 
         reader = start_reader(handshake_result.stream, logic_chan)
 
-        new(writer, handler_pump, logic_pump, reader, handler)
+        new(writer, handler_pump, logic_pump, reader)
     end
 end
 
