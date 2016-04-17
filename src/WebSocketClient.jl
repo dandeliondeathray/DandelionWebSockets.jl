@@ -5,6 +5,7 @@ export WSClient,
 
 include("core.jl")
 include("network.jl")
+include("executor.jl")
 include("client_logic.jl")
 include("glue.jl")
 include("handshake.jl")

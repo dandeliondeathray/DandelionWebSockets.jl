@@ -1,6 +1,6 @@
 typealias MockCall Tuple{Symbol,Array{Any, 1}}
 
-type MockExecutor <: ClientLogicExecutor
+type MockExecutor <: WebSocketClient.AbstractClientExecutor
     expected_calls::Array{MockCall}
 end
 

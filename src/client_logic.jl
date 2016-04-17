@@ -3,8 +3,7 @@
 # function, which is defined for the different input types below. It performs internal logic and
 # produces a call to its outbound interface.
 
-export ClientLogicExecutor,
-       ClientLogic
+export ClientLogic
 
 #
 # These types define the input interface for the client logic.
@@ -31,28 +30,6 @@ immutable FrameFromServer <: ClientLogicInput
 end
 
 #
-# Outbound interface for ClientLogic
-#
-
-abstract ClientLogicExecutor
-
-# `send_frame` is called when a frame should be sent to the server.
-send_frame(t::ClientLogicExecutor, ::Frame) = error("send_frame undefined for $(t)")
-
-# These are callbacks for state changes to the WebSocket.
-state_open(t::ClientLogicExecutor)          = error("state_open undefined for $(t)")
-state_closing(t::ClientLogicExecutor)       = error("state_closing undefined for $(t)")
-state_closed(t::ClientLogicExecutor)        = error("state_closed undefined for $(t)")
-
-# Callback when a text message is received from the server. Note that it's the entire message, not
-# individual frames.
-text_received(t::ClientLogicExecutor, ::UTF8String)      = error("text_received undefined for $(t)")
-
-# Callback when a binary message is received from the server. Note that it's the entire message, not
-# individual frames.
-data_received(t::ClientLogicExecutor, ::Array{UInt8, 1}) = error("data_received undefined for $(t)")
-
-#
 # ClientLogic
 #
 
@@ -67,14 +44,14 @@ const STATE_CLOSED     = SocketState(:closed)
 
 type ClientLogic
 	state::SocketState
-	executor::ClientLogicExecutor
+	executor::AbstractClientExecutor
 	rng::AbstractRNG
 	buffer::Vector{UInt8}
 	buffered_type::Opcode
 end
 
 ClientLogic(state::SocketState,
-	        executor::ClientLogicExecutor,
+	        executor::AbstractClientExecutor,
 	        rng::AbstractRNG) = ClientLogic(state, executor, rng, Vector{UInt8}(), OPCODE_TEXT)
 
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
