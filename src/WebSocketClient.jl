@@ -40,6 +40,6 @@ immutable WSClient
     end
 end
 
-stop(c::WSClient) = on_close(c.handler)
+stop(c::WSClient) = nothing
 
 end # module

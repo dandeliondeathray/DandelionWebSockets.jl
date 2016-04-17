@@ -5,8 +5,7 @@ end
 
 function Base.read(s::FakeFrameStream, ::Type{Frame})
     if isempty(s.reading)
-        sleep(100) # Block for a long time. Should really be block indefinitely.
-        return
+        throw(EOFError())
     end
     sleep(0.2)
     shift!(s.reading)
@@ -46,7 +45,7 @@ facts("Integration test") do
         # test_frame1 is a complete text message with payload "Hello".
         # test_frame2 and test_frame3 are two fragments that together become a whole text message
         # also with payload "Hello".
-        server_to_client_frames = [test_frame1, test_frame2, test_frame3]
+        server_to_client_frames = [test_frame1, test_frame2, test_frame3, server_close_frame]
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}())
         body = Vector{UInt8}()
         handshake_result = WebSocketClient.HandshakeResult(
@@ -62,8 +61,6 @@ facts("Integration test") do
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(2.0)
-        # Request that the connection be closed.
-        stop(client)
         # Wait for the handler to receive close confirmation.
         wait(handler)
 

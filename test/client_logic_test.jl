@@ -19,27 +19,6 @@ function LogicTestCase(;
 	LogicTestCase(description, initial_state, rng, input, expected_calls, final_state)
 end
 
-# A single text frame, masked, with body "Hello"
-test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
-
-mask2 = b"\x17\x42\x03\x7f"
-
-# Two masked fragments, one initial and one final. They are masked by two different masks.
-test_frame5 = Frame(false, OPCODE_TEXT, true, 3, 0,	mask, b"\x7f\x9f\x4d")
-test_frame6 = Frame(true, OPCODE_CONTINUATION, true, 2, 0,	mask2, b"\x7b\x2d")
-
-# Two binary fragments, one initial and one final.
-frame_bin_start = Frame(false, OPCODE_BINARY,       false, 3, 0, nomask, b"Hel")
-frame_bin_final = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
-frame_bin_1     = Frame(true,  OPCODE_BINARY,       false, 5, 0, nomask, b"Hello")
-
-server_close_frame = Frame(true, OPCODE_CLOSE, false, 0, 0, nomask, b"")
-client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, mask, b"")
-server_ping_frame = Frame(true, OPCODE_PING, false, 0, 0, nomask, b"")
-client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, mask, b"")
-server_ping_frame_w_pay = Frame(true, OPCODE_PING, false, 5, 0, nomask, b"Hello")
-client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
-
 logic_tests = [
 
 	#
