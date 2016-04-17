@@ -16,6 +16,7 @@ immutable WSClient
     handler_pump::HandlerPump
     logic_pump::ClientLogicPump
     reader::ServerReader
+    logic_chan::Channel{ClientLogicInput}
 
     function WSClient(handler::WebSocketHandler, do_handshake::Function)
         handshake_result = do_handshake()
@@ -35,10 +36,12 @@ immutable WSClient
 
         reader = start_reader(handshake_result.stream, logic_chan)
 
-        new(writer, handler_pump, logic_pump, reader)
+        c = new(writer, handler_pump, logic_pump, reader, logic_chan)
+        on_create(handler, c)
+        c
     end
 end
 
-stop(c::WSClient) = nothing
+stop(c::WSClient) = put!(c.logic_chan, CloseRequest())
 
 end # module

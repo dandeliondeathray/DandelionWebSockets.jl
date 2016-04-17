@@ -37,6 +37,7 @@ end
 ==(a::TextReceived, b::TextReceived) = a.text == b.text
 
 immutable OnClose <: HandlerType end
+immutable OnClosing <: HandlerType end
 
 type ClientExecutor <: AbstractClientExecutor
     frame_chan::Channel{Frame}
@@ -46,3 +47,4 @@ end
 send_frame(t::ClientExecutor, frame::Frame) = put!(t.frame_chan, frame)
 text_received(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, TextReceived(text))
 state_closed(t::ClientExecutor) = put!(t.user_chan, OnClose())
+state_closing(t::ClientExecutor) = put!(t.user_chan, OnClosing())

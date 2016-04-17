@@ -27,4 +27,15 @@ facts("Executor") do
         @fact take!(user_chan) --> WebSocketClient.OnClose()
     end
 
+    context("Closing states for executor") do
+        frame_chan = Channel{Frame}(32)
+        user_chan  = Channel{WebSocketClient.HandlerType}(32)
+
+        executor = WebSocketClient.ClientExecutor(frame_chan, user_chan)
+        WebSocketClient.state_closing(executor)
+        WebSocketClient.state_closed(executor)
+
+        @fact take!(user_chan) --> WebSocketClient.OnClosing()
+        @fact take!(user_chan) --> WebSocketClient.OnClose()
+    end
 end
