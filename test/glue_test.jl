@@ -60,9 +60,11 @@ end
 
 immutable MockHandler <: WebSocketClient.WebSocketHandler
     texts::Vector{UTF8String}
+    states::Vector{Symbol}
 end
 
 WebSocketClient.text_received(h::MockHandler, text::UTF8String) = push!(h.texts, text)
+WebSocketClient.on_close(h::MockHandler) = push!(h.states, :onclose)
 
 function expect_text(h::MockHandler, expected::UTF8String)
     @fact h.texts --> x -> !isempty(x)
@@ -71,9 +73,16 @@ function expect_text(h::MockHandler, expected::UTF8String)
     @fact actual --> expected
 end
 
+function expect_state(h::MockHandler, expected::Symbol)
+    @fact h.states --> x -> !isempty(x)
+
+    actual = shift!(h.states)
+    @fact actual --> expected
+end
+
 facts("WebClientHandler pump") do
     context("Start and stop") do
-        handler = MockHandler([])
+        handler = MockHandler([], [])
         chan    = Channel{WebSocketClient.HandlerType}(32)
         pump   = WebSocketClient.start(WebSocketClient.HandlerPump, handler, chan)
         sleep(0.05)
@@ -85,7 +94,7 @@ facts("WebClientHandler pump") do
     end
 
     context("Pumping objects into channel") do
-        handler = MockHandler([])
+        handler = MockHandler([], [])
         chan    = Channel{WebSocketClient.HandlerType}(32)
 
         @sync begin
@@ -95,6 +104,7 @@ facts("WebClientHandler pump") do
 
             @async begin
                 put!(chan, WebSocketClient.TextReceived(utf8("Hello")))
+                put!(chan, WebSocketClient.OnClose())
 
                 sleep(0.1)
 
@@ -103,6 +113,7 @@ facts("WebClientHandler pump") do
                 @fact pump.task --> istaskdone
 
                 expect_text(handler, utf8("Hello"))
+                expect_state(handler, :onclose)
             end
         end
     end

@@ -20,9 +20,11 @@ facts("Executor") do
         executor = WebSocketClient.ClientExecutor(frame_chan, user_chan)
         WebSocketClient.text_received(executor, utf8("Hello"))
         WebSocketClient.text_received(executor, utf8("world"))
+        WebSocketClient.state_closed(executor)
 
         @fact take!(user_chan) --> WebSocketClient.TextReceived(utf8("Hello"))
         @fact take!(user_chan) --> WebSocketClient.TextReceived(utf8("world"))
+        @fact take!(user_chan) --> WebSocketClient.OnClose()
     end
 
 end
