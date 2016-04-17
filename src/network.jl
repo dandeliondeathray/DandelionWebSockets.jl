@@ -14,6 +14,7 @@ function start_reader(s::IO, chan::Channel)
                 put!(chan, FrameFromServer(frame))
             end
         end
+        put!(chan, SocketClosed())
     end
     ServerReader(s, chan, t)
 end
@@ -21,7 +22,6 @@ end
 
 function stop_reader(t::ServerReader)
     try
-        close(t.chan)
         Base.throwto(t.task, StopTaskException())
     end
 end

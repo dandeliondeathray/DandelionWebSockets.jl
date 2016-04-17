@@ -31,6 +31,7 @@ end
 
 immutable CloseRequest <: ClientLogicInput end
 immutable SocketClosed <: ClientLogicInput end
+
 #
 # ClientLogic
 #

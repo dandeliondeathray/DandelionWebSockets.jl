@@ -84,6 +84,7 @@ facts("Reader task") do
                 @fact actual_frame.frame --> test_frame1
 
                 WebSocketClient.stop_reader(reader)
+                @fact take!(chan) --> WebSocketClient.SocketClosed()
                 sleep(0.2)
                 @fact reader.task --> istaskdone
             end
@@ -113,6 +114,7 @@ facts("Reader task") do
                 @fact actual_frame3.frame --> test_frame3
 
                 WebSocketClient.stop_reader(reader)
+                @fact take!(chan) --> WebSocketClient.SocketClosed()
                 sleep(0.1)
                 @fact reader.task --> istaskdone
             end
