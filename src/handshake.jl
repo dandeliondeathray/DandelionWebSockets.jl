@@ -1,3 +1,5 @@
+import Nettle
+
 immutable HandshakeResult
     expected_accept::ASCIIString
     stream::IO
@@ -13,4 +15,14 @@ function validate(handshake::HandshakeResult)
 
     accept_value = handshake.headers[accept_name]
     return accept_value == handshake.expected_accept
+end
+
+function make_websocket_key(rng::AbstractRNG)
+    ascii(base64encode(rand(rng, UInt8, 16)))
+end
+
+function calculate_accept(key::ASCIIString)
+    magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+    h = Nettle.digest("sha1", key * magic)
+    base64encode(h)
 end
