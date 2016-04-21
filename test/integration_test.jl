@@ -65,6 +65,8 @@ function expect_text(t::TestHandler, expected::UTF8String)
     @fact actual --> expected
 end
 
+uri = Requests.URI("http://some/host")
+
 facts("Integration test") do
     context("Receive two Hello messages.") do
         # test_frame1 is a complete text message with payload "Hello".
@@ -79,10 +81,14 @@ facts("Integration test") do
             headers,
             body)
 
-        do_handshake = () -> handshake_result
+        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
         handler = TestHandler()
 
-        client = WSClient(handler, do_handshake)
+        client = WSClient(uri, handler; do_handshake=do_handshake)
+
+        # Write a message "Hello"
+        put!(client.logic_chan,
+            WebSocketClient.SendTextFrame(utf8("Hello"), true, WebSocketClient.OPCODE_TEXT))
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(2.0)
@@ -93,6 +99,9 @@ facts("Integration test") do
         # One frame was a complete Hello text message, the other two are fragmented into two parts.
         expect_text(handler, utf8("Hello"))
         expect_text(handler, utf8("Hello"))
+
+        # We expect one message "Hello" and one close control frame to have been sent.
+        @fact length(stream.writing) --> 2
     end
 
     context("The client initiates closing handshake") do
@@ -108,10 +117,17 @@ facts("Integration test") do
             headers,
             body)
 
-        do_handshake = () -> handshake_result
+        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
         handler = TestHandler(true)
 
-        client = WSClient(handler, do_handshake)
+        client = WSClient(uri, handler; do_handshake=do_handshake)
+
+        # Write a message "Hello"
+        put!(client.logic_chan,
+            WebSocketClient.SendTextFrame(utf8("Hello"), true, WebSocketClient.OPCODE_TEXT))
+        # Write a message "Hello"
+        put!(client.logic_chan,
+            WebSocketClient.SendTextFrame(utf8("world"), true, WebSocketClient.OPCODE_TEXT))
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(1.0)
@@ -121,5 +137,8 @@ facts("Integration test") do
         # We expect that the server sent two Hello messages, in three frames.
         # One frame was a complete Hello text message, the other two are fragmented into two parts.
         expect_text(handler, utf8("Hello"))
+
+        # We expect one close frame and two message "Hello" and "world" to have been sent.
+        @fact length(stream.writing) --> 3
     end
 end

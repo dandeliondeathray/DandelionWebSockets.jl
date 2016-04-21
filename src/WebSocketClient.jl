@@ -18,8 +18,9 @@ immutable WSClient
     reader::ServerReader
     logic_chan::Channel{ClientLogicInput}
 
-    function WSClient(handler::WebSocketHandler, do_handshake::Function)
-        handshake_result = do_handshake()
+    function WSClient(uri::Requests.URI, handler::WebSocketHandler; do_handshake=WebSocketClient.do_handshake)
+        rng = MersenneTwister()
+        handshake_result = do_handshake(rng, uri)
 
         writer_channel = Channel{Frame}(32)
         writer = start_writer(handshake_result.stream, writer_channel)
@@ -28,7 +29,7 @@ immutable WSClient
         handler_pump = start(HandlerPump, handler, user_channel)
 
         executor = ClientExecutor(writer_channel, user_channel)
-        logic = ClientLogic(STATE_CONNECTING, executor, MersenneTwister())
+        logic = ClientLogic(STATE_OPEN, executor, rng)
 
         logic_chan = Channel{ClientLogicInput}(32)
         logic_handler = x -> handle(logic, x)
