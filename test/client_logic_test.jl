@@ -30,7 +30,7 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(test_frame1)],
-		expected_calls = [(:text_received, [utf8("Hello")])]),
+		expected_calls = [(:on_text, [utf8("Hello")])]),
 
 	LogicTestCase(
 		description    = "Two text fragments are received from the server",
@@ -38,7 +38,7 @@ logic_tests = [
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(test_frame2),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
-		expected_calls = [(:text_received, [utf8("Hello")])]),
+		expected_calls = [(:on_text, [utf8("Hello")])]),
 
 	LogicTestCase(
 		description    = "Buffer is cleared between two separate multi-fragment messages",
@@ -48,8 +48,8 @@ logic_tests = [
 		                  WebSocketClient.FrameFromServer(test_frame3),
 		                  WebSocketClient.FrameFromServer(test_frame2),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
-		expected_calls = [(:text_received, [utf8("Hello")]),
-		                  (:text_received, [utf8("Hello")])]),
+		expected_calls = [(:on_text, [utf8("Hello")]),
+		                  (:on_text, [utf8("Hello")])]),
 
 	LogicTestCase(
 		description    = "A ping request is received between two fragments",
@@ -59,7 +59,7 @@ logic_tests = [
 						  WebSocketClient.FrameFromServer(server_ping_frame),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
 		expected_calls = [(:send_frame, [client_pong_frame]),
-		                  (:text_received, [utf8("Hello")])]),
+		                  (:on_text, [utf8("Hello")])]),
 
 	LogicTestCase(
 		description    = "A pong response has the same payload as the ping",

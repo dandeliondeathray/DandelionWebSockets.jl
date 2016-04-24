@@ -46,7 +46,7 @@ type TestHandler <: WebSocketHandler
         new(Vector{UTF8String}(), Channel{Symbol}(5), close_on_message, nothing)
 end
 
-function WebSocketClient.text_received(h::TestHandler, text::UTF8String)
+function WebSocketClient.on_text(h::TestHandler, text::UTF8String)
     push!(h.received_texts, text)
     if h.close_on_message
         stop(get(h.client))
@@ -87,8 +87,7 @@ facts("Integration test") do
         client = WSClient(uri, handler; do_handshake=do_handshake)
 
         # Write a message "Hello"
-        put!(client.logic_chan,
-            WebSocketClient.SendTextFrame(utf8("Hello"), true, WebSocketClient.OPCODE_TEXT))
+        send_text(client, utf8("Hello"))
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(2.0)
@@ -123,11 +122,9 @@ facts("Integration test") do
         client = WSClient(uri, handler; do_handshake=do_handshake)
 
         # Write a message "Hello"
-        put!(client.logic_chan,
-            WebSocketClient.SendTextFrame(utf8("Hello"), true, WebSocketClient.OPCODE_TEXT))
+        send_text(client, utf8("Hello"))
         # Write a message "Hello"
-        put!(client.logic_chan,
-            WebSocketClient.SendTextFrame(utf8("world"), true, WebSocketClient.OPCODE_TEXT))
+        send_text(client, utf8("world"))
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(1.0)

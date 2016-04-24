@@ -16,8 +16,8 @@ state_closed(t::AbstractClientExecutor)        = error("state_closed undefined f
 
 # Callback when a text message is received from the server. Note that it's the entire message, not
 # individual frames.
-text_received(t::AbstractClientExecutor, ::UTF8String) =
-    error("text_received undefined for $(t)")
+on_text(t::AbstractClientExecutor, ::UTF8String) =
+    error("on_text undefined for $(t)")
 
 # Callback when a binary message is received from the server. Note that it's the entire message, not
 # individual frames.
@@ -45,6 +45,6 @@ type ClientExecutor <: AbstractClientExecutor
 end
 
 send_frame(t::ClientExecutor, frame::Frame) = put!(t.frame_chan, frame)
-text_received(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, TextReceived(text))
+on_text(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, TextReceived(text))
 state_closed(t::ClientExecutor) = put!(t.user_chan, OnClose())
 state_closing(t::ClientExecutor) = put!(t.user_chan, OnClosing())

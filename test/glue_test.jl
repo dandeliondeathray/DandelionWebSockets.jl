@@ -63,7 +63,7 @@ immutable MockHandler <: WebSocketClient.WebSocketHandler
     states::Vector{Symbol}
 end
 
-WebSocketClient.text_received(h::MockHandler, text::UTF8String) = push!(h.texts, text)
+WebSocketClient.on_text(h::MockHandler, text::UTF8String) = push!(h.texts, text)
 WebSocketClient.on_close(h::MockHandler) = push!(h.states, :onclose)
 
 function expect_text(h::MockHandler, expected::UTF8String)

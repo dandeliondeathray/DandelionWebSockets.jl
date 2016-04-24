@@ -31,7 +31,7 @@ immutable HandlerPump
     task::Task
 end
 
-handle(handler::WebSocketHandler, t::TextReceived) = text_received(handler, t.text)
+handle(handler::WebSocketHandler, t::TextReceived) = on_text(handler, t.text)
 handle(handler::WebSocketHandler, ::OnClosing) = on_closing(handler)
 handle(handler::WebSocketHandler, ::OnClose) = on_close(handler)
 

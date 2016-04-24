@@ -15,7 +15,7 @@ function mockcall(m::MockExecutor, s::Symbol, args...)
 end
 
 WebSocketClient.send_frame(m::MockExecutor, f::Frame) = mockcall(m, :send_frame, f)
-WebSocketClient.text_received(m::MockExecutor, s::UTF8String) = mockcall(m, :text_received, s)
+WebSocketClient.on_text(m::MockExecutor, s::UTF8String) = mockcall(m, :on_text, s)
 WebSocketClient.data_received(m::MockExecutor, s::Vector{UInt8}) = mockcall(m, :data_received, s)
 WebSocketClient.state_closed(m::MockExecutor) = mockcall(m, :state_closed)
 WebSocketClient.state_closing(m::MockExecutor) = mockcall(m, :state_closing)

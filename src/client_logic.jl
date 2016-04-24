@@ -143,7 +143,7 @@ end
 
 function handle_text(logic::ClientLogic, frame::Frame)
 	if frame.fin
-		text_received(logic.executor, utf8(frame.payload))
+		on_text(logic.executor, utf8(frame.payload))
 	else
 		start_buffer(logic, frame.payload, OPCODE_TEXT)
 	end
@@ -161,7 +161,7 @@ function handle_continuation(logic::ClientLogic, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
 		if logic.buffered_type == OPCODE_TEXT
-			text_received(logic.executor, utf8(logic.buffer))
+			on_text(logic.executor, utf8(logic.buffer))
 		elseif logic.buffered_type == OPCODE_BINARY
 			data_received(logic.executor, logic.buffer)
 			logic.buffer = Vector{UInt8}()

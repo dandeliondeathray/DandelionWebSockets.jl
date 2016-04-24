@@ -18,8 +18,8 @@ facts("Executor") do
         user_chan  = Channel{WebSocketClient.HandlerType}(32)
 
         executor = WebSocketClient.ClientExecutor(frame_chan, user_chan)
-        WebSocketClient.text_received(executor, utf8("Hello"))
-        WebSocketClient.text_received(executor, utf8("world"))
+        WebSocketClient.on_text(executor, utf8("Hello"))
+        WebSocketClient.on_text(executor, utf8("world"))
         WebSocketClient.state_closed(executor)
 
         @fact take!(user_chan) --> WebSocketClient.TextReceived(utf8("Hello"))

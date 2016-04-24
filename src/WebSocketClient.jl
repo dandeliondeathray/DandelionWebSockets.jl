@@ -1,7 +1,8 @@
 module WebSocketClient
 
 export WSClient,
-       stop
+       stop,
+       send_text
 
 include("core.jl")
 include("network.jl")
@@ -44,5 +45,7 @@ immutable WSClient
 end
 
 stop(c::WSClient) = put!(c.logic_chan, CloseRequest())
+
+send_text(c::WSClient, s::UTF8String) = put!(c.logic_chan, SendTextFrame(s, true, OPCODE_TEXT))
 
 end # module
