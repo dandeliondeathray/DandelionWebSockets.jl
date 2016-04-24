@@ -1,6 +1,7 @@
 module WebSocketClient
 
-export WSClient,
+export AbstractWSClient,
+       WSClient,
        stop,
        send_text
 
