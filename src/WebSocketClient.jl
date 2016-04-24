@@ -12,7 +12,9 @@ include("handler.jl")
 include("glue.jl")
 include("handshake.jl")
 
-immutable WSClient
+abstract AbstractWSClient
+
+immutable WSClient <: AbstractWSClient
     writer::ClientWriter
     handler_pump::HandlerPump
     logic_pump::ClientLogicPump
