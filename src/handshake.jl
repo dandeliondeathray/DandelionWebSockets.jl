@@ -44,3 +44,8 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
 
     HandshakeResult(expected_accept, result.socket, Dict(), b"")
 end
+
+function convert_ws_uri(uri::Requests.URI)
+    u = replace(string(uri), r"^ws", "http")
+    Requests.URI(u)
+end

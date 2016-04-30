@@ -116,10 +116,20 @@ facts("Integration test") do
             headers,
             body)
 
-        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
+        websocket_uri = Requests.URI("wss://some/uri")
+        expected_uri = Requests.URI("https://some/uri")
+        handshake_uri = nothing
+
+        function do_handshake(rng::AbstractRNG, uri::Requests.URI)
+            handshake_uri = uri
+            handshake_result
+        end
+
         handler = TestHandler(true)
 
-        client = WSClient(uri, handler; do_handshake=do_handshake)
+        client = WSClient(websocket_uri, handler; do_handshake=do_handshake)
+
+        @fact handshake_uri --> expected_uri
 
         # Write a message "Hello"
         send_text(client, utf8("Hello"))

@@ -99,4 +99,14 @@ facts("Handshake") do
 
         @fact handshake_result.expected_accept --> expected_accept
     end
+
+    context("Convert URIs from ws to http") do
+        ws_uri = Requests.URI("ws://some/uri")
+        wss_uri = Requests.URI("wss://some/uri")
+        http_uri = Requests.URI("http://some/uri")
+        @fact WebSocketClient.convert_ws_uri(ws_uri) --> Requests.URI("http://some/uri")
+        @fact WebSocketClient.convert_ws_uri(wss_uri) --> Requests.URI("https://some/uri")
+        @fact WebSocketClient.convert_ws_uri(http_uri) --> http_uri
+    end
 end
+

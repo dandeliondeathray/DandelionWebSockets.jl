@@ -24,7 +24,10 @@ immutable WSClient <: AbstractWSClient
 
     function WSClient(uri::Requests.URI, handler::WebSocketHandler; do_handshake=WebSocketClient.do_handshake)
         rng = MersenneTwister()
-        handshake_result = do_handshake(rng, uri)
+        # Requests expect a HTTP/HTTPS scheme, so we convert from the ws/wss to http/https,
+        # if necessary.
+        new_uri = convert_ws_uri(uri)
+        handshake_result = do_handshake(rng, new_uri)
 
         writer_channel = Channel{Frame}(32)
         writer = start_writer(handshake_result.stream, writer_channel)
@@ -46,6 +49,11 @@ immutable WSClient <: AbstractWSClient
         c
     end
 end
+
+# This method is primarily meant to be used when you want to feed the WebSocket client with another
+# channel, rather than going through the normal function calls. For instance, if building a
+# throttling layer on top of this you might want to access the logic channel directly.
+get_channel(c::WSClient) = c.logic_chan
 
 stop(c::WSClient) = put!(c.logic_chan, CloseRequest())
 
