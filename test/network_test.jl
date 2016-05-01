@@ -1,3 +1,5 @@
+import Base: read, write, readavailable
+
 # To accurately test a fake TCPSocket I need a blocking streamk.
 # The implementation below is meant to be simple, not performant or good.
 type BlockingStream <: IO
@@ -50,7 +52,8 @@ end
 test_frame1 = Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")
 test_frame2 = Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")
 test_frame3 = Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
-
+network_test_frame4 =
+    Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zero256)
 
 facts("Reader task") do
     context("Start and stop") do
@@ -174,5 +177,41 @@ facts("Writer task") do
                 @fact writer.task --> istaskdone
             end
         end
+    end
+end
+
+type FakeTLSStream <: IO
+    buf::IOBuffer
+
+    FakeTLSStream() = new(IOBuffer())
+end
+
+write(s::FakeTLSStream, frame::Frame) = write(s.buf, frame)
+
+read{T}(::FakeTLSStream, ::T) = throw(ErrorException())
+readavailable(s::FakeTLSStream) = takebuf_array(s.buf)
+
+facts("Byte stream from SSL socket") do
+    # MbedTLS.SSLContext does not allow you to read bytes from the IO stream. It throws an exception
+    # if you try. `BufferedReader` adapts the TLS stream to support byte I/O by reading all
+    # available data into a buffer and return data from that.
+    context("Read two bytes via TLSBufferedReader") do
+        fake_tls = FakeTLSStream()
+        write(fake_tls.buf, Vector{UInt8}([1,2]))
+
+        s = WebSocketClient.TLSBufferedReader(fake_tls)
+
+        @fact read(s, UInt8) --> 1
+        @fact read(s, UInt8) --> 2
+    end
+
+    context("Read frames via TLSBufferedReader") do
+        fake_tls = FakeTLSStream()
+        write(fake_tls, test_frame1)
+        write(fake_tls, network_test_frame4)
+
+        s = WebSocketClient.TLSBufferedReader(fake_tls)
+        @fact read(s, Frame) --> test_frame1
+        @fact read(s, Frame) --> network_test_frame4
     end
 end

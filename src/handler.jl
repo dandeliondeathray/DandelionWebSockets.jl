@@ -1,6 +1,8 @@
 export WebSocketHandler,
        on_text,
-       on_close
+       on_close,
+       on_create,
+       on_closing
 
 abstract WebSocketHandler
 
