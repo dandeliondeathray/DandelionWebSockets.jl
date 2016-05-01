@@ -64,8 +64,8 @@ immutable TLSBufferedIO <: IO
 end
 
 function fill_buffer(s::TLSBufferedIO, n::Int)
-    mark(s.buf)
-    while s.buf.size < n
+    begin_ptr = mark(s.buf)
+    while s.buf.size - begin_ptr < n
         write(s.buf, readavailable(s.tls_stream))
     end
     reset(s.buf)
