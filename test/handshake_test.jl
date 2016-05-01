@@ -108,5 +108,25 @@ facts("Handshake") do
         @fact WebSocketClient.convert_ws_uri(wss_uri) --> Requests.URI("https://some/uri")
         @fact WebSocketClient.convert_ws_uri(http_uri) --> http_uri
     end
+
+    context("SSL handshakes result in a TLSBufferedIO stream") do
+        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        key = ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
+        expected_accept = WebSocketClient.calculate_accept(key)
+
+        uri = Requests.URI("http://localhost:8000")
+        ssl_uri = Requests.URI("https://localhost:8000")
+
+        m = MockRequest(expected_accept)
+        do_req(uri::Requests.URI, method::ASCIIString; headers=Dict()) =
+            mock_do_stream_request(m, uri, method; headers=headers)
+
+        normal_handshake_result = WebSocketClient.do_handshake(rng, uri; do_request=do_req)
+        @fact isa(normal_handshake_result.stream, WebSocketClient.TLSBufferedIO) --> false
+
+        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        ssl_handshake_result = WebSocketClient.do_handshake(rng, ssl_uri, do_request=do_req)
+        @fact isa(ssl_handshake_result.stream, WebSocketClient.TLSBufferedIO) --> true
+    end
 end
 
