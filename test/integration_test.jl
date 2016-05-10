@@ -1,3 +1,6 @@
+import WebSocketClient: on_text, on_binary, on_create,
+                        state_connecting, state_open, state_closing, state_closed
+
 immutable FakeFrameStream <: IO
     reading::Vector{Frame}
     writing::Vector{Frame}
@@ -37,25 +40,36 @@ headers = Dict(
 
 type TestHandler <: WebSocketHandler
     received_texts::Vector{UTF8String}
+    received_datas::Vector{Vector{UInt8}}
     stop_chan::Channel{Symbol}
-    close_on_message::Bool # If true, initiates a closing handshake on the first text message.
+    close_on_message::Bool # If true, initiates a closing handshake on the first message.
     client::Nullable{WSClient}
 
-    TestHandler() = new(Vector{UTF8String}(), Channel{Symbol}(5), false, nothing)
+    TestHandler() = new(Vector{UTF8String}(), [], Channel{Symbol}(5), false, nothing)
     TestHandler(close_on_message::Bool) =
-        new(Vector{UTF8String}(), Channel{Symbol}(5), close_on_message, nothing)
+        new(Vector{UTF8String}(), [], Channel{Symbol}(5), close_on_message, nothing)
 end
 
-function WebSocketClient.on_text(h::TestHandler, text::UTF8String)
+function on_text(h::TestHandler, text::UTF8String)
     push!(h.received_texts, text)
     if h.close_on_message
         stop(get(h.client))
     end
 end
 
-WebSocketClient.on_closing(h::TestHandler) = nothing
-WebSocketClient.on_close(h::TestHandler) = put!(h.stop_chan, :stop)
-WebSocketClient.on_create(h::TestHandler, c::WSClient) = h.client = c
+
+function on_binary(h::TestHandler, data::Vector{UInt8})
+    push!(h.received_datas, data)
+    if h.close_on_message
+        stop(get(h.client))
+    end
+end
+
+state_open(h::TestHandler) = nothing
+state_connecting(h::TestHandler) = nothing
+state_closing(h::TestHandler) = nothing
+state_closed(h::TestHandler) = put!(h.stop_chan, :stop)
+on_create(h::TestHandler, c::WSClient) = h.client = c
 
 wait(t::TestHandler) = take!(t.stop_chan)
 function expect_text(t::TestHandler, expected::UTF8String)
@@ -65,14 +79,22 @@ function expect_text(t::TestHandler, expected::UTF8String)
     @fact actual --> expected
 end
 
+function expect_binary(t::TestHandler, expected::Vector{UInt8})
+    @fact t.received_datas --> x -> !isempty(x)
+
+    actual = shift!(t.received_datas)
+    @fact actual --> expected
+end
+
 uri = Requests.URI("http://some/host")
 
 facts("Integration test") do
-    context("Receive two Hello messages.") do
+    context("Receive two Hello messages, and one binary.") do
         # test_frame1 is a complete text message with payload "Hello".
         # test_frame2 and test_frame3 are two fragments that together become a whole text message
-        # also with payload "Hello".
-        server_to_client_frames = [test_frame1, test_frame2, test_frame3, server_close_frame]
+        # also with payload "Hello". frame_bin_1 is a binary message.
+        server_to_client_frames = [test_frame1, test_frame2, test_frame3,
+                                   frame_bin_1, server_close_frame]
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), true)
         body = Vector{UInt8}()
         handshake_result = WebSocketClient.HandshakeResult(
@@ -98,6 +120,7 @@ facts("Integration test") do
         # One frame was a complete Hello text message, the other two are fragmented into two parts.
         expect_text(handler, utf8("Hello"))
         expect_text(handler, utf8("Hello"))
+        expect_binary(handler, b"Hello")
 
         # We expect one message "Hello" and one close control frame to have been sent.
         @fact length(stream.writing) --> 2

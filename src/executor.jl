@@ -43,7 +43,7 @@ end
 
 immutable StateConnecting <: HandlerType end
 immutable StateOpen <: HandlerType end
-immutable StateClose <: HandlerType end
+immutable StateClosed <: HandlerType end
 immutable StateClosing <: HandlerType end
 
 type ClientExecutor <: AbstractClientExecutor
@@ -54,7 +54,7 @@ end
 send_frame(t::ClientExecutor, frame::Frame) = put!(t.frame_chan, frame)
 state_connecting(t::ClientExecutor) = put!(t.user_chan, StateConnecting())
 state_open(t::ClientExecutor) = put!(t.user_chan, StateOpen())
-state_closed(t::ClientExecutor) = put!(t.user_chan, StateClose())
+state_closed(t::ClientExecutor) = put!(t.user_chan, StateClosed())
 state_closing(t::ClientExecutor) = put!(t.user_chan, StateClosing())
 on_text(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, OnText(text))
 on_binary(t::ClientExecutor, data::Vector{UInt8}) = put!(t.user_chan, OnBinary(data))

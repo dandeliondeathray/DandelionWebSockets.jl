@@ -30,7 +30,7 @@ facts("Executor") do
         @fact take!(user_chan) --> OnText(utf8("Hello"))
         @fact take!(user_chan) --> OnText(utf8("world"))
         @fact take!(user_chan) --> OnBinary(b"\x00\x01\x02")
-        @fact take!(user_chan) --> StateClose()
+        @fact take!(user_chan) --> StateClosed()
     end
 
     context("State changes for executor") do
@@ -46,6 +46,6 @@ facts("Executor") do
         @fact take!(user_chan) --> StateConnecting()
         @fact take!(user_chan) --> StateOpen()
         @fact take!(user_chan) --> StateClosing()
-        @fact take!(user_chan) --> StateClose()
+        @fact take!(user_chan) --> StateClosed()
     end
 end

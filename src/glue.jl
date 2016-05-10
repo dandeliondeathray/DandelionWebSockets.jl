@@ -32,8 +32,11 @@ immutable HandlerPump
 end
 
 handle(handler::WebSocketHandler, t::OnText) = on_text(handler, t.text)
-handle(handler::WebSocketHandler, ::StateClosing) = on_closing(handler)
-handle(handler::WebSocketHandler, ::StateClose) = on_close(handler)
+handle(handler::WebSocketHandler, t::OnBinary) = on_binary(handler, t.data)
+handle(handler::WebSocketHandler, ::StateOpen) = state_open(handler)
+handle(handler::WebSocketHandler, ::StateConnecting) = state_connecting(handler)
+handle(handler::WebSocketHandler, ::StateClosing) = state_closing(handler)
+handle(handler::WebSocketHandler, ::StateClosed) = state_closed(handler)
 
 function start(::Type{HandlerPump}, handler::WebSocketHandler, chan::Channel{HandlerType})
     t = @async begin
