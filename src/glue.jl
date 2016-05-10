@@ -26,6 +26,12 @@ end
 # This pump takes messages from the executor and calls functions on the handler.
 #
 
+# TODO: This glue is overly specific. We should be able to make a general pump that pumps a
+#       function call on a given object, and apply it. That way, the executor will say:
+#       "Call the function `on_text` on your handler object, with these arguments.", instead of
+#       creating a separate type for each such call. Then we can get rid of the types OnText,
+#       OnBinary, StateOpen, and so on, because they're used to convey that same information.
+
 immutable HandlerPump
     chan::Channel{HandlerType}
     task::Task

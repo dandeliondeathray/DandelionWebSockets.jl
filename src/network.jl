@@ -1,5 +1,7 @@
 import Base: read, write
 
+# TODO: Documentation
+
 type StopTaskException <: Exception end
 
 immutable ServerReader
@@ -16,6 +18,7 @@ function start_reader(s::IO, chan::Channel)
                 put!(chan, FrameFromServer(frame))
             end
         catch ex
+            # TODO: Handle errors better.
             println("WebSocketClient.start_reader exception: $(ex)")
         end
         put!(chan, SocketClosed())
@@ -42,6 +45,7 @@ function start_writer(s::IO, chan::Channel)
             for frame in chan
                 write(s, frame)
             end
+            # TODO: Handle errors better.
         end
     end
     ClientWriter(s, chan, t)

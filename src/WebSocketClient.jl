@@ -42,6 +42,8 @@ immutable WSClient <: AbstractWSClient
         logic_handler = x -> handle(logic, x)
         logic_pump = start_client_logic_pump(logic_handler, logic_chan)
 
+        # TODO: Send state_connecting call?
+
         reader = start_reader(handshake_result.stream, logic_chan)
 
         c = new(writer, handler_pump, logic_pump, reader, logic_chan)
@@ -58,5 +60,6 @@ get_channel(c::WSClient) = c.logic_chan
 stop(c::WSClient) = put!(c.logic_chan, CloseRequest())
 
 send_text(c::WSClient, s::UTF8String) = put!(c.logic_chan, SendTextFrame(s, true, OPCODE_TEXT))
+# TODO: Support sending binary messages.
 
 end # module

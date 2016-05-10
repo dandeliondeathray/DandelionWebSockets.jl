@@ -1,6 +1,8 @@
 import Nettle
 import Requests
 
+# TODO: Documentation
+
 immutable HandshakeResult
     expected_accept::ASCIIString
     stream::IO

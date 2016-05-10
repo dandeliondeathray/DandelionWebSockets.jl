@@ -40,7 +40,10 @@ immutable SocketState
 	v::Symbol
 end
 
+# TODO: We never send a `state_connecting` callback here, because that should be done when we make
+#       the HTTP upgrade.
 const STATE_CONNECTING     = SocketState(:connecting)
+# TODO: We should send a `state_open` callback, when the ClientLogic is created.
 const STATE_OPEN           = SocketState(:open)
 const STATE_CLOSING        = SocketState(:closing)
 const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
@@ -87,8 +90,11 @@ function handle(logic::ClientLogic, req::SendTextFrame)
 	send(logic, req.isfinal, req.opcode, payload)
 end
 
+# TODO: Sending binary frames.
 handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
+# TODO: Sending ping requests.
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
+# TODO: Handle pong replies, and disconnect when timing out.
 
 function handle(logic::ClientLogic, req::CloseRequest)
 	logic.state = STATE_CLOSING
@@ -157,6 +163,7 @@ function handle_binary(logic::ClientLogic, frame::Frame)
 	end
 end
 
+# TODO: What if we get a binary/text frame before we get a final continuation frame?
 function handle_continuation(logic::ClientLogic, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin

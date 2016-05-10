@@ -19,6 +19,8 @@
 #     |                     Payload Data continued ...                |
 #     +---------------------------------------------------------------+
 
+# TODO: Rethink what we're exporting here. Should we export anything? None of this
+#       should be part of the interface to the user.
 export Frame,
        Opcode,
        OPCODE_CONTINUATION,
@@ -29,6 +31,8 @@ export Frame,
        OPCODE_PONG
 
 import Base.==
+
+# TODO: Documentation.
 
 immutable Opcode
     op::UInt8
