@@ -103,8 +103,8 @@ facts("WebClientHandler pump") do
             @fact pump.task --> x -> !istaskdone(x)
 
             @async begin
-                put!(chan, WebSocketClient.TextReceived(utf8("Hello")))
-                put!(chan, WebSocketClient.OnClose())
+                put!(chan, WebSocketClient.OnText(utf8("Hello")))
+                put!(chan, WebSocketClient.StateClose())
 
                 sleep(0.1)
 

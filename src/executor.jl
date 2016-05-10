@@ -10,19 +10,19 @@ abstract AbstractClientExecutor
 send_frame(t::AbstractClientExecutor, ::Frame) = error("send_frame undefined for $(t)")
 
 # These are callbacks for state changes to the WebSocket.
-state_open(t::AbstractClientExecutor)          = error("state_open undefined for $(t)")
-state_closing(t::AbstractClientExecutor)       = error("state_closing undefined for $(t)")
-state_closed(t::AbstractClientExecutor)        = error("state_closed undefined for $(t)")
+state_connecting(t::AbstractClientExecutor) = error("state_connecting undefined for $(typeof(t))")
+state_open(t::AbstractClientExecutor)       = error("state_open undefined for $(typeof(t))")
+state_closing(t::AbstractClientExecutor)    = error("state_closing undefined for $(typeof(t))")
+state_closed(t::AbstractClientExecutor)     = error("state_closed undefined for $(typeof(t))")
 
 # Callback when a text message is received from the server. Note that it's the entire message, not
 # individual frames.
-on_text(t::AbstractClientExecutor, ::UTF8String) =
-    error("on_text undefined for $(t)")
+on_text(t::AbstractClientExecutor, ::UTF8String) = error("on_text undefined for $(typeof(t))")
 
 # Callback when a binary message is received from the server. Note that it's the entire message, not
 # individual frames.
-data_received(t::AbstractClientExecutor, ::Array{UInt8, 1}) =
-    error("data_received undefined for $(t)")
+on_binary(t::AbstractClientExecutor, ::Vector{UInt8}) =
+    error("on_binary undefined for $(typeof(t))")
 
 #
 # Implementation of ClientLogicExecutor
@@ -30,14 +30,21 @@ data_received(t::AbstractClientExecutor, ::Array{UInt8, 1}) =
 
 abstract HandlerType
 
-immutable TextReceived <: HandlerType
+immutable OnText <: HandlerType
     text::UTF8String
 end
 
-==(a::TextReceived, b::TextReceived) = a.text == b.text
+immutable OnBinary <: HandlerType
+    data::Vector{UInt8}
+end
 
-immutable OnClose <: HandlerType end
-immutable OnClosing <: HandlerType end
+==(a::OnText, b::OnText) = a.text == b.text
+==(a::OnBinary, b::OnBinary) = a.data == b.data
+
+immutable StateConnecting <: HandlerType end
+immutable StateOpen <: HandlerType end
+immutable StateClose <: HandlerType end
+immutable StateClosing <: HandlerType end
 
 type ClientExecutor <: AbstractClientExecutor
     frame_chan::Channel{Frame}
@@ -45,6 +52,9 @@ type ClientExecutor <: AbstractClientExecutor
 end
 
 send_frame(t::ClientExecutor, frame::Frame) = put!(t.frame_chan, frame)
-on_text(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, TextReceived(text))
-state_closed(t::ClientExecutor) = put!(t.user_chan, OnClose())
-state_closing(t::ClientExecutor) = put!(t.user_chan, OnClosing())
+state_connecting(t::ClientExecutor) = put!(t.user_chan, StateConnecting())
+state_open(t::ClientExecutor) = put!(t.user_chan, StateOpen())
+state_closed(t::ClientExecutor) = put!(t.user_chan, StateClose())
+state_closing(t::ClientExecutor) = put!(t.user_chan, StateClosing())
+on_text(t::ClientExecutor, text::UTF8String) = put!(t.user_chan, OnText(text))
+on_binary(t::ClientExecutor, data::Vector{UInt8}) = put!(t.user_chan, OnBinary(data))

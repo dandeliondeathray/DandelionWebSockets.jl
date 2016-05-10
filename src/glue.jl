@@ -31,9 +31,9 @@ immutable HandlerPump
     task::Task
 end
 
-handle(handler::WebSocketHandler, t::TextReceived) = on_text(handler, t.text)
-handle(handler::WebSocketHandler, ::OnClosing) = on_closing(handler)
-handle(handler::WebSocketHandler, ::OnClose) = on_close(handler)
+handle(handler::WebSocketHandler, t::OnText) = on_text(handler, t.text)
+handle(handler::WebSocketHandler, ::StateClosing) = on_closing(handler)
+handle(handler::WebSocketHandler, ::StateClose) = on_close(handler)
 
 function start(::Type{HandlerPump}, handler::WebSocketHandler, chan::Channel{HandlerType})
     t = @async begin

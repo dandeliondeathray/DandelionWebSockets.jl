@@ -74,7 +74,7 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(frame_bin_1)],
-		expected_calls = [(:data_received, Array[b"Hello"])]),
+		expected_calls = [(:on_binary, Array[b"Hello"])]),
 
 	LogicTestCase(
 		description    = "Two binary fragments are received from the server",
@@ -82,7 +82,7 @@ logic_tests = [
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(frame_bin_start),
 		                  WebSocketClient.FrameFromServer(frame_bin_final)],
-		expected_calls = [(:data_received, Array[b"Hello"])]),
+		expected_calls = [(:on_binary, Array[b"Hello"])]),
 
 	#
 	# Client to server tests
