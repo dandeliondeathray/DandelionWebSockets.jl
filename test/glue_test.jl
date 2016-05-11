@@ -1,7 +1,7 @@
 import WebSocketClient: on_text, on_binary,
                         state_connecting, state_open, state_closing, state_closed,
-                        OnText, OnBinary, StateOpen, StateConnecting, StateClosed, StateClosing,
-                        @taskproxy, TaskProxy, start, stop
+                        @taskproxy, TaskProxy, start, stop,
+                        HandlerTaskProxy
 
 type FakeInput1 <: WebSocketClient.ClientLogicInput end
 type FakeInput2 <: WebSocketClient.ClientLogicInput end
@@ -23,24 +23,24 @@ end
 # Test types for our general pump.
 #
 
-type MockPumpTarget
+type MockTaskProxyTarget
     call::Vector{Symbol}
     args::Vector{Vector{Any}}
 
-    MockPumpTarget() = new([], [])
+    MockTaskProxyTarget() = new([], [])
 end
 
-function called(m::MockPumpTarget, f::Symbol, args...)
+function called(m::MockTaskProxyTarget, f::Symbol, args...)
     push!(m.call, f)
     push!(m.args, [args...])
 end
 
-foo(m::MockPumpTarget) = called(m, :foo)
-bar(m::MockPumpTarget, i::Int) = called(m, :bar, i)
-baz(m::MockPumpTarget, s::UTF8String) = called(m, :baz, s)
-qux(m::MockPumpTarget, i::Int, s::UTF8String) = called(m, :qux, i, s)
+foo(m::MockTaskProxyTarget) = called(m, :foo)
+bar(m::MockTaskProxyTarget, i::Int) = called(m, :bar, i)
+baz(m::MockTaskProxyTarget, s::UTF8String) = called(m, :baz, s)
+qux(m::MockTaskProxyTarget, i::Int, s::UTF8String) = called(m, :qux, i, s)
 
-function expect_call(m::MockPumpTarget, f::Symbol, expected_args...)
+function expect_call(m::MockTaskProxyTarget, f::Symbol, expected_args...)
     @fact m.call --> not(isempty)
     @fact m.args --> not(isempty)
 
@@ -52,47 +52,32 @@ function expect_call(m::MockPumpTarget, f::Symbol, expected_args...)
     @fact args --> expected
 end
 
-@taskproxy MockPump foo bar baz qux
-
+@taskproxy MockTaskProxy foo bar baz qux
 
 facts("ClientLogicPump") do
-    context("Start and stop") do
-        client = MockClientLogic([])
-        chan   = Channel{WebSocketClient.ClientLogicInput}(32)
-        handle = x -> mock_handle(client, x)
-
-        pump   = WebSocketClient.start_client_logic_pump(handle, chan)
-        sleep(0.05)
-        @fact pump.task --> x -> !istaskdone(x)
-
-        WebSocketClient.stop_client_logic_pump(pump)
-        sleep(0.05)
-        @fact pump.task --> istaskdone
-    end
-
     context("Pumping objects into channel") do
+
         client = MockClientLogic([])
-        chan   = Channel{WebSocketClient.ClientLogicInput}(32)
-        handle = x -> mock_handle(client, x)
 
         @sync begin
-            pump   = WebSocketClient.start_client_logic_pump(handle, chan)
+            proxy = ClientLogicTaskProxy(client)
+            task = start(proxy)
             sleep(0.05)
-            @fact pump.task --> x -> !istaskdone(x)
+            @fact task --> not(istaskdone)
 
             @async begin
-                put!(chan, FakeInput1())
-                put!(chan, FakeInput2())
-                put!(chan, FakeInput2())
+                handle(proxy, FakeInput1())
+                handle(proxy, FakeInput2())
+                handle(proxy, FakeInput2())
 
                 sleep(0.1)
                 expect(client, FakeInput1())
                 expect(client, FakeInput2())
                 expect(client, FakeInput2())
 
-                WebSocketClient.stop_client_logic_pump(pump)
+                stop(proxy)
                 sleep(0.05)
-                @fact pump.task --> istaskdone
+                @fact task --> istaskdone
             end
         end
     end
@@ -138,20 +123,21 @@ end
 
 facts("WebClientHandler pump") do
     context("Start and stop") do
-        handler = MockHandler()
-        chan    = Channel{WebSocketClient.HandlerType}(32)
-        pump   = WebSocketClient.start(WebSocketClient.HandlerPump, handler, chan)
-        sleep(0.05)
-        @fact pump.task --> x -> !istaskdone(x)
+        t = MockTaskProxyTarget()
+        pump = MockTaskProxy(t)
+        task = start(pump)
 
-        WebSocketClient.stop(pump)
         sleep(0.05)
-        @fact pump.task --> istaskdone
+        @fact task --> not(istaskdone)
+
+        stop(pump)
+        sleep(0.05)
+        @fact task --> istaskdone
     end
 
-    context("General pump") do
-        t = MockPumpTarget()
-        pump = MockPump(t)
+    context("Calling functions on task proxy") do
+        t = MockTaskProxyTarget()
+        pump = MockTaskProxy(t)
         start(pump)
 
         foo(pump)
@@ -169,26 +155,26 @@ facts("WebClientHandler pump") do
 
     context("Pumping objects into channel") do
         handler = MockHandler()
-        chan    = Channel{WebSocketClient.HandlerType}(32)
+        proxy = HandlerTaskProxy(handler)
 
         @sync begin
-            pump   = WebSocketClient.start(WebSocketClient.HandlerPump, handler, chan)
+            task = start(proxy)
             sleep(0.05)
-            @fact pump.task --> x -> !istaskdone(x)
+            @fact task --> x -> !istaskdone(x)
 
             @async begin
-                put!(chan, StateConnecting())
-                put!(chan, StateOpen())
-                put!(chan, OnText(utf8("Hello")))
-                put!(chan, OnBinary(b"Hello"))
-                put!(chan, StateClosing())
-                put!(chan, StateClosed())
+                state_connecting(proxy)
+                state_open(proxy)
+                on_text(proxy, utf8("Hello"))
+                on_binary(proxy, b"Hello")
+                state_closing(proxy)
+                state_closed(proxy)
 
                 sleep(0.1)
 
-                WebSocketClient.stop(pump)
+                stop(proxy)
                 sleep(0.05)
-                @fact pump.task --> istaskdone
+                @fact task --> istaskdone
 
                 expect_state(handler, :state_connecting)
                 expect_state(handler, :state_open)

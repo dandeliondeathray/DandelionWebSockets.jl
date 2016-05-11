@@ -1,27 +1,3 @@
-# This function takes ClientLogicInput objects from a channel and calls the appropriate
-# function on ClientLogic.
-# This glue is there because we want ClientLogic to be a simple object with functions
-# without any concurrency involved, for testing purposes.
-
-type ClientLogicPump
-    handle::Function
-    chan::Channel{ClientLogicInput}
-    task::Task
-end
-
-function start_client_logic_pump(handle::Function, chan::Channel{ClientLogicInput})
-    t = @async begin
-        for o in chan
-            handle(o)
-        end
-    end
-    ClientLogicPump(handle, chan, t)
-end
-
-function stop_client_logic_pump(t::ClientLogicPump)
-    close(t.chan)
-end
-
 #
 # This task proxy takes messages from the executor and calls functions on the handler.
 #
@@ -53,6 +29,7 @@ macro taskproxy(proxy_type::Symbol, functions...)
                         f(p.target, args...)
                     end
                 end
+                t
             end
 
             stop(h::$proxy_type) = close(h.chan)
@@ -60,26 +37,5 @@ macro taskproxy(proxy_type::Symbol, functions...)
     )
 end
 
-
-immutable HandlerPump
-    chan::Channel{HandlerType}
-    task::Task
-end
-
-handle(handler::WebSocketHandler, t::OnText) = on_text(handler, t.text)
-handle(handler::WebSocketHandler, t::OnBinary) = on_binary(handler, t.data)
-handle(handler::WebSocketHandler, ::StateOpen) = state_open(handler)
-handle(handler::WebSocketHandler, ::StateConnecting) = state_connecting(handler)
-handle(handler::WebSocketHandler, ::StateClosing) = state_closing(handler)
-handle(handler::WebSocketHandler, ::StateClosed) = state_closed(handler)
-
-function start(::Type{HandlerPump}, handler::WebSocketHandler, chan::Channel{HandlerType})
-    t = @async begin
-        for x in chan
-            handle(handler, x)
-        end
-    end
-    HandlerPump(chan, t)
-end
-
-stop(h::HandlerPump) = close(h.chan)
+@taskproxy HandlerTaskProxy on_text on_binary state_connecting state_open state_closing state_closed
+@taskproxy ClientLogicTaskProxy handle
