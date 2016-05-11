@@ -4,7 +4,7 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
 
     proxy_functions = []
     for fname in functions
-        fexpr = :($fname(p::$proxy_type, args...) = put!(p.chan, ($fname, [args...])))
+        fexpr = :($fname(p::$proxy_type, args...) = put!(p.chan, ($fname, collect(args))))
         push!(proxy_functions, fexpr)
     end
 

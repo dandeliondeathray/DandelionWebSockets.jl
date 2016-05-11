@@ -1,7 +1,7 @@
-import WebSocketClient: AbstractHandlerTaskProxy, AbstractWriterTaskProxy,
+import WebSocketClient: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, AbstractClientTaskProxy,
     on_text, on_binary,
     state_connecting, state_open, state_closing, state_closed,
-    write
+    write, handle
 
 @mock MockHandlerTaskProxy AbstractHandlerTaskProxy
 @mockfunction(MockHandlerTaskProxy,
@@ -10,6 +10,9 @@ import WebSocketClient: AbstractHandlerTaskProxy, AbstractWriterTaskProxy,
 
 @mock MockWriterTaskProxy AbstractWriterTaskProxy
 @mockfunction MockWriterTaskProxy write
+
+@mock MockClientTaskProxy AbstractClientTaskProxy
+@mockfunction MockClientTaskProxy handle
 
 type FakeRNG <: AbstractRNG
     values::Array{UInt8, 1}

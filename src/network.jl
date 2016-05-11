@@ -6,24 +6,23 @@ type StopTaskException <: Exception end
 
 immutable ServerReader
     s::IO
-    chan::Channel
     task::Task
 end
 
-function start_reader(s::IO, chan::Channel)
+function start_reader(s::IO, logic::AbstractClientTaskProxy)
     t = @async begin
         try
             while true
                 frame = read(s, Frame)
-                put!(chan, FrameFromServer(frame))
+                handle(logic, FrameFromServer(frame))
             end
         catch ex
             # TODO: Handle errors better.
             println("WebSocketClient.start_reader exception: $(ex)")
         end
-        put!(chan, SocketClosed())
+        handle(logic, SocketClosed())
     end
-    ServerReader(s, chan, t)
+    ServerReader(s, t)
 end
 
 
@@ -32,29 +31,6 @@ function stop_reader(t::ServerReader)
         Base.throwto(t.task, StopTaskException())
     end
 end
-
-immutable ClientWriter
-    s::IO
-    chan::Channel
-    task::Task
-end
-
-function start_writer(s::IO, chan::Channel)
-    t = @async begin
-        try
-            for frame in chan
-                write(s, frame)
-            end
-            # TODO: Handle errors better.
-        end
-    end
-    ClientWriter(s, chan, t)
-end
-
-function stop_writer(t::ClientWriter)
-    close(t.chan)
-end
-
 
 #
 # TLSBufferedIO adapts a TLS socket so we can do byte I/O.

@@ -18,8 +18,8 @@ baz(m::MockTaskProxyTarget, s::UTF8String) = called(m, :baz, s)
 qux(m::MockTaskProxyTarget, i::Int, s::UTF8String) = called(m, :qux, i, s)
 
 function expect_call(m::MockTaskProxyTarget, f::Symbol, expected_args...)
-    @fact m.call --> not(isempty)
-    @fact m.args --> not(isempty)
+    @fact isempty(m.call) --> false
+    @fact isempty(m.args) --> false
 
     call = shift!(m.call)
     args = shift!(m.args)
@@ -49,18 +49,22 @@ facts("Task proxy") do
     context("Calling functions on task proxy") do
         t = MockTaskProxyTarget()
         pump = MockTaskProxy(t)
-        start(pump)
+        @sync begin
+            @schedule begin
+                start(pump)
 
-        foo(pump)
-        bar(pump, 42)
-        baz(pump, utf8("Hitchhiker"))
-        qux(pump, 42, utf8("Hitchhiker"))
-        sleep(0.1)
+                foo(pump)
+                bar(pump, 42)
+                baz(pump, utf8("Hitchhiker"))
+                qux(pump, 42, utf8("Hitchhiker"))
+                sleep(0.3)
 
-        stop(pump)
-        expect_call(t, :foo)
-        expect_call(t, :bar, 42)
-        expect_call(t, :baz, utf8("Hitchhiker"))
-        expect_call(t, :qux, 42, utf8("Hitchhiker"))
+                stop(pump)
+                expect_call(t, :foo)
+                expect_call(t, :bar, 42)
+                expect_call(t, :baz, utf8("Hitchhiker"))
+                expect_call(t, :qux, 42, utf8("Hitchhiker"))
+            end
+        end
     end
 end
