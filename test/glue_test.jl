@@ -3,22 +3,6 @@ import WebSocketClient: on_text, on_binary,
                         @taskproxy, TaskProxy, start, stop,
                         HandlerTaskProxy
 
-type FakeInput1 <: WebSocketClient.ClientLogicInput end
-type FakeInput2 <: WebSocketClient.ClientLogicInput end
-
-type MockClientLogic
-    inputs::Vector{WebSocketClient.ClientLogicInput}
-end
-
-mock_handle(c::MockClientLogic, x::WebSocketClient.ClientLogicInput) = push!(c.inputs, x)
-
-function expect(c::MockClientLogic, expected::WebSocketClient.ClientLogicInput)
-    @fact c.inputs --> x -> !isempty(x)
-
-    actual = shift!(c.inputs)
-    @fact actual --> expected
-end
-
 #
 # Test types for our general pump.
 #
@@ -54,35 +38,6 @@ end
 
 @taskproxy MockTaskProxy foo bar baz qux
 
-facts("ClientLogicPump") do
-    context("Pumping objects into channel") do
-
-        client = MockClientLogic([])
-
-        @sync begin
-            proxy = ClientLogicTaskProxy(client)
-            task = start(proxy)
-            sleep(0.05)
-            @fact task --> not(istaskdone)
-
-            @async begin
-                handle(proxy, FakeInput1())
-                handle(proxy, FakeInput2())
-                handle(proxy, FakeInput2())
-
-                sleep(0.1)
-                expect(client, FakeInput1())
-                expect(client, FakeInput2())
-                expect(client, FakeInput2())
-
-                stop(proxy)
-                sleep(0.05)
-                @fact task --> istaskdone
-            end
-        end
-    end
-
-end
 
 immutable MockHandler <: WebSocketClient.WebSocketHandler
     texts::Vector{UTF8String}
@@ -121,7 +76,7 @@ function expect_state(h::MockHandler, expected::Symbol)
     @fact actual --> expected
 end
 
-facts("WebClientHandler pump") do
+facts("Task proxy") do
     context("Start and stop") do
         t = MockTaskProxyTarget()
         pump = MockTaskProxy(t)
@@ -153,7 +108,7 @@ facts("WebClientHandler pump") do
         expect_call(t, :qux, 42, utf8("Hitchhiker"))
     end
 
-    context("Pumping objects into channel") do
+    context("HandlerTaskProxy") do
         handler = MockHandler()
         proxy = HandlerTaskProxy(handler)
 
