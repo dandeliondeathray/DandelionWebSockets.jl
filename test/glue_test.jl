@@ -1,6 +1,7 @@
 import WebSocketClient: on_text, on_binary,
                         state_connecting, state_open, state_closing, state_closed,
-                        OnText, OnBinary, StateOpen, StateConnecting, StateClosed, StateClosing
+                        OnText, OnBinary, StateOpen, StateConnecting, StateClosed, StateClosing,
+                        @taskproxy, TaskProxy, start, stop
 
 type FakeInput1 <: WebSocketClient.ClientLogicInput end
 type FakeInput2 <: WebSocketClient.ClientLogicInput end
@@ -17,6 +18,42 @@ function expect(c::MockClientLogic, expected::WebSocketClient.ClientLogicInput)
     actual = shift!(c.inputs)
     @fact actual --> expected
 end
+
+#
+# Test types for our general pump.
+#
+
+type MockPumpTarget
+    call::Vector{Symbol}
+    args::Vector{Vector{Any}}
+
+    MockPumpTarget() = new([], [])
+end
+
+function called(m::MockPumpTarget, f::Symbol, args...)
+    push!(m.call, f)
+    push!(m.args, [args...])
+end
+
+foo(m::MockPumpTarget) = called(m, :foo)
+bar(m::MockPumpTarget, i::Int) = called(m, :bar, i)
+baz(m::MockPumpTarget, s::UTF8String) = called(m, :baz, s)
+qux(m::MockPumpTarget, i::Int, s::UTF8String) = called(m, :qux, i, s)
+
+function expect_call(m::MockPumpTarget, f::Symbol, expected_args...)
+    @fact m.call --> not(isempty)
+    @fact m.args --> not(isempty)
+
+    call = shift!(m.call)
+    args = shift!(m.args)
+
+    expected = [expected_args...]
+    @fact call --> f
+    @fact args --> expected
+end
+
+@taskproxy MockPump foo bar baz qux
+
 
 facts("ClientLogicPump") do
     context("Start and stop") do
@@ -112,6 +149,24 @@ facts("WebClientHandler pump") do
         @fact pump.task --> istaskdone
     end
 
+    context("General pump") do
+        t = MockPumpTarget()
+        pump = MockPump(t)
+        start(pump)
+
+        foo(pump)
+        bar(pump, 42)
+        baz(pump, utf8("Hitchhiker"))
+        qux(pump, 42, utf8("Hitchhiker"))
+        sleep(0.1)
+
+        stop(pump)
+        expect_call(t, :foo)
+        expect_call(t, :bar, 42)
+        expect_call(t, :baz, utf8("Hitchhiker"))
+        expect_call(t, :qux, 42, utf8("Hitchhiker"))
+    end
+
     context("Pumping objects into channel") do
         handler = MockHandler()
         chan    = Channel{WebSocketClient.HandlerType}(32)
@@ -144,5 +199,4 @@ facts("WebClientHandler pump") do
             end
         end
     end
-
 end

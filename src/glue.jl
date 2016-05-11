@@ -23,14 +23,43 @@ function stop_client_logic_pump(t::ClientLogicPump)
 end
 
 #
-# This pump takes messages from the executor and calls functions on the handler.
+# This task proxy takes messages from the executor and calls functions on the handler.
 #
 
-# TODO: This glue is overly specific. We should be able to make a general pump that pumps a
-#       function call on a given object, and apply it. That way, the executor will say:
-#       "Call the function `on_text` on your handler object, with these arguments.", instead of
-#       creating a separate type for each such call. Then we can get rid of the types OnText,
-#       OnBinary, StateOpen, and so on, because they're used to convey that same information.
+abstract TaskProxy
+
+macro taskproxy(proxy_type::Symbol, functions...)
+
+    proxy_functions = []
+    for fname in functions
+        fexpr = :($fname(p::$proxy_type, args...) = put!(p.chan, ($fname, [args...])))
+        push!(proxy_functions, fexpr)
+    end
+
+    esc(
+        quote
+            immutable $proxy_type <: TaskProxy
+                target::Any
+                chan::Channel{Any}
+
+                $(proxy_type)(target::Any) = new(target, Channel{Any}(32))
+            end
+
+            $(proxy_functions...)
+
+            function start(p::$proxy_type)
+                t = @async begin
+                    for (f, args) in p.chan
+                        f(p.target, args...)
+                    end
+                end
+            end
+
+            stop(h::$proxy_type) = close(h.chan)
+        end
+    )
+end
+
 
 immutable HandlerPump
     chan::Channel{HandlerType}

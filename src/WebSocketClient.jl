@@ -5,6 +5,9 @@ export AbstractWSClient,
        stop,
        send_text
 
+# TODO: Move all of the public interface here, and move away anything that isn't a public
+#       interface.
+
 include("core.jl")
 include("network.jl")
 include("executor.jl")
