@@ -51,15 +51,18 @@ const STATE_CLOSED         = SocketState(:closed)
 
 type ClientLogic
 	state::SocketState
-	executor::AbstractClientExecutor
+	handler::AbstractHandlerTaskProxy
+	writer::AbstractWriterTaskProxy
 	rng::AbstractRNG
 	buffer::Vector{UInt8}
 	buffered_type::Opcode
 end
 
 ClientLogic(state::SocketState,
-	        executor::AbstractClientExecutor,
-	        rng::AbstractRNG) = ClientLogic(state, executor, rng, Vector{UInt8}(), OPCODE_TEXT)
+			handler::AbstractHandlerTaskProxy,
+			writer::AbstractWriterTaskProxy,
+	        rng::AbstractRNG) =
+	ClientLogic(state, handler, writer, rng, Vector{UInt8}(), OPCODE_TEXT)
 
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
 	mask    = rand(logic.rng, UInt8, 4)
@@ -78,7 +81,7 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 	frame = Frame(
 		isfinal, false, false, false, opcode, true, len, extended_len, mask, payload)
 
-	send_frame(logic.executor, frame)
+	write(logic.writer, frame)
 end
 
 function handle(logic::ClientLogic, req::SendTextFrame)
@@ -101,13 +104,13 @@ function handle(logic::ClientLogic, req::CloseRequest)
 	mask = rand(logic.rng, UInt8, 4)
 	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0,
 		mask, b"")
-	send_frame(logic.executor, frame)
-	state_closing(logic.executor)
+	write(logic.writer, frame)
+	state_closing(logic.handler)
 end
 
 function handle(logic::ClientLogic, ::SocketClosed)
 	logic.state = STATE_CLOSED
-	state_closed(logic.executor)
+	state_closed(logic.handler)
 end
 
 function handle(logic::ClientLogic, req::FrameFromServer)
@@ -138,8 +141,8 @@ function handle_close(logic::ClientLogic, frame::Frame)
 		mask = rand(logic.rng, UInt8, 4)
 		frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
 			mask, frame.payload)
-		send_frame(logic.executor, frame)
-		state_closing(logic.executor)
+		write(logic.writer, frame)
+		state_closing(logic.handler)
 	end
 end
 
@@ -149,7 +152,7 @@ end
 
 function handle_text(logic::ClientLogic, frame::Frame)
 	if frame.fin
-		on_text(logic.executor, utf8(frame.payload))
+		on_text(logic.handler, utf8(frame.payload))
 	else
 		start_buffer(logic, frame.payload, OPCODE_TEXT)
 	end
@@ -157,7 +160,7 @@ end
 
 function handle_binary(logic::ClientLogic, frame::Frame)
 	if frame.fin
-		on_binary(logic.executor, frame.payload)
+		on_binary(logic.handler, frame.payload)
 	else
 		start_buffer(logic, frame.payload, OPCODE_BINARY)
 	end
@@ -168,9 +171,9 @@ function handle_continuation(logic::ClientLogic, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
 		if logic.buffered_type == OPCODE_TEXT
-			on_text(logic.executor, utf8(logic.buffer))
+			on_text(logic.handler, utf8(logic.buffer))
 		elseif logic.buffered_type == OPCODE_BINARY
-			on_binary(logic.executor, logic.buffer)
+			on_binary(logic.handler, logic.buffer)
 			logic.buffer = Vector{UInt8}()
 		end
 	end

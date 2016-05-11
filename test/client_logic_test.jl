@@ -4,7 +4,8 @@ immutable LogicTestCase
 	rng::FakeRNG
 	#frames::Dict{AbstractString, Frame}
 	input::Vector{Any} # This will contain types such as FrameFromServer or SendTextFrame
-	expected_calls::Vector{MockCall}
+	handler_calls::Vector{MockCall}
+	writer_calls::Vector{MockCall}
 	final_state::WebSocketClient.SocketState
 end
 
@@ -13,10 +14,11 @@ function LogicTestCase(;
 	initial_state=WebSocketClient.STATE_CONNECTING,
 	rng=FakeRNG(),
 	input=[],
-	expected_calls=[],
+	handler_calls=[],
+	writer_calls=[],
 	final_state=initial_state)
 
-	LogicTestCase(description, initial_state, rng, input, expected_calls, final_state)
+	LogicTestCase(description, initial_state, rng, input, handler_calls, writer_calls, final_state)
 end
 
 logic_tests = [
@@ -30,7 +32,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(test_frame1)],
-		expected_calls = [(:on_text, [utf8("Hello")])]),
+		handler_calls  = [(symbol("WebSocketClient.on_text"), [utf8("Hello")])],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "Two text fragments are received from the server",
@@ -38,7 +41,8 @@ logic_tests = [
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(test_frame2),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
-		expected_calls = [(:on_text, [utf8("Hello")])]),
+		handler_calls  = [(symbol("WebSocketClient.on_text"), [utf8("Hello")])],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "Buffer is cleared between two separate multi-fragment messages",
@@ -48,8 +52,9 @@ logic_tests = [
 		                  WebSocketClient.FrameFromServer(test_frame3),
 		                  WebSocketClient.FrameFromServer(test_frame2),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
-		expected_calls = [(:on_text, [utf8("Hello")]),
-		                  (:on_text, [utf8("Hello")])]),
+		handler_calls  = [(symbol("WebSocketClient.on_text"), [utf8("Hello")]),
+		                  (symbol("WebSocketClient.on_text"), [utf8("Hello")])],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "A ping request is received between two fragments",
@@ -58,15 +63,16 @@ logic_tests = [
 		input          = [WebSocketClient.FrameFromServer(test_frame2),
 						  WebSocketClient.FrameFromServer(server_ping_frame),
 		                  WebSocketClient.FrameFromServer(test_frame3)],
-		expected_calls = [(:send_frame, [client_pong_frame]),
-		                  (:on_text, [utf8("Hello")])]),
+		handler_calls  = [(symbol("WebSocketClient.on_text"), [utf8("Hello")])],
+		writer_calls   = [(:write, [client_pong_frame])]),
 
 	LogicTestCase(
 		description    = "A pong response has the same payload as the ping",
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.FrameFromServer(server_ping_frame_w_pay)],
-		expected_calls = [(:send_frame, [client_pong_frame_w_pay])]),
+		handler_calls  = [],
+		writer_calls   = [(:write, [client_pong_frame_w_pay])]),
 
 
 	LogicTestCase(
@@ -74,7 +80,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(b""),
 		input          = [WebSocketClient.FrameFromServer(frame_bin_1)],
-		expected_calls = [(:on_binary, Array[b"Hello"])]),
+		handler_calls  = [(symbol("WebSocketClient.on_binary"), Array[b"Hello"])],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "Two binary fragments are received from the server",
@@ -82,7 +89,8 @@ logic_tests = [
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(frame_bin_start),
 		                  WebSocketClient.FrameFromServer(frame_bin_final)],
-		expected_calls = [(:on_binary, Array[b"Hello"])]),
+		handler_calls  = [(symbol("WebSocketClient.on_binary"), Array[b"Hello"])],
+		writer_calls   = []),
 
 	#
 	# Client to server tests
@@ -93,7 +101,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT)],
-		expected_calls = [(:send_frame, [test_frame4])]),
+		handler_calls  = [],
+		writer_calls   = [(:write, [test_frame4])]),
 
 	LogicTestCase(
 		description    = "Client sends two fragments",
@@ -101,8 +110,9 @@ logic_tests = [
 		rng            = FakeRNG(vcat(mask, mask2)),
 		input          = [WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
-		expected_calls = [(:send_frame, [test_frame5]),
-		                  (:send_frame, [test_frame6])]),
+		handler_calls  = [],
+		writer_calls   = [(:write, [test_frame5]),
+		                  (:write, [test_frame6])]),
 
 	LogicTestCase(
 		description    = "Frames are not sent when in CLOSING",
@@ -111,7 +121,8 @@ logic_tests = [
 		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
-		expected_calls = []),
+		handler_calls  = [],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "Frames are not sent when in CONNECTING",
@@ -120,7 +131,8 @@ logic_tests = [
 		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
-		expected_calls = []),
+		handler_calls  = [],
+		writer_calls   = []),
 
 	LogicTestCase(
 		description    = "Frames are not sent when in CLOSED",
@@ -129,7 +141,8 @@ logic_tests = [
 		input          = [WebSocketClient.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  WebSocketClient.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  WebSocketClient.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
-		expected_calls = []),
+		handler_calls  = [],
+		writer_calls   = []),
 
 	#
 	# Closing the connection
@@ -140,8 +153,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
-		expected_calls = [(:send_frame,    [client_close_reply]),
-		                  (:state_closing, [])],
+		handler_calls  = [(symbol("WebSocketClient.state_closing"), [])],
+		writer_calls   = [(:write,    [client_close_reply])],
 		final_state    = WebSocketClient.STATE_CLOSING_SOCKET),
 
 	LogicTestCase(
@@ -149,8 +162,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(mask),
 		input          = [WebSocketClient.CloseRequest()],
-		expected_calls = [(:send_frame,    [client_close_reply]),
-		                  (:state_closing, [])],
+		handler_calls  = [(symbol("WebSocketClient.state_closing"), [])],
+		writer_calls   = [(:write,    [client_close_reply])],
 		final_state    = WebSocketClient.STATE_CLOSING),
 
 	LogicTestCase(
@@ -158,7 +171,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_CLOSING,
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.FrameFromServer(server_close_frame)],
-		expected_calls = [],
+		handler_calls  = [],
+		writer_calls   = [],
 		final_state    = WebSocketClient.STATE_CLOSING_SOCKET),
 
 	LogicTestCase(
@@ -166,7 +180,8 @@ logic_tests = [
 		initial_state  = WebSocketClient.STATE_CLOSING_SOCKET,
 		rng            = FakeRNG(),
 		input          = [WebSocketClient.SocketClosed()],
-		expected_calls = [(:state_closed, [])],
+		handler_calls  = [(symbol("WebSocketClient.state_closed"), [])],
+		writer_calls   = [],
 		final_state    = WebSocketClient.STATE_CLOSED),
 
 ]
@@ -178,8 +193,9 @@ facts("ClientLogic") do
 
 	for test in logic_tests
 		context(test.description) do
-			executor = MockExecutor(test.expected_calls)
-			logic = ClientLogic(test.initial_state, executor, test.rng)
+			mock_handler = MockHandlerTaskProxy(test.handler_calls)
+			mock_writer  = MockWriterTaskProxy(test.writer_calls)
+			logic = ClientLogic(test.initial_state, mock_handler, mock_writer, test.rng)
 
 			for x in test.input
 				WebSocketClient.handle(logic, x)
@@ -187,7 +203,8 @@ facts("ClientLogic") do
 
 			@fact logic.state --> test.final_state
 
-			check_mock(executor)
+			check_mock(mock_handler)
+			check_mock(mock_writer)
 		end
 	end
 

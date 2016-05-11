@@ -1,27 +1,15 @@
-typealias MockCall Tuple{Symbol,Array{Any, 1}}
+import WebSocketClient: AbstractHandlerTaskProxy, AbstractWriterTaskProxy,
+    on_text, on_binary,
+    state_connecting, state_open, state_closing, state_closed,
+    write
 
-type MockExecutor <: WebSocketClient.AbstractClientExecutor
-    expected_calls::Array{MockCall}
-end
+@mock MockHandlerTaskProxy AbstractHandlerTaskProxy
+@mockfunction(MockHandlerTaskProxy,
+    on_text, on_binary,
+    state_connecting, state_open, state_closing, state_closed)
 
-type UnexpectedCallException <: Exception end
-
-function mockcall(m::MockExecutor, s::Symbol, args...)
-    @fact m.expected_calls --> x -> !isempty(x)
-    expected_symbol, expected_args = shift!(m.expected_calls)
-
-    @fact s --> expected_symbol
-    @fact Any[args...] --> expected_args
-end
-
-WebSocketClient.send_frame(m::MockExecutor, f::Frame) = mockcall(m, :send_frame, f)
-WebSocketClient.on_text(m::MockExecutor, s::UTF8String) = mockcall(m, :on_text, s)
-WebSocketClient.on_binary(m::MockExecutor, s::Vector{UInt8}) = mockcall(m, :on_binary, s)
-WebSocketClient.state_closed(m::MockExecutor) = mockcall(m, :state_closed)
-WebSocketClient.state_closing(m::MockExecutor) = mockcall(m, :state_closing)
-
-expect(m::MockExecutor, s::Symbol, args...) = push!(m.expected_calls, tuple(s, [args...]))
-check_mock(m::MockExecutor) = @fact m.expected_calls --> isempty
+@mock MockWriterTaskProxy AbstractWriterTaskProxy
+@mockfunction MockWriterTaskProxy write
 
 type FakeRNG <: AbstractRNG
     values::Array{UInt8, 1}
