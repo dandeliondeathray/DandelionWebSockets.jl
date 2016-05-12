@@ -22,7 +22,6 @@ include("taskproxy.jl")
 include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")
-include("handler.jl")
 include("handshake.jl")
 
 # This defines the public interface that the user should implement. These are callbacks called when
