@@ -47,6 +47,7 @@ test_frame3 = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
 
 # A single text frame, masked, with body "Hello"
 test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
+test_bin_frame4 = Frame(true,  OPCODE_BINARY, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 
 mask2 = b"\x17\x42\x03\x7f"
 

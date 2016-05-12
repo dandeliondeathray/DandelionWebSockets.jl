@@ -65,6 +65,10 @@ ClientLogic(state::SocketState,
 	ClientLogic(state, handler, writer, rng, Vector{UInt8}(), OPCODE_TEXT)
 
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
+	if logic.state != STATE_OPEN
+		return
+	end
+
 	mask    = rand(logic.rng, UInt8, 4)
 	masking!(payload, mask)
 	len::UInt64  = length(payload)
@@ -85,16 +89,11 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 end
 
 function handle(logic::ClientLogic, req::SendTextFrame)
-	if logic.state != STATE_OPEN
-		return
-	end
-
 	payload = Vector{UInt8}(req.data)
 	send(logic, req.isfinal, req.opcode, payload)
 end
 
-# TODO: Sending binary frames.
-handle(logic::ClientLogic, req::SendBinaryFrame)   = nothing
+handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
 # TODO: Sending ping requests.
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 # TODO: Handle pong replies, and disconnect when timing out.

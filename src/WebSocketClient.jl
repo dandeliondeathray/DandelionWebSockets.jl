@@ -3,7 +3,8 @@ module WebSocketClient
 export AbstractWSClient,
        WSClient,
        stop,
-       send_text
+       send_text,
+       send_binary
 
 export WebSocketHandler,
        on_text,
@@ -79,6 +80,6 @@ get_channel(c::WSClient) = c.logic_proxy.chan
 stop(c::WSClient) = handle(c.logic_proxy, CloseRequest())
 
 send_text(c::WSClient, s::UTF8String) = handle(c.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
-# TODO: Support sending binary messages.
-
+send_binary(c::WSClient, data::Vector{UInt8}) =
+    handle(c.logic_proxy, SendBinaryFrame(data, true, OPCODE_BINARY))
 end # module

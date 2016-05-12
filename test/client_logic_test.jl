@@ -105,6 +105,15 @@ logic_tests = [
 		writer_calls   = [(:write, [test_frame4])]),
 
 	LogicTestCase(
+		description    = "Client sends a binary message",
+		initial_state  = WebSocketClient.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [WebSocketClient.SendBinaryFrame(b"Hello", true, OPCODE_BINARY)],
+		handler_calls  = [],
+		writer_calls   = [(:write, [test_bin_frame4])]),
+
+
+	LogicTestCase(
 		description    = "Client sends two fragments",
 		initial_state  = WebSocketClient.STATE_OPEN,
 		rng            = FakeRNG(vcat(mask, mask2)),

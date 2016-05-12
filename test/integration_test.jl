@@ -110,6 +110,7 @@ facts("Integration test") do
 
         # Write a message "Hello"
         send_text(client, utf8("Hello"))
+        send_binary(client, b"Hello, binary")
 
         # Sleep for a few seconds to let all the messages be sent and received
         sleep(2.0)
@@ -122,8 +123,9 @@ facts("Integration test") do
         expect_text(handler, utf8("Hello"))
         expect_binary(handler, b"Hello")
 
-        # We expect one message "Hello" and one close control frame to have been sent.
-        @fact length(stream.writing) --> 2
+        # We expect one text message "Hello", one binary message, and one close control frame to
+        # have been sent.
+        @fact length(stream.writing) --> 3
     end
 
     context("The client initiates closing handshake") do
