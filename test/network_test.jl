@@ -1,5 +1,7 @@
 import Base: read, write, readavailable
-import WebSocketClient: start, stop, WriterTaskProxy, FrameFromServer, SocketClosed
+import WebSocketClient:
+    start, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
+
 
 network_test_frame4 =
     Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zero256)
@@ -13,18 +15,20 @@ facts("Reader task") do
             (:handle, Any[SocketClosed()])
         ])
 
+        logic_proxy = ClientLogicTaskProxy(logic)
+        start(logic_proxy)
 
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic)
-                sleep(0.5)
+                reader = WebSocketClient.start_reader(s, logic_proxy)
+                sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
                 WebSocketClient.stop_reader(reader)
-                sleep(0.1)
+                sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
         end
@@ -42,17 +46,20 @@ facts("Reader task") do
             (:handle, Any[SocketClosed()])
         ])
 
+        logic_proxy = ClientLogicTaskProxy(logic)
+        start(logic_proxy)
+
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic)
-                sleep(0.1)
+                reader = WebSocketClient.start_reader(s, logic_proxy)
+                sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
                 WebSocketClient.stop_reader(reader)
-                sleep(0.1)
+                sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
         end
@@ -71,12 +78,15 @@ facts("Reader task") do
             (:handle, Any[SocketClosed()])
         ])
 
+        logic_proxy = ClientLogicTaskProxy(logic)
+        start(logic_proxy)
+
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic)
-                sleep(0.1)
+                reader = WebSocketClient.start_reader(s, logic_proxy)
+                sleep(0.3)
                 WebSocketClient.stop_reader(reader)
-                sleep(0.2)
+                sleep(0.3)
                 @fact reader.task --> istaskdone
             end
         end
@@ -97,12 +107,15 @@ facts("Reader task") do
             (:handle, Any[SocketClosed()])
         ])
 
+        logic_proxy = ClientLogicTaskProxy(logic)
+        start(logic_proxy)
+
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic)
-                sleep(0.1)
+                reader = WebSocketClient.start_reader(s, logic_proxy)
+                sleep(0.005)
                 WebSocketClient.stop_reader(reader)
-                sleep(0.2)
+                sleep(0.005)
                 @fact reader.task --> istaskdone
             end
         end
