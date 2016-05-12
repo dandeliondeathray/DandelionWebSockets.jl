@@ -55,9 +55,14 @@ immutable WSClient <: AbstractWSClient
         handshake_result = do_handshake(rng, new_uri)
 
         writer = WriterTaskProxy(handshake_result.stream)
+        start(writer)
+
         handler_proxy = HandlerTaskProxy(handler)
+        start(handler_proxy)
+
         logic = ClientLogic(STATE_OPEN, handler_proxy, writer, rng)
         logic_proxy = ClientLogicTaskProxy(logic)
+        start(logic_proxy)
 
         reader = start_reader(handshake_result.stream, logic_proxy)
 
