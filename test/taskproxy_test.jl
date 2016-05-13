@@ -1,4 +1,4 @@
-import WebSocketClient: @taskproxy, TaskProxy, start, stop
+import WebSocketClient: @taskproxy, TaskProxy, start, stop, ProxyCall
 
 type MockTaskProxyTarget
     call::Vector{Symbol}

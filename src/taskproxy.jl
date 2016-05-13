@@ -1,5 +1,7 @@
 abstract TaskProxy
 
+typealias ProxyCall Tuple{Function, Vector{Any}}
+
 macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, functions...)
 
     proxy_functions = []
@@ -12,9 +14,9 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
         quote
             immutable $proxy_type <: $abstract_type
                 target::Any
-                chan::Channel{Any}
+                chan::Channel{ProxyCall}
 
-                $(proxy_type)(target::Any) = new(target, Channel{Any}(32))
+                $(proxy_type)(target::Any) = new(target, Channel{ProxyCall}(32))
             end
 
             $(proxy_functions...)
