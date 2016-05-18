@@ -18,7 +18,7 @@ function start_reader(s::IO, logic::AbstractClientTaskProxy)
             end
         catch ex
             # TODO: Handle errors better.
-            println("WebSocketClient.start_reader exception: $(ex)")
+            println("DandelionWebSockets.start_reader exception: $(ex)")
         end
         handle(logic, SocketClosed())
     end

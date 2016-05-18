@@ -1,4 +1,4 @@
-module WebSocketClient
+module DandelionWebSockets
 
 export AbstractWSClient,
        WSClient,
@@ -47,7 +47,7 @@ immutable WSClient <: AbstractWSClient
     logic_proxy::ClientLogicTaskProxy
     reader::ServerReader
 
-    function WSClient(uri::Requests.URI, handler::WebSocketHandler; do_handshake=WebSocketClient.do_handshake)
+    function WSClient(uri::Requests.URI, handler::WebSocketHandler; do_handshake=DandelionWebSockets.do_handshake)
         rng = MersenneTwister()
         # Requests expect a HTTP/HTTPS scheme, so we convert from the ws/wss to http/https,
         # if necessary.

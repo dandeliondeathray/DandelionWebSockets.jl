@@ -1,9 +1,9 @@
-import WebSocketClient: on_text, on_binary,
+import DandelionWebSockets: on_text, on_binary,
                         state_connecting, state_open, state_closing, state_closed,
                         start, stop, HandlerTaskProxy
 
 
-immutable MockHandler <: WebSocketClient.WebSocketHandler
+immutable MockHandler <: DandelionWebSockets.WebSocketHandler
     texts::Vector{UTF8String}
     datas::Vector{Vector{UInt8}}
     states::Vector{Symbol}

@@ -1,4 +1,4 @@
-import WebSocketClient: on_text, on_binary, on_create,
+import DandelionWebSockets: on_text, on_binary, on_create,
                         state_connecting, state_open, state_closing, state_closed
 
 immutable FakeFrameStream <: IO
@@ -26,7 +26,7 @@ end
 
 function Base.write(s::FakeFrameStream, frame::Frame)
     push!(s.writing, frame)
-    if frame.opcode == WebSocketClient.OPCODE_CLOSE
+    if frame.opcode == DandelionWebSockets.OPCODE_CLOSE
         put!(s.stop_chan, :stop)
     end
 end
@@ -97,7 +97,7 @@ facts("Integration test") do
                                    frame_bin_1, server_close_frame]
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), true)
         body = Vector{UInt8}()
-        handshake_result = WebSocketClient.HandshakeResult(
+        handshake_result = DandelionWebSockets.HandshakeResult(
             accept, # This is the accept value we expect, and matches that in the headers dict.
             stream,
             headers,
@@ -135,7 +135,7 @@ facts("Integration test") do
         server_to_client_frames = [test_frame1, server_close_frame]
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), false)
         body = Vector{UInt8}()
-        handshake_result = WebSocketClient.HandshakeResult(
+        handshake_result = DandelionWebSockets.HandshakeResult(
             accept, # This is the accept value we expect, and matches that in the headers dict.
             stream,
             headers,

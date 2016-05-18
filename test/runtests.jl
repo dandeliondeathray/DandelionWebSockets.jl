@@ -1,4 +1,4 @@
-using WebSocketClient
+using DandelionWebSockets
 using FactCheck
 
 include("mock.jl")

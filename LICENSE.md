@@ -1,4 +1,4 @@
-The WebSocketClient.jl package is licensed under the MIT "Expat" License:
+The DandelionWebSockets.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2016: Erik Edin.
 >

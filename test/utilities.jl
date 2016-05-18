@@ -1,4 +1,4 @@
-import WebSocketClient: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, AbstractClientTaskProxy,
+import DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, AbstractClientTaskProxy,
     on_text, on_binary,
     state_connecting, state_open, state_closing, state_closed,
     write, handle, FrameFromServer

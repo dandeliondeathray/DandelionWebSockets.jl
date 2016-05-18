@@ -1,5 +1,5 @@
 import Base: read, write, readavailable
-import WebSocketClient:
+import DandelionWebSockets:
     start, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
 
 
@@ -20,14 +20,14 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic_proxy)
+                reader = DandelionWebSockets.start_reader(s, logic_proxy)
                 sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
-                WebSocketClient.stop_reader(reader)
+                DandelionWebSockets.stop_reader(reader)
                 sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
@@ -51,14 +51,14 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic_proxy)
+                reader = DandelionWebSockets.start_reader(s, logic_proxy)
                 sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
-                WebSocketClient.stop_reader(reader)
+                DandelionWebSockets.stop_reader(reader)
                 sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
@@ -83,9 +83,9 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic_proxy)
+                reader = DandelionWebSockets.start_reader(s, logic_proxy)
                 sleep(0.3)
-                WebSocketClient.stop_reader(reader)
+                DandelionWebSockets.stop_reader(reader)
                 sleep(0.3)
                 @fact reader.task --> istaskdone
             end
@@ -112,9 +112,9 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = WebSocketClient.start_reader(s, logic_proxy)
+                reader = DandelionWebSockets.start_reader(s, logic_proxy)
                 sleep(0.005)
-                WebSocketClient.stop_reader(reader)
+                DandelionWebSockets.stop_reader(reader)
                 sleep(0.005)
                 @fact reader.task --> istaskdone
             end
@@ -203,7 +203,7 @@ facts("Byte stream from SSL socket") do
         fake_tls = FakeTLSStream()
         write(fake_tls.buf, Vector{UInt8}([1,2]))
 
-        s = WebSocketClient.TLSBufferedIO(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
 
         @fact read(s, UInt8) --> 1
         @fact read(s, UInt8) --> 2
@@ -214,14 +214,14 @@ facts("Byte stream from SSL socket") do
         test_write(fake_tls, test_frame1)
         test_write(fake_tls, network_test_frame4)
 
-        s = WebSocketClient.TLSBufferedIO(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
         @fact read(s, Frame) --> test_frame1
         @fact read(s, Frame) --> network_test_frame4
     end
 
     context("Write frames via TLSBufferedIO") do
         fake_tls = FakeTLSStream()
-        s = WebSocketClient.TLSBufferedIO(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
 
         mark(fake_tls.write_buf)
         write(s, test_frame1)
