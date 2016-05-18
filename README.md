@@ -16,6 +16,7 @@ What needs to be done before this is registered as a package?
 - Sending ping frames, ensuring we get a reply.
 - Improve error handling.
 - Set version (use semantic versioning?)
+- Use the BufferedStreams package instead of our own TLSBufferedIO, if possible.
 
 Completed preparation tasks:
 
