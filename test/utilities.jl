@@ -125,7 +125,7 @@ end
 
 ==(a::FrameFromServer, b::FrameFromServer) = a.frame == b.frame
 
-type MockClientLogic <: AbstractClientTaskProxy
+type MockClientLogic <: AbstractClientLogic
     actuals::Vector{MockCall}
     expected::Vector{MockCall}
 

@@ -12,25 +12,38 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
 
     esc(
         quote
-            immutable $proxy_type <: $abstract_type
-                target::Any
+            type $proxy_type <: $abstract_type
+                target::Nullable{$target_type}
                 chan::Channel{ProxyCall}
 
-                $(proxy_type)(target::Any) = new(target, Channel{ProxyCall}(32))
+                $(proxy_type)() = new(Nullable{$target_type}(), Channel{ProxyCall}(32))
+                $(proxy_type)(target::$target_type) =
+                    new(Nullable{$target_type}(target), Channel{ProxyCall}(32))
             end
 
             $(proxy_functions...)
 
             function start(p::$proxy_type)
-                t = @async begin
+                if isnull(p.target)
+                    error("Target not set in proxy $(p). Call `attach` or set in constructor")
+                end
+                target = get(p.target)
+                @async begin
                     for (f, args) in p.chan
-                        f(p.target, args...)
+                        f(target, args...)
                     end
                 end
-                t
             end
 
             stop(h::$proxy_type) = close(h.chan)
+
+            is_set(p::$proxy_type) = !isnull(p.target)
+
+            function attach(p::$proxy_type, target::$target_type)
+                !isnull(p.target) && error("Target already set")
+
+                p.target = Nullable{$target_type}(target)
+            end
         end
     )
 end

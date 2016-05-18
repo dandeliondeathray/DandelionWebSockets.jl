@@ -1,4 +1,4 @@
-import DandelionWebSockets: @taskproxy, TaskProxy, start, stop, ProxyCall
+import DandelionWebSockets: @taskproxy, TaskProxy, start, stop, ProxyCall, attach, is_set
 
 type MockTaskProxyTarget
     call::Vector{Symbol}
@@ -66,5 +66,32 @@ facts("Task proxy") do
                 expect_call(t, :qux, 42, utf8("Hitchhiker"))
             end
         end
+    end
+
+    context("Attach a target after TaskProxy creation") do
+        t = MockTaskProxyTarget()
+        proxy = MockTaskProxy()
+
+        @fact is_set(proxy) --> false
+
+        # We can't start a proxy before target is set.
+        @fact_throws start(proxy) ErrorException
+
+        attach(proxy, t)
+        @fact is_set(proxy) --> true
+
+        # Start does not throw an exception when a target has been attached.
+        start(proxy)
+    end
+
+    context("Attaching twice leads to an exception") do
+        t = MockTaskProxyTarget()
+        proxy = MockTaskProxy()
+
+        attach(proxy, t)
+        @fact is_set(proxy) --> true
+
+        @fact_throws attach(proxy, t) ErrorException
+
     end
 end

@@ -7,5 +7,5 @@
     on_text, on_binary,
     state_connecting, state_open, state_closing, state_closed)
 
-@taskproxy ClientLogicTaskProxy AbstractClientTaskProxy ClientLogic handle
+@taskproxy ClientLogicTaskProxy AbstractClientTaskProxy AbstractClientLogic handle
 @taskproxy WriterTaskProxy AbstractWriterTaskProxy IO write

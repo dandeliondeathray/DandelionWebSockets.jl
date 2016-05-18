@@ -49,7 +49,7 @@ const STATE_CLOSING        = SocketState(:closing)
 const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
-type ClientLogic
+type ClientLogic <: AbstractClientLogic
 	state::SocketState
 	handler::AbstractHandlerTaskProxy
 	writer::AbstractWriterTaskProxy
