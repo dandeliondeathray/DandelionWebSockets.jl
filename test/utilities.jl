@@ -67,6 +67,18 @@ client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, mask, b"")
 server_ping_frame_w_pay = Frame(true, OPCODE_PING, false, 5, 0, nomask, b"Hello")
 client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 
+zero256 = Array{UInt8}([UInt8(0) for x in range(1, 256)])
+zero65k = Array{UInt8}([UInt8(0) for x in range(1, 65536 + 1024)])
+zero256_masked = Array{UInt8}([zero256[i] $ mask[(i-1)%4 + 1] for i in 1:length(zero256)])
+zero65k_masked = Array{UInt8}([zero65k[i] $ mask[(i-1)%4 + 1] for i in 1:length(zero65k)])
+
+# Binary message, payload is 256 bytes, single masked
+test_bin_frame_256 = Frame(true, OPCODE_BINARY, true, 126, 256, mask, zero256_masked)
+
+# Binary message, payload is 64KiB, masked
+test_bin_frame_65k = Frame(true, OPCODE_BINARY, true, 127, 65536 + 1024, mask, zero65k_masked)
+
+
 #
 # To accurately test a fake TCPSocket I need a blocking stream.
 # The implementation below is meant to be simple, not performant or good.

@@ -112,6 +112,22 @@ logic_tests = [
 		handler_calls  = [],
 		writer_calls   = [(:write, [test_bin_frame4])]),
 
+	LogicTestCase(
+		description    = "Client sends a binary message, 256 bytes",
+		initial_state  = DandelionWebSockets.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [DandelionWebSockets.SendBinaryFrame(zero256, true, OPCODE_BINARY)],
+		handler_calls  = [],
+		writer_calls   = [(:write, [test_bin_frame_256])]),
+
+	LogicTestCase(
+		description    = "Client sends a binary message, 65k",
+		initial_state  = DandelionWebSockets.STATE_OPEN,
+		rng            = FakeRNG(mask),
+		input          = [DandelionWebSockets.SendBinaryFrame(zero65k, true, OPCODE_BINARY)],
+		handler_calls  = [],
+		writer_calls   = [(:write, [test_bin_frame_65k])]),
+
 
 	LogicTestCase(
 		description    = "Client sends two fragments",

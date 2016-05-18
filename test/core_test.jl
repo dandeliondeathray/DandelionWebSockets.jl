@@ -41,9 +41,6 @@ immutable FrameTestCase
 end
 
 
-zero256 = [UInt8(0) for x in range(1, 256)]
-zero64k = [UInt8(0) for x in range(1, 65536)]
-
 frame_test_cases = [
     FrameTestCase("A single frame unmasked text message, body Hello",
         b"\x81\x05\x48\x65\x6c\x6c\x6f",
@@ -73,9 +70,9 @@ frame_test_cases = [
         vcat(b"\x82\x7E\x01\x00", zero256),
         Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zero256)),
 
-    FrameTestCase("Binary message, payload is 64KiB",
-        vcat(b"\x82\x7f\x00\x00\x00\x00\x00\x01\x00\x00", zero64k),
-        Frame(true, false, false, false, OPCODE_BINARY, false, 127, 65536, nomask, zero64k))
+    FrameTestCase("Binary message, payload is 65KiB",
+        vcat(b"\x82\x7f\x00\x00\x00\x00\x00\x01\x04\x00", zero65k),
+        Frame(true, false, false, false, OPCODE_BINARY, false, 127, 65536 + 1024, nomask, zero65k))
 ]
 
 facts("Reading frames") do
