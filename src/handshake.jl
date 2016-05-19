@@ -1,5 +1,6 @@
 import Nettle
 import Requests
+using BufferedStreams
 
 # TODO: Documentation
 
@@ -46,7 +47,7 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
 
     stream = result.socket
     if uri.scheme == "https"
-        stream = TLSBufferedIO(stream)
+        stream = BufferedInputStream(stream)
     end
 
     HandshakeResult(expected_accept, stream, Dict(), b"")

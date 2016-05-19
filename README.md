@@ -6,7 +6,6 @@ What needs to be done before this is registered as a package?
 
 - Wait for Requests.jl to make a release with the HTTP upgrade feature.
     + Update REQUIRE to reflect the new version of Requests.jl.
-- Rename to DandelionWebSockets.
 - Documentation:
     + Design
     + Usage
@@ -16,8 +15,11 @@ What needs to be done before this is registered as a package?
 - Sending ping frames, ensuring we get a reply.
 - Improve error handling.
 - Set version (use semantic versioning?)
-- Use the BufferedStreams package instead of our own TLSBufferedIO, if possible.
 
 Completed preparation tasks:
+
+- Rename to DandelionWebSockets.
+- Use the BufferedStreams package instead of our own TLSBufferedIO, if possible.
+
 
 ## Usage
