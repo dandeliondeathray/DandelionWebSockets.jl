@@ -88,6 +88,9 @@ end
 
 uri = Requests.URI("http://some/host")
 
+immutable FakeHandler <: WebSocketHandler end
+
+
 facts("Integration test") do
     context("Receive two Hello messages, and one binary.") do
         # test_frame1 is a complete text message with payload "Hello".
@@ -175,5 +178,16 @@ facts("Integration test") do
 
         # We expect one close frame and two message "Hello" and "world" to have been sent.
         @fact length(stream.writing) --> 3
+    end
+
+    context("Check that default callbacks do nothing") do
+        h = FakeHandler()
+        on_text(h, utf8("Hello"))
+        on_binary(h, b"Hello")
+        on_create(h)
+        state_closed(h)
+        state_closing(h)
+        state_connecting(h)
+        state_open(h)
     end
 end
