@@ -23,16 +23,18 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
 
             $(proxy_functions...)
 
+            function do_proxy(p::$proxy_type, target::$target_type)
+                for (f, args) in p.chan
+                    f(target, args...)
+                end
+            end
+
             function start(p::$proxy_type)
                 if isnull(p.target)
                     error("Target not set in proxy $(p). Call `attach` or set in constructor")
                 end
                 target = get(p.target)
-                @async begin
-                    for (f, args) in p.chan
-                        f(target, args...)
-                    end
-                end
+                @async do_proxy(p, target)
             end
 
             stop(h::$proxy_type) = close(h.chan)

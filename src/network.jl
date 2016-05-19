@@ -9,19 +9,21 @@ immutable ServerReader
     task::Task
 end
 
-function start_reader(s::IO, logic::AbstractClientTaskProxy)
-    t = @async begin
-        try
-            while true
-                frame = read(s, Frame)
-                handle(logic, FrameFromServer(frame))
-            end
-        catch ex
-            # TODO: Handle errors better.
-            println("DandelionWebSockets.start_reader exception: $(ex)")
+function do_reader(s::IO, logic::AbstractClientTaskProxy)
+    try
+        while true
+            frame = read(s, Frame)
+            handle(logic, FrameFromServer(frame))
         end
-        handle(logic, SocketClosed())
+    catch ex
+        # TODO: Handle errors better.
+        println("DandelionWebSockets.start_reader exception: $(ex)")
     end
+    handle(logic, SocketClosed())
+end
+
+function start_reader(s::IO, logic::AbstractClientTaskProxy)
+    t = @schedule do_reader(s, logic)
     ServerReader(s, t)
 end
 
