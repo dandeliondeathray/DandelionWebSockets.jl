@@ -1,14 +1,21 @@
 import FactCheck: @fact
 
-typealias MockCall Tuple{Symbol, Vector{Any}}
+type MockCall
+    sym::Symbol
+    args::Vector{Any}
+    return_value::Any
+end
+
 macro mock(mock_type::Symbol, abstract_type::Symbol)
     esc(
         quote
             type $mock_type <: $abstract_type
                 calls::Vector{MockCall}
+
+                $mock_type() = new([])
             end
 
-            function check_mock(m::$mock_type)
+            function check(m::$mock_type)
                 @fact m.calls --> isempty
             end
         end
@@ -38,6 +45,13 @@ macro mockfunction(mock_type::Symbol, functions...)
         end)
 end
 
+macro expect(fcall::Expr, rv::Any)
+    dump(fcall)
+    println()
+    dump(rv)
+    println()
+end
+
 abstract AbstractMockTester
 
 module Baz
@@ -50,13 +64,16 @@ import Baz: bar
 @mockfunction MockTester foo bar
 
 facts("Test mock") do
-    t = MockTester([
-        (:foo, []),
-        (symbol("Baz.bar"), [42, "Hello"])
-    ])
+    context("Expectations") do
+        t = MockTester()
 
-    foo(t)
-    bar(t, 42, "Hello")
+        @expect foo(t, 17) nothing
+        @expect bar(t, utf8("Hello")) 42
 
-    check_mock(t)
+        @fact foo(t, 17) --> nothing
+        @fact bar(t, utf8("Hello")) --> 42
+
+        check(t)
+    end
 end
+
