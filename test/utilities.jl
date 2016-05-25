@@ -6,12 +6,8 @@ import DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, A
 import Base.==
 
 @mock MockHandlerTaskProxy AbstractHandlerTaskProxy
-@mockfunction(MockHandlerTaskProxy,
-    on_text, on_binary,
-    state_connecting, state_open, state_closing, state_closed)
 
 @mock MockWriterTaskProxy AbstractWriterTaskProxy
-@mockfunction MockWriterTaskProxy write
 
 #
 # A fake RNG allows us to deterministically test functions that would otherwise behave
@@ -137,11 +133,13 @@ end
 
 ==(a::FrameFromServer, b::FrameFromServer) = a.frame == b.frame
 
-type MockClientLogic <: AbstractClientLogic
-    actuals::Vector{MockCall}
-    expected::Vector{MockCall}
+typealias MockLogicCall Tuple{Symbol, Vector{Any}}
 
-    MockClientLogic(expected::Vector{MockCall}) = new([], expected)
+type MockClientLogic <: AbstractClientLogic
+    actuals::Vector{MockLogicCall}
+    expected::Vector{MockLogicCall}
+
+    MockClientLogic(expected::Vector{MockLogicCall}) = new([], expected)
 end
 
 function call(m::MockClientLogic, s::Symbol, args...)
