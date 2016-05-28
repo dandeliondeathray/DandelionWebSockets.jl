@@ -6,6 +6,32 @@ type MockCall
     return_value::Any
 end
 
+type MockExpectationException <: Exception
+    s::AbstractString
+end
+
+MockExpectationException(expected::Any, actual::Any) =
+    MockExpectationException("Expected $expected, but got $actual")
+show(m::MockExpectationException) = "MockExpectationException: $(m.s)"
+
+
+abstract AbstractMatcher
+
+immutable ValueMatcher <: AbstractMatcher
+    value::Any
+end
+
+match(m::ValueMatcher, v::Any) = m.value == v || throw(MockExpectationException(m.value, v))
+show(m::ValueMatcher) = show(m.value)
+
+immutable TypeMatcher <: AbstractMatcher
+    typ::DataType
+end
+
+match(m::TypeMatcher, v::Any) =
+    isa(v, m.typ) || throw(MockExpectationException(m.typ, typeof(v)))
+show(m::TypeMatcher) = "TypeMatcher($(m.typ))"
+
 macro mock(mock_type::Symbol, abstract_type::Symbol)
     esc(
         quote
@@ -16,8 +42,13 @@ macro mock(mock_type::Symbol, abstract_type::Symbol)
             end
 
             function check(m::$mock_type)
-                @fact m.calls --> isempty
-                empty!(m.calls)
+                try
+                    if !isempty(m.calls)
+                        throw(MockExpectationException("Missing calls: $(m.calls)"))
+                    end
+                finally
+                    empty!(m.calls)
+                end
             end
         end
     )
@@ -40,12 +71,31 @@ macro mockfunction(t::Symbol, fdefs...)
         params = [x.args[1] for x in fdef.args[2:end]]
 
         check_call_block = quote
-            @fact ($t).calls --> not(isempty)
-            mock_call = shift!(($t).calls)
             args = vcat($(params...))
+            called_sym = $(Expr(:quote, function_sym))
 
-            @fact $(Expr(:quote, function_sym)) --> mock_call.sym
-            @fact args --> mock_call.args
+            if isempty(($t).calls)
+                throw(MockExpectationException("Unexpected call $called_sym, with args $args"))
+            end
+
+            mock_call = shift!(($t).calls)
+
+            if called_sym != mock_call.sym
+                throw(MockExpectationException(
+                    "Expected call $(mock_call.sym)($(mock_call.args)) but got $(called_sym)($args)"))
+            end
+
+            if length(mock_call.args) != length(args)
+                throw(MockExpectationException(
+                    "Expected $(length(mock_call.args)) arguments, but got $(length(args)):" *
+                    "Expected $(mock_call.args), but got $(args)"))
+            end
+
+            for i in range(1, length(mock_call.args))
+                matcher = mock_call.args[i]
+                arg = args[i]
+                match(matcher, arg)
+            end
 
             mock_call.return_value
         end
@@ -62,10 +112,12 @@ macro mockfunction(t::Symbol, fdefs...)
     end)
 end
 
+to_matcher(x::AbstractMatcher) = x
+to_matcher(x::Any) = ValueMatcher(x)
+
 macro expect(mock_object::Symbol, fcall::Expr, rvs...)
     sym = fcall.args[1]
     args = Vector{Any}(fcall.args[2:end])
-    qargs = Vector{Any}()
 
     rv = nothing
     if !isempty(rvs)
@@ -74,7 +126,8 @@ macro expect(mock_object::Symbol, fcall::Expr, rvs...)
 
     quote
         qargs = vcat($(args...))
-        push!(($mock_object).calls, MockCall($(Expr(:quote, sym)), qargs, $rv))
+        match_args = [to_matcher(x) for x in qargs]
+        push!(($mock_object).calls, MockCall($(Expr(:quote, sym)), match_args, $rv))
     end
 end
 
@@ -106,6 +159,55 @@ facts("Test mock") do
         @fact bar(utf8("Hello"), -5) --> 42
         @fact baz(b"Hello") --> nothing
 
+        check(t)
+    end
+
+    context("Failed expectation") do
+        @expect t foo(t, 17, 42)
+
+        @fact_throws foo(t, 17, 43) MockExpectationException
+
+        check(t)
+    end
+
+    context("Missing calls") do
+        @expect t foo(t, 17, 42)
+
+        @fact_throws check(t) MockExpectationException
+        @fact t.calls --> isempty
+    end
+
+    context("Unexpected call") do
+        @fact_throws foo(t, 17, 42)
+
+        check(t)
+    end
+
+    context("Wrong number of arguments") do
+        @expect t foo(t, 17, 42, 43)
+
+        @fact_throws foo(t, 17, 42) MockExpectationException
+
+        check(t)
+    end
+
+    context("Matchers") do
+        match(ValueMatcher(42), 42)
+        @fact_throws match(ValueMatcher(42), 43)
+        @fact_throws match(ValueMatcher(42), "42")
+
+        match(TypeMatcher(Int), 42)
+        @fact_throws match(TypeMatcher(Int), "")
+    end
+
+    context("Using TypeMatcher") do
+        @expect t foo(t, TypeMatcher(Int), 42)
+        @expect t foo(t, TypeMatcher(Number), 42)
+        @expect t foo(t, TypeMatcher(AbstractString), 42)
+
+        foo(t, 17, 42)
+        foo(t, 18, 42)
+        @fact_throws foo(t, 19, 42) MockExpectationException
         check(t)
     end
 end
