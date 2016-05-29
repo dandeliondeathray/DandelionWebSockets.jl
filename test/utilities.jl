@@ -147,16 +147,41 @@ function call(m::MockClientLogic, s::Symbol, args...)
 end
 
 function check(m::MockClientLogic)
-    #while !isempty(m.expected)
-    #    @fact m.actuals --> not(isempty) "Expecting calls $(m.expected), but no more actual calls"
-    #    (expected_func, expected_args) = shift!(m.expected)
-    #    (actual_func, actual_args) = shift!(m.actuals)
-    #
-    #    @fact actual_func --> expected_func
-    #    @fact actual_args --> expected_args
-    #end
-
     @fact m.actuals --> m.expected
 end
 
 handle(m::MockClientLogic, args...) = call(m, :handle, args...)
+
+#
+# A fake stream for checking that we read and write the right frames.
+#
+
+immutable FakeFrameStream <: IO
+    reading::Vector{Frame}
+    writing::Vector{Frame}
+    close_on_empty::Bool
+    stop_chan::Channel{Symbol}
+
+    FakeFrameStream(reading::Vector{Frame}, writing::Vector{Frame}, close_on_empty::Bool) =
+        new(reading, writing, close_on_empty, Channel{Symbol}(32))
+end
+
+function Base.read(s::FakeFrameStream, ::Type{Frame})
+    if isempty(s.reading)
+        if s.close_on_empty
+            throw(EOFError())
+        else
+            take!(s.stop_chan)
+            throw(EOFError())
+        end
+    end
+    sleep(0.2)
+    shift!(s.reading)
+end
+
+function Base.write(s::FakeFrameStream, frame::Frame)
+    push!(s.writing, frame)
+    if frame.opcode == DandelionWebSockets.OPCODE_CLOSE
+        put!(s.stop_chan, :stop)
+    end
+end

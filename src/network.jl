@@ -4,7 +4,9 @@ import Base: read, write
 
 type StopTaskException <: Exception end
 
-immutable ServerReader
+abstract AbstractServerReader
+
+immutable ServerReader <: AbstractServerReader
     s::IO
     task::Task
 end
@@ -28,7 +30,7 @@ function start_reader(s::IO, logic::AbstractClientTaskProxy)
 end
 
 
-function stop_reader(t::ServerReader)
+function stop(t::ServerReader)
     try
         Base.throwto(t.task, StopTaskException())
     end

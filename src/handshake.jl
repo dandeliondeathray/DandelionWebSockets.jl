@@ -11,6 +11,10 @@ immutable HandshakeResult
     body::Vector{UInt8}
 end
 
+immutable HandshakeFailure
+
+end
+
 function validate(handshake::HandshakeResult)
     accept_name = "Sec-WebSocket-Accept"
     if !haskey(handshake.headers, accept_name)

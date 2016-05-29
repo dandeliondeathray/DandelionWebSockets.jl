@@ -1,50 +1,55 @@
 import Requests: URI
 
 
-immutable WSClient <: AbstractWSClient
-    writer::WriterTaskProxy
-    handler_proxy::HandlerTaskProxy
-    logic_proxy::ClientLogicTaskProxy
-    reader::ServerReader
+type WSClient <: AbstractWSClient
+    writer::AbstractWriterTaskProxy
+    handler_proxy::AbstractHandlerTaskProxy
+    logic_proxy::AbstractClientTaskProxy
+    reader::Nullable{ServerReader}
+    do_handshake::Function
+    rng::AbstractRNG
 
-    function WSClient(;do_handshake=DandelionWebSockets.do_handshake,
-                       rng::AbstractRNG=MersenneTwister())
-        rng = MersenneTwister()
-        # Requests expect a HTTP/HTTPS scheme, so we convert from the ws/wss to http/https,
-        # if necessary.
-        new_uri = convert_ws_uri(uri)
-        handshake_result = do_handshake(rng, new_uri)
-
-        writer = WriterTaskProxy(handshake_result.stream)
-        start(writer)
-
-        handler_proxy = HandlerTaskProxy(handler)
-        start(handler_proxy)
-
-        logic = ClientLogic(STATE_OPEN, handler_proxy, writer, rng)
-        logic_proxy = ClientLogicTaskProxy(logic)
-        start(logic_proxy)
-
-        reader = start_reader(handshake_result.stream, logic_proxy)
-
-        c = new(writer, handler_proxy, logic_proxy, reader)
-        on_create(handler, c)
-        c
+    function WSClient(;
+                      do_handshake=DandelionWebSockets.do_handshake,
+                      rng::AbstractRNG=MersenneTwister(),
+                      writer::AbstractWriterTaskProxy=WriterTaskProxy(),
+                      handler_proxy::AbstractHandlerTaskProxy=HandlerTaskProxy(),
+                      logic_proxy::AbstractClientTaskProxy=ClientLogicTaskProxy())
+        new(writer, handler_proxy, logic_proxy, Nullable{ServerReader}(), do_handshake, rng)
     end
 end
 
-function connection_result_(result::HandshakeResult, handler::WebSocketHandler)
-    state_open(handler)
+function connection_result_(client::WSClient, result::HandshakeResult, handler::WebSocketHandler)
+    if !validate(result)
+        state_closed(handler)
+        return false
+    end
+
+    attach(client.writer, result.stream)
+    start(client.writer)
+
+    attach(client.handler_proxy, handler)
+    start(client.handler_proxy)
+
+    state_open(client.handler_proxy)
+
+    logic = ClientLogic(STATE_OPEN, client.handler_proxy, client.writer, client.rng)
+    attach(client.logic_proxy, logic)
+    start(client.logic_proxy)
+
+    client.reader = Nullable{ServerReader}(start_reader(result.stream, client.logic_proxy))
     true
 end
 
-function connection_result_(result::HandshakeFailure, handler::WebSocketHandler)
+function connection_result_(client::WSClient, result::HandshakeFailure, handler::WebSocketHandler)
     state_closed(handler)
     false
 end
 
 
-function connect(client::WSClient, uri::URI)
-    handshake_result = client.do_handshake()
-    connection_result_(handshake_result)
+function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
+    state_connecting(handler)
+    new_uri = convert_ws_uri(uri)
+    handshake_result = client.do_handshake(client.rng, new_uri)
+    connection_result_(client, handshake_result, handler)
 end

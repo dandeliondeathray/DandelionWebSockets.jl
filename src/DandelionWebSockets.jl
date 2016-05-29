@@ -13,7 +13,8 @@ export WebSocketHandler,
        state_closed,
        state_closing,
        state_connecting,
-       state_open
+       state_open,
+       wsconnect
 
 # TODO: Move all of the public interface here, and move away anything that isn't a public
 #       interface.
@@ -38,10 +39,10 @@ include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")
 include("handshake.jl")
+include("glue.jl")
 include("client.jl")
 
 
-include("glue.jl")
 
 # This method is primarily meant to be used when you want to feed the WebSocket client with another
 # channel, rather than going through the normal function calls. For instance, if building a

@@ -1,41 +1,13 @@
 import DandelionWebSockets: on_text, on_binary, on_create, get_channel,
                         state_connecting, state_open, state_closing, state_closed
 
-immutable FakeFrameStream <: IO
-    reading::Vector{Frame}
-    writing::Vector{Frame}
-    close_on_empty::Bool
-    stop_chan::Channel{Symbol}
 
-    FakeFrameStream(reading::Vector{Frame}, writing::Vector{Frame}, close_on_empty::Bool) =
-        new(reading, writing, close_on_empty, Channel{Symbol}(32))
-end
 
-function Base.read(s::FakeFrameStream, ::Type{Frame})
-    if isempty(s.reading)
-        if s.close_on_empty
-            throw(EOFError())
-        else
-            take!(s.stop_chan)
-            throw(EOFError())
-        end
-    end
-    sleep(0.2)
-    shift!(s.reading)
-end
-
-function Base.write(s::FakeFrameStream, frame::Frame)
-    push!(s.writing, frame)
-    if frame.opcode == DandelionWebSockets.OPCODE_CLOSE
-        put!(s.stop_chan, :stop)
-    end
-end
-
-accept = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+accept_field = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 headers = Dict(
     # This is the expected response when the client sends
     # Sec-WebSocket-Key => "dGhlIHNhbXBsZSBub25jZQ=="
-    "Sec-WebSocket-Accept" => accept
+    "Sec-WebSocket-Accept" => accept_field
 )
 
 type TestHandler <: WebSocketHandler
@@ -101,7 +73,7 @@ facts("Integration test") do
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), true)
         body = Vector{UInt8}()
         handshake_result = DandelionWebSockets.HandshakeResult(
-            accept, # This is the accept value we expect, and matches that in the headers dict.
+            accept_field, # This is the accept value we expect, and matches that in the headers dict.
             stream,
             headers,
             body)
@@ -142,7 +114,7 @@ facts("Integration test") do
         stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), false)
         body = Vector{UInt8}()
         handshake_result = DandelionWebSockets.HandshakeResult(
-            accept, # This is the accept value we expect, and matches that in the headers dict.
+            accept_field, # This is the accept value we expect, and matches that in the headers dict.
             stream,
             headers,
             body)

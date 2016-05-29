@@ -1,6 +1,6 @@
 import Base: read, write, readavailable, readbytes!, eof
 import DandelionWebSockets:
-    start, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
+    start, start_reader, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
 using BufferedStreams
 
 
@@ -21,14 +21,14 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = DandelionWebSockets.start_reader(s, logic_proxy)
+                reader = start_reader(s, logic_proxy)
                 sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
-                DandelionWebSockets.stop_reader(reader)
+                stop(reader)
                 sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
@@ -52,14 +52,14 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = DandelionWebSockets.start_reader(s, logic_proxy)
+                reader = start_reader(s, logic_proxy)
                 sleep(0.3)
                 @fact reader.task --> istaskstarted
                 @fact reader.task --> not(istaskdone)
 
                 # Stop reader task
                 # Check that it isn't running.
-                DandelionWebSockets.stop_reader(reader)
+                stop(reader)
                 sleep(0.3)
                 @fact istaskdone(reader.task) --> true
             end
@@ -84,9 +84,9 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = DandelionWebSockets.start_reader(s, logic_proxy)
+                reader = start_reader(s, logic_proxy)
                 sleep(0.3)
-                DandelionWebSockets.stop_reader(reader)
+                stop(reader)
                 sleep(0.3)
                 @fact reader.task --> istaskdone
             end
@@ -113,9 +113,9 @@ facts("Reader task") do
 
         @sync begin
             @async begin
-                reader = DandelionWebSockets.start_reader(s, logic_proxy)
+                reader = start_reader(s, logic_proxy)
                 sleep(0.005)
-                DandelionWebSockets.stop_reader(reader)
+                stop(reader)
                 sleep(0.005)
                 @fact reader.task --> istaskdone
             end
