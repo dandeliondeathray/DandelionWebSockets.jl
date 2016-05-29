@@ -14,15 +14,15 @@ import Base.==
 # pseudo-randomly.
 #
 
-type FakeRNG <: AbstractRNG
-    values::Array{UInt8, 1}
+type FakeRNG{T} <: AbstractRNG
+    values::Array{T, 1}
 
-    FakeRNG(v::Array{UInt8, 1}) = new(copy(v))
+    FakeRNG{T}(v::Array{T, 1}) = new(copy(v))
 end
 
-FakeRNG() = FakeRNG(Array{UInt8, 1}())
+FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
 
-function Base.rand(rng::FakeRNG, ::Type{UInt8}, n::Int)
+function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
     @fact rng.values --> x -> !isempty(x)
     splice!(rng.values, 1:n)
 end

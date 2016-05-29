@@ -1,7 +1,7 @@
 immutable LogicTestCase
 	description::AbstractString
 	initial_state::DandelionWebSockets.SocketState
-	rng::FakeRNG
+	rng::FakeRNG{UInt8}
 	#frames::Dict{AbstractString, Frame}
 	input::Vector{Any} # This will contain types such as FrameFromServer or SendTextFrame
 	handler_calls::Vector{Any}
@@ -12,7 +12,7 @@ end
 function LogicTestCase(;
 	description="",
 	initial_state=DandelionWebSockets.STATE_CONNECTING,
-	rng=FakeRNG(),
+	rng=FakeRNG(UInt8),
 	input=[],
 	handler_calls=[],
 	writer_calls=[],
@@ -44,7 +44,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "A text message from the server is received",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(b""),
+		rng            = FakeRNG{UInt8}(b""),
 		input          = [DandelionWebSockets.FrameFromServer(test_frame1)],
 		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
 		writer_calls   = []),
@@ -52,7 +52,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Two text fragments are received from the server",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.FrameFromServer(test_frame2),
 		                  DandelionWebSockets.FrameFromServer(test_frame3)],
 		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
@@ -61,7 +61,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Buffer is cleared between two separate multi-fragment messages",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.FrameFromServer(test_frame2),
 		                  DandelionWebSockets.FrameFromServer(test_frame3),
 		                  DandelionWebSockets.FrameFromServer(test_frame2),
@@ -73,7 +73,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "A ping request is received between two fragments",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.FrameFromServer(test_frame2),
 						  DandelionWebSockets.FrameFromServer(server_ping_frame),
 		                  DandelionWebSockets.FrameFromServer(test_frame3)],
@@ -83,7 +83,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "A pong response has the same payload as the ping",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.FrameFromServer(server_ping_frame_w_pay)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, client_pong_frame_w_pay))]),
@@ -92,7 +92,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "A binary message from the server is received",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(b""),
+		rng            = FakeRNG{UInt8}(b""),
 		input          = [DandelionWebSockets.FrameFromServer(frame_bin_1)],
 		handler_calls  = [:(@expect mock_handler on_binary(mock_handler, b"Hello"))],
 		writer_calls   = []),
@@ -100,7 +100,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Two binary fragments are received from the server",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.FrameFromServer(frame_bin_start),
 		                  DandelionWebSockets.FrameFromServer(frame_bin_final)],
 		handler_calls  = [:(@expect mock_handler on_binary(mock_handler, b"Hello"))],
@@ -113,7 +113,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Client sends a message",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_frame4))]),
@@ -121,7 +121,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Client sends a binary message",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.SendBinaryFrame(b"Hello", true, OPCODE_BINARY)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_bin_frame4))]),
@@ -129,7 +129,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Client sends a binary message, 256 bytes",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.SendBinaryFrame(zero256, true, OPCODE_BINARY)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_bin_frame_256))]),
@@ -137,7 +137,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Client sends a binary message, 65k",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.SendBinaryFrame(zero65k, true, OPCODE_BINARY)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_bin_frame_65k))]),
@@ -146,7 +146,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Client sends two fragments",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(vcat(mask, mask2)),
+		rng            = FakeRNG{UInt8}(vcat(mask, mask2)),
 		input          = [DandelionWebSockets.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  DandelionWebSockets.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
 		handler_calls  = [],
@@ -156,7 +156,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Frames are not sent when in CLOSING",
 		initial_state  = DandelionWebSockets.STATE_CLOSING,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  DandelionWebSockets.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  DandelionWebSockets.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
@@ -166,7 +166,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Frames are not sent when in CONNECTING",
 		initial_state  = DandelionWebSockets.STATE_CONNECTING,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  DandelionWebSockets.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  DandelionWebSockets.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
@@ -176,7 +176,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "Frames are not sent when in CLOSED",
 		initial_state  = DandelionWebSockets.STATE_CLOSED,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
 						  DandelionWebSockets.SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
 		                  DandelionWebSockets.SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
@@ -190,7 +190,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "The server initiates a closing handshake.",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.FrameFromServer(server_close_frame)],
 		handler_calls  = [:(@expect mock_handler state_closing(mock_handler))],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, client_close_reply))],
@@ -199,7 +199,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "The client initiates a closing handshake.",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(mask),
+		rng            = FakeRNG{UInt8}(mask),
 		input          = [DandelionWebSockets.CloseRequest()],
 		handler_calls  = [:(@expect mock_handler state_closing(mock_handler))],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, client_close_reply))],
@@ -208,7 +208,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "The server replies to a client initiated handshake",
 		initial_state  = DandelionWebSockets.STATE_CLOSING,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.FrameFromServer(server_close_frame)],
 		handler_calls  = [],
 		writer_calls   = [],
@@ -217,7 +217,7 @@ logic_tests = [
 	LogicTestCase(
 		description    = "The socket is closed cleanly",
 		initial_state  = DandelionWebSockets.STATE_CLOSING_SOCKET,
-		rng            = FakeRNG(),
+		rng            = FakeRNG(UInt8),
 		input          = [DandelionWebSockets.SocketClosed()],
 		handler_calls  = [:(@expect(mock_handler, state_closed(mock_handler)))],
 		writer_calls   = [],

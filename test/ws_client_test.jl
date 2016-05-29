@@ -43,7 +43,7 @@ headers = Dict(
     # Sec-WebSocket-Key => "dGhlIHNhbXBsZSBub25jZQ=="
     "Sec-WebSocket-Accept" => accept_field
 )
-fake_rng = FakeRNG(b"\x00\x00\x00\x00")
+fake_rng = FakeRNG{UInt8}(b"\x00\x00\x00\x00")
 facts("WSClient") do
     context("Connecting a WSClient") do
         uri = Requests.URI("http://some/url")

@@ -60,7 +60,7 @@ facts("Handshake") do
     end
 
     context("Handshake calculations") do
-        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         actual_key = DandelionWebSockets.make_websocket_key(rng)
         @fact actual_key --> ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
 
@@ -69,7 +69,7 @@ facts("Handshake") do
     end
 
     context("Make headers") do
-        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         key = DandelionWebSockets.make_websocket_key(rng)
 
         headers = DandelionWebSockets.make_headers(key)
@@ -80,7 +80,7 @@ facts("Handshake") do
     end
 
     context("Handshake") do
-        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         key = ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
         expected_headers = DandelionWebSockets.make_headers(key)
 
@@ -112,7 +112,7 @@ facts("Handshake") do
     end
 
     context("SSL handshakes result in a BufferedInputStream stream") do
-        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         key = ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
         expected_accept = DandelionWebSockets.calculate_accept(key)
 
@@ -126,7 +126,7 @@ facts("Handshake") do
         normal_handshake_result = DandelionWebSockets.do_handshake(rng, uri; do_request=do_req)
         @fact isa(normal_handshake_result.stream, BufferedInputStream) --> false
 
-        rng = FakeRNG(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         ssl_handshake_result = DandelionWebSockets.do_handshake(rng, ssl_uri, do_request=do_req)
         @fact isa(ssl_handshake_result.stream, BufferedInputStream) --> true
     end
