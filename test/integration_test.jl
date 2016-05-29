@@ -15,17 +15,17 @@ type TestHandler <: WebSocketHandler
     received_datas::Vector{Vector{UInt8}}
     stop_chan::Channel{Symbol}
     close_on_message::Bool # If true, initiates a closing handshake on the first message.
-    client::Nullable{WSClient}
+    client::WSClient
 
-    TestHandler() = new(Vector{UTF8String}(), [], Channel{Symbol}(5), false, nothing)
-    TestHandler(close_on_message::Bool) =
-        new(Vector{UTF8String}(), [], Channel{Symbol}(5), close_on_message, nothing)
+    TestHandler(client::WSClient) = new(Vector{UTF8String}(), [], Channel{Symbol}(5), false, client)
+    TestHandler(client::WSClient, close_on_message::Bool) =
+        new(Vector{UTF8String}(), [], Channel{Symbol}(5), close_on_message, client)
 end
 
 function on_text(h::TestHandler, text::UTF8String)
     push!(h.received_texts, text)
     if h.close_on_message
-        stop(get(h.client))
+        stop(h.client)
     end
 end
 
@@ -33,7 +33,7 @@ end
 function on_binary(h::TestHandler, data::Vector{UInt8})
     push!(h.received_datas, data)
     if h.close_on_message
-        stop(get(h.client))
+        stop(h.client)
     end
 end
 
@@ -41,7 +41,6 @@ state_open(h::TestHandler) = nothing
 state_connecting(h::TestHandler) = nothing
 state_closing(h::TestHandler) = nothing
 state_closed(h::TestHandler) = put!(h.stop_chan, :stop)
-on_create(h::TestHandler, c::WSClient) = h.client = c
 
 wait(t::TestHandler) = take!(t.stop_chan)
 function expect_text(t::TestHandler, expected::UTF8String)
@@ -79,9 +78,10 @@ facts("Integration test") do
             body)
 
         do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
-        handler = TestHandler()
 
-        client = WSClient(uri, handler; do_handshake=do_handshake)
+        client = WSClient(; do_handshake=do_handshake)
+        handler = TestHandler(client)
+        wsconnect(client, uri, handler)
 
         # Write a message "Hello"
         send_text(client, utf8("Hello"))
@@ -128,9 +128,9 @@ facts("Integration test") do
             handshake_result
         end
 
-        handler = TestHandler(true)
-
-        client = WSClient(websocket_uri, handler; do_handshake=do_handshake)
+        client = WSClient(; do_handshake=do_handshake)
+        handler = TestHandler(client, true)
+        wsconnect(client, websocket_uri, handler)
 
         @fact handshake_uri --> expected_uri
 
@@ -156,7 +156,6 @@ facts("Integration test") do
         h = FakeHandler()
         on_text(h, utf8("Hello"))
         on_binary(h, b"Hello")
-        on_create(h)
         state_closed(h)
         state_closing(h)
         state_connecting(h)

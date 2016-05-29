@@ -9,7 +9,6 @@ export AbstractWSClient,
 export WebSocketHandler,
        on_text,
        on_binary,
-       on_create,
        state_closed,
        state_closing,
        state_connecting,
@@ -26,7 +25,6 @@ abstract WebSocketHandler
 
 on_text(t::WebSocketHandler, ::UTF8String) = nothing
 on_binary(t::WebSocketHandler, ::Vector{UInt8}) = nothing
-on_create(t::WebSocketHandler) = nothing
 state_closed(t::WebSocketHandler) = nothing
 state_closing(t::WebSocketHandler) = nothing
 state_connecting(t::WebSocketHandler) = nothing
