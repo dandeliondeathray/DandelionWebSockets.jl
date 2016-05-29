@@ -53,3 +53,14 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     handshake_result = client.do_handshake(client.rng, new_uri)
     connection_result_(client, handshake_result, handler)
 end
+
+# This method is primarily meant to be used when you want to feed the WebSocket client with another
+# channel, rather than going through the normal function calls. For instance, if building a
+# throttling layer on top of this you might want to access the logic channel directly.
+get_channel(c::WSClient) = c.logic_proxy.chan
+
+stop(c::WSClient) = handle(c.logic_proxy, CloseRequest())
+
+send_text(c::WSClient, s::UTF8String) = handle(c.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
+send_binary(c::WSClient, data::Vector{UInt8}) =
+    handle(c.logic_proxy, SendBinaryFrame(data, true, OPCODE_BINARY))

@@ -1,5 +1,5 @@
-import DandelionWebSockets: on_text, on_binary, on_create, get_channel,
-                        state_connecting, state_open, state_closing, state_closed
+import DandelionWebSockets: on_text, on_binary, get_channel,
+                            state_connecting, state_open, state_closing, state_closed
 
 
 
