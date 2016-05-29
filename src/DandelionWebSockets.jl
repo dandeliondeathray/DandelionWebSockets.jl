@@ -36,5 +36,6 @@ include("client_logic.jl")
 include("handshake.jl")
 include("glue.jl")
 include("client.jl")
+include("reconnect.jl")
 
 end # module
