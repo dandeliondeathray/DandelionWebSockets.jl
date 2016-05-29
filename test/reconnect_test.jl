@@ -1,5 +1,4 @@
-import DandelionWebSockets: AbstractBackoff, Backoff, RandomizedBackoff,
-                            reset, backoff_min, backoff_max
+import DandelionWebSockets: backoff_min, backoff_max, reset
 
 type FakeBackoff <: AbstractBackoff
     values::Vector{Float64}
@@ -18,6 +17,7 @@ end
 
 backoff_min(b::FakeBackoff) = b.min
 backoff_max(b::FakeBackoff) = b.max
+reset(b::FakeBackoff) = b.i = 1
 
 facts("Reconnect") do
     context("Backoff") do
@@ -72,5 +72,54 @@ facts("Reconnect") do
         for i in range(1, 5)
             @fact values[i] --> roughly(expected[i])
         end
+    end
+
+    context("Retry") do
+        expected_sleep_args = [1.0, 2.0, 3.0, 4.0, 5.0]
+        backoff = FakeBackoff(expected_sleep_args, 0.0, 5.0)
+        actual_sleep_args = Vector{Float64}()
+        retries = 0
+
+        retry_fun = () -> retries += 1
+        sleep_fun = x -> begin
+            push!(actual_sleep_args, x)
+            nothing
+        end
+
+        r = Retry(backoff, retry_fun; sleep_fun=sleep_fun)
+
+        retry(r)
+        retry(r)
+        retry(r)
+        retry(r)
+        retry(r)
+
+        @fact actual_sleep_args --> expected_sleep_args
+        @fact retries --> 5
+    end
+
+    context("Retry reset") do
+        backoff_values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        backoff = FakeBackoff(backoff_values, 0.0, 5.0)
+        expected_sleep_args = [1.0, 2.0, 1.0, 2.0]
+        actual_sleep_args = Vector{Float64}()
+        retries = 0
+
+        retry_fun = () -> retries += 1
+        sleep_fun = x -> begin
+            push!(actual_sleep_args, x)
+            nothing
+        end
+
+        r = Retry(backoff, retry_fun; sleep_fun=sleep_fun)
+
+        retry(r)
+        retry(r)
+        reset(r)
+        retry(r)
+        retry(r)
+
+        @fact actual_sleep_args --> expected_sleep_args
+        @fact retries --> 4
     end
 end
