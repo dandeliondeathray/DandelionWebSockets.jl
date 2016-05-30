@@ -1,4 +1,4 @@
-import DandelionWebSockets: on_text, on_binary, get_channel,
+import DandelionWebSockets: on_text, on_binary,
                             state_connecting, state_open, state_closing, state_closed
 
 
@@ -101,9 +101,6 @@ facts("Integration test") do
         # We expect one text message "Hello", one binary message, and one close control frame to
         # have been sent.
         @fact length(stream.writing) --> 3
-
-        # For coverage
-        get_channel(client)
     end
 
     context("The client initiates closing handshake") do
