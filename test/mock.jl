@@ -1,9 +1,20 @@
+immutable Throws
+    ex::Exception
+end
+
+mock_action(action::Throws) = throw(action.ex)
+mock_action(x::Any) = x
+
+immutable MyException <: Exception
+    msg::AbstractString
+end
+
 import FactCheck: @fact
 
 type MockCall
     sym::Symbol
     args::Vector{Any}
-    return_value::Any
+    action::Any
 end
 
 type MockExpectationException <: Exception
@@ -97,7 +108,7 @@ macro mockfunction(t::Symbol, fdefs...)
                 match(matcher, arg)
             end
 
-            mock_call.return_value
+            return mock_action(mock_call.action)
         end
 
         fun = Expr(:function)
@@ -208,6 +219,14 @@ facts("Test mock") do
         foo(t, 17, 42)
         foo(t, 18, 42)
         @fact_throws foo(t, 19, 42) MockExpectationException
+        check(t)
+    end
+
+    context("MockThrowAction") do
+        @expect t foo(t, 17, 42) Throws(MyException("some error"))
+
+        @fact_throws foo(t, 17, 42) MyException
+
         check(t)
     end
 end
