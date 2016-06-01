@@ -37,5 +37,6 @@ include("handshake.jl")
 include("glue.jl")
 include("client.jl")
 include("reconnect.jl")
+include("mock.jl")
 
 end # module

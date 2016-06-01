@@ -1,7 +1,7 @@
 import Base: reset
 
 export AbstractBackoff, Backoff, RandomizedBackoff, reset, backoff_min, backoff_max
-export Retry, retry
+export AbstractRetry, Retry, retry
 
 abstract AbstractBackoff
 
@@ -39,7 +39,9 @@ function call(b::RandomizedBackoff)
     max(backoff_min(b), min(backoff_max(b), v + r))
 end
 
-type Retry
+abstract AbstractRetry
+
+type Retry <: AbstractRetry
     backoff::AbstractBackoff
     fun::Function
     sleep_fun::Function
