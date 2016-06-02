@@ -1,5 +1,6 @@
 export @mock, @mockfunction, @expect, Throws, MockExpectationException,
-       MockCall, ValueMatcher, mock_match, TypeMatcher
+       MockCall, ValueMatcher, mock_match, TypeMatcher, AbstractMatcher,
+       mock_match
 
 immutable Throws
     ex::Exception
