@@ -44,16 +44,15 @@ abstract AbstractRetry
 type Retry <: AbstractRetry
     backoff::AbstractBackoff
     fun::Function
-    sleep_fun::Function
+    timer_fun::Function
 
     Retry(backoff::AbstractBackoff, fun::Function;
-          sleep_fun::Function=sleep) = new(backoff, fun, sleep_fun)
+          timer_fun::Function=Timer) = new(backoff, fun, timer_fun)
 end
 
 function retry(r::Retry)
     backoff_time = r.backoff()
-    r.sleep_fun(backoff_time)
-    r.fun()
+    r.timer_fun(r.fun, backoff_time)
 end
 
 reset(r::Retry) = reset(r.backoff)

@@ -75,18 +75,20 @@ facts("Reconnect") do
     end
 
     context("Retry") do
-        expected_sleep_args = [1.0, 2.0, 3.0, 4.0, 5.0]
-        backoff = FakeBackoff(expected_sleep_args, 0.0, 5.0)
-        actual_sleep_args = Vector{Float64}()
-        retries = 0
+        expected_delays = [1.0, 2.0, 3.0, 4.0, 5.0]
+        backoff = FakeBackoff(expected_delays, 0.0, 5.0)
+        actual_delays = Vector{Float64}()
 
-        retry_fun = () -> retries += 1
-        sleep_fun = x -> begin
-            push!(actual_sleep_args, x)
+        retry_fun = () -> nothing
+        timer_fun = (actual_retry_fun, delay) -> begin
+            if actual_retry_fun != retry_fun
+                error("Unexpected function sent into timer")
+            end
+            push!(actual_delays, delay)
             nothing
         end
 
-        r = Retry(backoff, retry_fun; sleep_fun=sleep_fun)
+        r = Retry(backoff, retry_fun; timer_fun=timer_fun)
 
         retry(r)
         retry(r)
@@ -94,24 +96,25 @@ facts("Reconnect") do
         retry(r)
         retry(r)
 
-        @fact actual_sleep_args --> expected_sleep_args
-        @fact retries --> 5
+        @fact actual_delays --> expected_delays
     end
 
     context("Retry reset") do
         backoff_values = [1.0, 2.0, 3.0, 4.0, 5.0]
         backoff = FakeBackoff(backoff_values, 0.0, 5.0)
-        expected_sleep_args = [1.0, 2.0, 1.0, 2.0]
-        actual_sleep_args = Vector{Float64}()
-        retries = 0
+        expected_delays = [1.0, 2.0, 1.0, 2.0]
+        actual_delays = Vector{Float64}()
 
-        retry_fun = () -> retries += 1
-        sleep_fun = x -> begin
-            push!(actual_sleep_args, x)
+        retry_fun = () -> nothing
+        timer_fun = (actual_retry_fun, delay) -> begin
+            if actual_retry_fun != retry_fun
+                error("Unexpected function sent into timer")
+            end
+            push!(actual_delays, delay)
             nothing
         end
 
-        r = Retry(backoff, retry_fun; sleep_fun=sleep_fun)
+        r = Retry(backoff, retry_fun; timer_fun=timer_fun)
 
         retry(r)
         retry(r)
@@ -119,7 +122,6 @@ facts("Reconnect") do
         retry(r)
         retry(r)
 
-        @fact actual_sleep_args --> expected_sleep_args
-        @fact retries --> 4
+        @fact actual_delays --> expected_delays
     end
 end
