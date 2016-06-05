@@ -34,6 +34,8 @@
 #      *  0x82 0x7F 0x0000000000010000 [65536 bytes of binary data]
 #
 
+using BufferedStreams
+
 immutable FrameTestCase
     description::AbstractString
     serialized_frame::Array{UInt8}
@@ -90,6 +92,16 @@ facts("Writing frames") do
             s = IOBuffer()
             write(s, tc.frame)
             @fact takebuf_array(s) --> tc.serialized_frame
+        end
+    end
+end
+
+facts("BufferedStreams") do
+    for tc in frame_test_cases
+        context(tc.description) do
+            s = IOBuffer(tc.serialized_frame)
+            buffered = BufferedInputStream(s)
+            @fact read(buffered, Frame) --> tc.frame
         end
     end
 end

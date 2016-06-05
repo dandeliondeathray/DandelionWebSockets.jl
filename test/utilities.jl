@@ -185,3 +185,4 @@ function Base.write(s::FakeFrameStream, frame::Frame)
         put!(s.stop_chan, :stop)
     end
 end
+

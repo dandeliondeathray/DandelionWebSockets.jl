@@ -1,5 +1,6 @@
 import Requests: URI
 import Base: show
+using BufferedStreams
 
 type WSClient <: AbstractWSClient
     writer::AbstractWriterTaskProxy
@@ -28,7 +29,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
         #return false
     end
 
-    attach(client.writer, result.stream)
+    attach(client.writer, BufferedOutputStream(result.stream))
     start(client.writer)
 
     attach(client.handler_proxy, handler)
@@ -40,7 +41,8 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     attach(client.logic_proxy, logic)
     start(client.logic_proxy)
 
-    client.reader = Nullable{ServerReader}(start_reader(result.stream, client.logic_proxy))
+    client.reader = Nullable{ServerReader}(
+        start_reader(BufferedInputStream(result.stream), client.logic_proxy))
     true
 end
 

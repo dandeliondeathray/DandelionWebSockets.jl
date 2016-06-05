@@ -1,6 +1,5 @@
 import Nettle
 import Requests
-using BufferedStreams
 
 # TODO: Documentation
 
@@ -56,12 +55,7 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
     headers = make_headers(key)
     result = do_request(uri, ascii("GET"); headers=headers)
 
-    stream = result.socket
-    if uri.scheme == "https"
-        stream = BufferedInputStream(stream)
-    end
-
-    HandshakeResult(expected_accept, stream, Dict(), b"")
+    HandshakeResult(expected_accept, result.socket, Dict(), b"")
 end
 
 function convert_ws_uri(uri::Requests.URI)

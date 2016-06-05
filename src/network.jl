@@ -12,9 +12,11 @@ immutable ServerReader <: AbstractServerReader
 end
 
 function do_reader(s::IO, logic::AbstractClientTaskProxy)
+    println("Reader task started")
     try
         while true
             frame = read(s, Frame)
+            println("Read frame: $frame")
             handle(logic, FrameFromServer(frame))
         end
     catch ex
