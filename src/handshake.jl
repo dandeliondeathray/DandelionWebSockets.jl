@@ -18,11 +18,18 @@ end
 function validate(handshake::HandshakeResult)
     accept_name = "Sec-WebSocket-Accept"
     if !haskey(handshake.headers, accept_name)
+        println("No key $accept_name in $(handshake.headers)")
         return false
     end
 
     accept_value = handshake.headers[accept_name]
-    return accept_value == handshake.expected_accept
+
+    is_valid = accept_value == handshake.expected_accept
+    if !is_valid
+        println("Expected accept value $(handshake.expected_accept) does not match actual $accept_value")
+    end
+
+    is_valid
 end
 
 function make_websocket_key(rng::AbstractRNG)

@@ -1,5 +1,5 @@
 import Requests: URI
-
+import Base: show
 
 type WSClient <: AbstractWSClient
     writer::AbstractWriterTaskProxy
@@ -18,11 +18,14 @@ type WSClient <: AbstractWSClient
         new(writer, handler_proxy, logic_proxy, Nullable{ServerReader}(), do_handshake, rng)
     end
 end
+show(io::IO, c::WSClient) =
+    show(io, "WSClient($(c.handler_proxy), $(c.logic_proxy))")
 
 function connection_result_(client::WSClient, result::HandshakeResult, handler::WebSocketHandler)
     if !validate(result)
-        state_closed(handler)
-        return false
+        println("Could not validate HTTP Upgrade")
+        #state_closed(handler)
+        #return false
     end
 
     attach(client.writer, result.stream)

@@ -29,6 +29,8 @@ type RandomizedBackoff <: AbstractBackoff
     interval::Float64
 end
 
+show(io::IO, r::RandomizedBackoff) = show(io, "RandomizedBackoff($(r.backoff), $(r.interval))")
+
 reset(b::RandomizedBackoff) = reset(b.backoff)
 backoff_min(b::RandomizedBackoff) = backoff_min(b.backoff)
 backoff_max(b::RandomizedBackoff) = backoff_max(b.backoff)
