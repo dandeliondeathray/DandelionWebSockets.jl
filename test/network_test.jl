@@ -1,7 +1,6 @@
-import Base: read, write, readavailable, readbytes!, eof
+import Base: read, write, readavailable
 import DandelionWebSockets:
     start, start_reader, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
-using BufferedStreams
 
 
 network_test_frame4 =
@@ -176,67 +175,59 @@ end
 
 type FakeTLSStream <: IO
     buf::IOBuffer
+    write_buf::IOBuffer
 
-    FakeTLSStream() = new(IOBuffer())
+    FakeTLSStream() = new(IOBuffer(), IOBuffer())
 end
 
 test_write(s::FakeTLSStream, frame::Frame) = write(s.buf, frame)
 function write(s::FakeTLSStream, frame::Frame)
-    mark(s.buf)
-    write(s.buf, frame)
-    reset(s.buf)
+    mark(s.write_buf)
+    write(s.write_buf, frame)
+    reset(s.write_buf)
 end
 
-write(s::FakeTLSStream, t::UInt8) = write(s.buf, t)
-write(s::FakeTLSStream, t::UInt16) = write(s.buf, t)
-write(s::FakeTLSStream, t::UInt64) = write(s.buf, t)
+write(s::FakeTLSStream, t::UInt8) = write(s.write_buf, t)
+write(s::FakeTLSStream, t::UInt16) = write(s.write_buf, t)
+write(s::FakeTLSStream, t::UInt64) = write(s.write_buf, t)
+
 
 read{T}(::FakeTLSStream, ::T) = throw(ErrorException())
-readavailable(s::FakeTLSStream) = throw(ErrorException())
-
-readbytes!(ctx::FakeTLSStream, buf::Vector{UInt8}, nbytes=length(buf)) =
-    readbytes!(ctx.buf, buf, UInt(nbytes))
-
-readbytes!(ctx::FakeTLSStream, buf::Vector{UInt8}, nbytes::UInt) = readbytes!(ctx.buf, buf, nbytes)
-eof(f::FakeTLSStream) = eof(f.buf)
+readavailable(s::FakeTLSStream) = takebuf_array(s.buf)
 
 facts("Byte stream from SSL socket") do
-    # MbedTLS.SSLContext does not allow you to read byte s from the IO stream. It throws an
-    # exception if you try. `BufferedStreams` adapts the TLS stream to support byte I/O.
-    context("Read two bytes via BufferedStreams") do
+    # MbedTLS.SSLContext does not allow you to read bytes from the IO stream. It throws an exception
+    # if you try. `BufferedReader` adapts the TLS stream to support byte I/O by reading all
+    # available data into a buffer and return data from that.
+    context("Read two bytes via TLSBufferedIO") do
         fake_tls = FakeTLSStream()
-        mark(fake_tls.buf)
         write(fake_tls.buf, Vector{UInt8}([1,2]))
-        reset(fake_tls.buf)
 
-        s = BufferedInputStream(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
 
         @fact read(s, UInt8) --> 1
         @fact read(s, UInt8) --> 2
     end
 
-    context("Read frames via BufferedStreams") do
+    context("Read frames via TLSBufferedIO") do
         fake_tls = FakeTLSStream()
-        mark(fake_tls.buf)
         test_write(fake_tls, test_frame1)
         test_write(fake_tls, network_test_frame4)
-        reset(fake_tls.buf)
 
-        s = BufferedInputStream(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
         @fact read(s, Frame) --> test_frame1
         @fact read(s, Frame) --> network_test_frame4
     end
 
-    context("Write frames via BufferedStreams") do
+    context("Write frames via TLSBufferedIO") do
         fake_tls = FakeTLSStream()
-        s = BufferedOutputStream(fake_tls)
+        s = DandelionWebSockets.TLSBufferedIO(fake_tls)
 
-        mark(fake_tls.buf)
+        mark(fake_tls.write_buf)
         write(s, test_frame1)
         write(s, network_test_frame4)
-        flush(s)
-        reset(fake_tls.buf)
-        @fact read(fake_tls.buf, Frame) --> test_frame1
-        @fact read(fake_tls.buf, Frame) --> network_test_frame4
+        reset(fake_tls.write_buf)
+        @fact read(fake_tls.write_buf, Frame) --> test_frame1
+        @fact read(fake_tls.write_buf, Frame) --> network_test_frame4
     end
 end

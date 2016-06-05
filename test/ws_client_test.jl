@@ -74,10 +74,10 @@ facts("WSClient") do
         @expect mock_client_logic_proxy attach(mock_client_logic_proxy, TypeMatcher(AbstractClientLogic))
         @expect mock_client_logic_proxy start(mock_client_logic_proxy)
 
-        @expect mock_writer_proxy attach(mock_writer_proxy, TypeMatcher(BufferedOutputStream))
+        @expect mock_writer_proxy attach(mock_writer_proxy, stream)
         @expect mock_writer_proxy start(mock_writer_proxy)
 
-        @expect mock_server_reader start_reader(TypeMatcher(BufferedInputStream), mock_client_logic_proxy)
+        @expect mock_server_reader start_reader(stream, mock_client_logic_proxy)
 
         @fact wsconnect(client, uri, mocker) --> true
 

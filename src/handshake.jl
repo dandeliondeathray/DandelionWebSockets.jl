@@ -55,7 +55,12 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
     headers = make_headers(key)
     result = do_request(uri, ascii("GET"); headers=headers)
 
-    HandshakeResult(expected_accept, result.socket, Dict(), b"")
+    stream = result.socket
+    if uri.scheme == "https"
+        stream = TLSBufferedIO(stream)
+    end
+
+    HandshakeResult(expected_accept, stream, Dict(), b"")
 end
 
 function convert_ws_uri(uri::Requests.URI)

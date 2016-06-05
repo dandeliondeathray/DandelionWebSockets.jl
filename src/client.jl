@@ -29,7 +29,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
         #return false
     end
 
-    attach(client.writer, BufferedOutputStream(result.stream))
+    attach(client.writer, result.stream)
     start(client.writer)
 
     attach(client.handler_proxy, handler)
@@ -42,7 +42,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     start(client.logic_proxy)
 
     client.reader = Nullable{ServerReader}(
-        start_reader(BufferedInputStream(result.stream), client.logic_proxy))
+        start_reader(result.stream, client.logic_proxy))
     true
 end
 
