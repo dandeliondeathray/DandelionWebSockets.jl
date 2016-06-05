@@ -9,8 +9,6 @@ end
 mock_action(action::Throws) = throw(action.ex)
 mock_action(x::Any) = x
 
-import FactCheck: @fact
-
 type MockCall
     sym::Symbol
     args::Vector{Any}
