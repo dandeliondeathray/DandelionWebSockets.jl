@@ -1,7 +1,7 @@
 import Base: reset
 
 export AbstractBackoff, Backoff, RandomizedBackoff, reset, backoff_min, backoff_max
-export AbstractRetry, Retry, retry
+export AbstractRetry, Retry, retry, set_function
 
 abstract AbstractBackoff
 
@@ -41,13 +41,15 @@ end
 
 abstract AbstractRetry
 
+default_timer_factory = (f, d) -> Timer(f, d)
+
 type Retry <: AbstractRetry
     backoff::AbstractBackoff
     fun::Function
     timer_fun::Function
 
     Retry(backoff::AbstractBackoff, fun::Function;
-          timer_fun::Function=Timer) = new(backoff, fun, timer_fun)
+          timer_fun::Function=default_timer_factory) = new(backoff, (t) -> fun(), timer_fun)
 end
 
 function retry(r::Retry)
@@ -56,3 +58,5 @@ function retry(r::Retry)
 end
 
 reset(r::Retry) = reset(r.backoff)
+
+set_function(r::Retry, f::Function) = r.fun = (t) -> f()

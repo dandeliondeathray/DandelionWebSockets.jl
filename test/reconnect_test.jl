@@ -81,9 +81,6 @@ facts("Reconnect") do
 
         retry_fun = () -> nothing
         timer_fun = (actual_retry_fun, delay) -> begin
-            if actual_retry_fun != retry_fun
-                error("Unexpected function sent into timer")
-            end
             push!(actual_delays, delay)
             nothing
         end
@@ -107,9 +104,6 @@ facts("Reconnect") do
 
         retry_fun = () -> nothing
         timer_fun = (actual_retry_fun, delay) -> begin
-            if actual_retry_fun != retry_fun
-                error("Unexpected function sent into timer")
-            end
             push!(actual_delays, delay)
             nothing
         end
@@ -123,5 +117,27 @@ facts("Reconnect") do
         retry(r)
 
         @fact actual_delays --> expected_delays
+    end
+
+    context("Set reconnect function") do
+        backoff_values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        backoff = FakeBackoff(backoff_values, 0.0, 5.0)
+        retry_fun = () -> nothing
+        r = Retry(backoff, retry_fun)
+
+        new_retry_fun = () -> 1+1
+        set_function(r, new_retry_fun)
+    end
+
+    context("Default timer") do
+        backoff_value = 0.2
+        backoff = FakeBackoff([backoff_value], 0.0, 5.0)
+        called = 0
+        retry_fun = () -> called += 1
+        r = Retry(backoff, retry_fun)
+
+        retry(r)
+        sleep(backoff_value * 2.0)
+        @fact called --> 1
     end
 end
