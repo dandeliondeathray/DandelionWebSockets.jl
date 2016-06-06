@@ -2,19 +2,24 @@ import Base: read, write
 
 # TODO: Documentation
 
+"An exception thrown into a task in order to stop it."
 type StopTaskException <: Exception end
 
 abstract AbstractServerReader
 
+"Reading from a network socket and placing the resulting frame on a channel."
 immutable ServerReader <: AbstractServerReader
     s::IO
     task::Task
 end
 
+"Read frames from the network, until an exception is thrown in this task."
 function do_reader(s::IO, logic::AbstractClientTaskProxy)
     try
         while true
             frame = read(s, Frame)
+            # This is a proxy, so the actual `handle` call made on the logic object is done in a
+            # separate coroutine.
             handle(logic, FrameFromServer(frame))
         end
     catch ex
@@ -37,9 +42,20 @@ function stop(t::ServerReader)
 end
 
 #
-# TLSBufferedIO adapts a TLS socket so we can do byte I/O.
+#
 #
 
+"""
+TLSBufferedIO adapts a TLS socket so we can do byte I/O.
+
+The stream returned by MbedTLS when using a TLS socket does not support the byte I/O used when
+reading a frame. It only supports reading a chunk of data. This is a fake stream that buffers some
+data and lets us do byte I/O.
+
+Note: This should have been done by the BufferedStreams.jl package. However, I couldn't get it to
+work with the MbedTLS stream, for reasons unknown. If we can investigate and fix that problem, then
+we should really replace this type with a BufferedInputStream.
+"""
 immutable TLSBufferedIO <: IO
     tls_stream::IO
     buf::IOBuffer
@@ -47,6 +63,7 @@ immutable TLSBufferedIO <: IO
     TLSBufferedIO(tls_stream::IO) = new(tls_stream, IOBuffer())
 end
 
+"Read all available data, and block until we have enough to fulfíll the next read."
 function fill_buffer(s::TLSBufferedIO, n::Int)
     begin_ptr = mark(s.buf)
     while s.buf.size - begin_ptr < n

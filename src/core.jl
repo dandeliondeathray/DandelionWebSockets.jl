@@ -1,3 +1,5 @@
+# Core defines the core WebSocket types, such as a frame and opcodes.
+
 # Description of a WebSocket frame from https://tools.ietf.org/html/rfc6455, chapter 5.2.
 #
 #      0                   1                   2                   3

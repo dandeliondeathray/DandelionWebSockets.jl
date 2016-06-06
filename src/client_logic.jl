@@ -2,6 +2,17 @@
 # The ClientLogic type is defined below entirely synchronously. It takes input via the `handle()`
 # function, which is defined for the different input types below. It performs internal logic and
 # produces a call to its outbound interface.
+#
+# The outbound interface is composed of two abstract types `AbstractHandlerTaskProxy` and
+# `AbstractWriterTaskProxy`. The concrete implementations will be `TaskProxy` objects, which will
+# store the calls (function and arguments) and call it on a target object in another coroutine. This
+# means that as long as the channels don't block, the logic will be performed concurrently with the
+# the callbacks and writing to the network. This is important because the logic might have to respond
+# to ping requests in a timely manner, which it might not be able to do if the callbacks block.
+#
+# For testing purposes the abstract outbound interface can be replaced with mock objects. This lets us
+# test the logic of the WebSocket synchronously, without any asynchronicity or concurrency
+# complicating things.
 
 export ClientLogic
 
@@ -9,52 +20,78 @@ export ClientLogic
 # These types define the input interface for the client logic.
 #
 
+"Abstract type for all commands sent to `ClientLogic`.
+
+These commands are sent as arguments to the different `handle` functions on `ClientLogic`. Each
+command represents an action on a WebSocket, such as sending a text frame, ping request, or closing
+the connection."
 abstract ClientLogicInput
 
+"Send a text frame, sent to `ClientLogic`."
 immutable SendTextFrame <: ClientLogicInput
 	data::UTF8String
+	# True if this is the final frame in the text message.
 	isfinal::Bool
+	# What WebSocket opcode should be used.
 	opcode::Opcode
 end
 
+"Send a binary frame, sent to `ClientLogic`."
 immutable SendBinaryFrame <: ClientLogicInput
 	data::Array{UInt8, 1}
+	# True if this is the final frame in the text message.
 	isfinal::Bool
+	# What WebSocket opcode should be used.
 	opcode::Opcode
 end
 
+"Send a ping request to the server."
 immutable ClientPingRequest  <: ClientLogicInput end
 
+"A frame was received from the server."
 immutable FrameFromServer <: ClientLogicInput
 	frame::Frame
 end
 
+"A request to close the WebSocket."
 immutable CloseRequest <: ClientLogicInput end
+
+"Used when the underlying network socket was closed."
 immutable SocketClosed <: ClientLogicInput end
 
 #
 # ClientLogic
 #
 
+"Enum value for the different states a WebSocket can be in."
 immutable SocketState
 	v::Symbol
 end
 
-# TODO: We never send a `state_connecting` callback here, because that should be done when we make
-#       the HTTP upgrade.
+# We never send a `state_connecting` callback here, because that should be done when we make the
+# HTTP upgrade.
 const STATE_CONNECTING     = SocketState(:connecting)
-# TODO: We should send a `state_open` callback, when the ClientLogic is created.
+# We send a `state_open` callback when the ClientLogic is created, when making the connection.
 const STATE_OPEN           = SocketState(:open)
 const STATE_CLOSING        = SocketState(:closing)
 const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
+"Type for the logic of a client WebSocket."
 type ClientLogic <: AbstractClientLogic
+	# A WebSocket can be in a number of states. See the `STATE_*` constants.
 	state::SocketState
+	# The object to which callbacks should be made. This proxy will make the callbacks
+	# asynchronously.
 	handler::AbstractHandlerTaskProxy
+	# A proxy for the stream where we write our frames.
 	writer::AbstractWriterTaskProxy
+	# Random number generation, used for masking frames.
 	rng::AbstractRNG
+	# Here we keep data collected when we get a message made up of multiple frames.
 	buffer::Vector{UInt8}
+	# This stores the type of the multiple frame message. This is the opcode of the first frame,
+	# as the following frames have the OPCODE_CONTINUATION opcode.
 	buffered_type::Opcode
 end
 
@@ -64,13 +101,17 @@ ClientLogic(state::SocketState,
 	        rng::AbstractRNG) =
 	ClientLogic(state, handler, writer, rng, Vector{UInt8}(), OPCODE_TEXT)
 
+"Send a frame to the other endpoint, using the supplied payload and opcode."
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
+	# We can't send any frames in CLOSING or CLOSED.
 	if logic.state != STATE_OPEN
 		return
 	end
 
+	# Each frame is masked with four random bytes.
 	mask    = rand(logic.rng, UInt8, 4)
 	masking!(payload, mask)
+
 	len::UInt64  = length(payload)
 	extended_len = 0
 
@@ -82,36 +123,45 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 		len = 127
 	end
 
+	# Create a Frame and write it to the underlying socket, via the `writer` proxy.
 	frame = Frame(
 		isfinal, false, false, false, opcode, true, len, extended_len, mask, payload)
 
 	write(logic.writer, frame)
 end
 
+"Send a single text frame."
 function handle(logic::ClientLogic, req::SendTextFrame)
 	payload = Vector{UInt8}(req.data)
 	send(logic, req.isfinal, req.opcode, payload)
 end
 
+"Send a single binary frame."
 handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
 # TODO: Sending ping requests.
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 # TODO: Handle pong replies, and disconnect when timing out.
 
+"Handle a user request to close the WebSocket."
 function handle(logic::ClientLogic, req::CloseRequest)
 	logic.state = STATE_CLOSING
+
+	# Send a close frame to the server
 	mask = rand(logic.rng, UInt8, 4)
 	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0,
 		mask, b"")
 	write(logic.writer, frame)
+
 	state_closing(logic.handler)
 end
 
+"The underlying socket was closed. This is sent by the reader."
 function handle(logic::ClientLogic, ::SocketClosed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)
 end
 
+"Handle a frame from the server."
 function handle(logic::ClientLogic, req::FrameFromServer)
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)

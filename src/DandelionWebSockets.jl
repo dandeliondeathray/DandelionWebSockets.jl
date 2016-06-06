@@ -21,11 +21,22 @@ abstract AbstractWSClient
 # events arrive from this WebSocket library.
 abstract WebSocketHandler
 
+"Handle a text frame."
 on_text(t::WebSocketHandler, ::UTF8String) = nothing
+
+"Handle a binary frame."
 on_binary(t::WebSocketHandler, ::Vector{UInt8}) = nothing
+
+"The WebSocket was closed."
 state_closed(t::WebSocketHandler) = nothing
+
+"The WebSocket is about to close."
 state_closing(t::WebSocketHandler) = nothing
+
+"The WebSocket is trying to connect."
 state_connecting(t::WebSocketHandler) = nothing
+
+"The WebSocket is open and ready to send and receive messages."
 state_open(t::WebSocketHandler) = nothing
 
 include("core.jl")
@@ -34,7 +45,6 @@ include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")
 include("handshake.jl")
-include("glue.jl")
 include("client.jl")
 include("reconnect.jl")
 include("mock.jl")
