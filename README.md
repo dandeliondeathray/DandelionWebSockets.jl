@@ -1,26 +1,47 @@
 # DandelionWebSockets
 DandelionWebSockets is a client side WebSocket package.
 
-## Preparation tasks
-What needs to be done before this is registered as a package?
-
-- Wait for Requests.jl to make a release with the HTTP upgrade feature.
-    + Update REQUIRE to reflect the new version of Requests.jl.
-- Documentation:
-    + Design
-    + Usage
-    + Code
-- Refine the public interface.
-- Missing state callbacks (open, connecting).
-- Sending ping frames, ensuring we get a reply.
-- Improve error handling.
-- Set version (use semantic versioning?)
-- Use the BufferedStreams package instead of our own TLSBufferedIO, if possible.
-- Wait for Requests.jl to make a release with the HTTP upgrade feature.
-    + Update REQUIRE to reflect the new version of Requests.jl.
-
-Completed preparation tasks:
-
-- Rename to DandelionWebSockets.
-
 ## Usage
+Create a subtype of `WebSocketHandler`, with callbacks for WebSocket events. Create a `WSClient` and
+connect to a WebSocket server.
+
+```
+type MyHandler <: WebSocketHandler
+    client::WSClient
+end
+
+# These are called when you get a text or binary frame, respectively.
+on_text(handler::MyHandler, text::UTF8String) = ...
+on_binary(handler::MyHandler, data::Vector{UInt8}) = ...
+
+# These are called when the state of the WebSocket changes.
+state_connecting(handler::MyHandler) = ...
+state_open(handler::MyHandler)       = ...
+state_closing(handler::MyHandler)    = ...
+state_closed(handler::MyHandler)     = ...
+```
+
+The following functions are available on `WSClient`, to send frames to the server.
+
+```
+send_text(c::WSClient, s::UTF8String)
+send_binary(c::WSClient, data::Vector{UInt8})
+
+# Close the WebSocket.
+stop(c::WSClient)
+```
+
+To connect to a WebSocket server, call
+`wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)`.
+
+## Needs work
+
+- Implement regular pings, to ensure the connection is up.
+- Validate HTTP Upgrade to WebSocket
+- Wait for Requests.jl next release.
+  This package needs a HTTP Upgrade feature of Requests.jl, which is only present in master, not in
+  the release 0.3.7.
+- Ability to send multi-frame messages.
+
+## License
+DandelionWebSockets is licensed under the MIT license.
