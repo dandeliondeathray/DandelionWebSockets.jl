@@ -52,8 +52,8 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # which should contain a computed value.
     if !validate(result)
         println("Could not validate HTTP Upgrade")
-        #state_closed(handler)
-        #return false
+        state_closed(handler)
+        return false
     end
 
     # Each `TaskProxy` used here acts as a proxy for another object. When you call some predefined
