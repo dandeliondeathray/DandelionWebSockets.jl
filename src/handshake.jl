@@ -77,10 +77,9 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
         stream = TLSBufferedIO(stream)
     end
 
-    # TODO: Headers are not returned yet. This prevents us from actually validating the connection.
     # TODO: Any body unintentionally read during the HTTP parsing is not returned, which means that
     #       if any such bytes were read, then we will not be able to correctly read the first frame.
-    HandshakeResult(expected_accept, stream, Dict(), b"")
+    HandshakeResult(expected_accept, stream, result.response.headers, b"")
 end
 
 "Convert `ws://` or `wss://` URIs to 'http://` or `https://`."
