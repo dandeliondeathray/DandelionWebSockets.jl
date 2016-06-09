@@ -37,7 +37,6 @@ To connect to a WebSocket server, call
 ## Needs work
 
 - Implement regular pings, to ensure the connection is up.
-- Validate HTTP Upgrade to WebSocket
 - Wait for Requests.jl next release.
   This package needs a HTTP Upgrade feature of Requests.jl, which is only present in master, not in
   the release 0.3.7.
