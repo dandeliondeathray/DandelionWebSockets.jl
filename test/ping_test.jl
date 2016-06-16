@@ -6,7 +6,7 @@
 
 import DandelionWebSockets: ClientPingRequest, handle, pong_missed
 
-type FakeLogic <: AbstractClientLogic
+type FakeLogic <: AbstractClientTaskProxy
     ping_requests::Int
     pongs_missed::Int
 

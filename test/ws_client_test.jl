@@ -61,7 +61,8 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -73,6 +74,8 @@ facts("WSClient") do
 
         @expect mock_client_logic_proxy attach(mock_client_logic_proxy, TypeMatcher(AbstractClientLogic))
         @expect mock_client_logic_proxy start(mock_client_logic_proxy)
+
+        @expect mock_ponger attach(mock_ponger, mock_client_logic_proxy)
 
         @expect mock_writer_proxy attach(mock_writer_proxy, stream)
         @expect mock_writer_proxy start(mock_writer_proxy)
@@ -86,6 +89,7 @@ facts("WSClient") do
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
     end
 
     context("Connection fails") do
@@ -101,7 +105,8 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -114,6 +119,7 @@ facts("WSClient") do
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
     end
 
     context("Connection succeeds, but Accept value is wrong") do
@@ -133,7 +139,8 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -146,5 +153,6 @@ facts("WSClient") do
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
     end
 end

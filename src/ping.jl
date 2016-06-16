@@ -4,7 +4,7 @@ export Pinger, stop,
 type Pinger <: AbstractPinger
     timer::Timer
 
-    function Pinger(logic::AbstractClientLogic, interval::Float64)
+    function Pinger(logic::AbstractClientTaskProxy, interval::Float64)
         send_ping = x -> handle(logic, ClientPingRequest())
         new(Timer(send_ping, interval, interval))
     end
@@ -24,7 +24,7 @@ function start_timer_(p::Ponger)
     p.timer = Nullable{Timer}(Timer(p.pong_missed, p.timeout, p.timeout))
 end
 
-function attach(ponger::Ponger, logic::AbstractClientLogic)
+function attach(ponger::Ponger, logic::AbstractClientTaskProxy)
     ponger.pong_missed = x -> pong_missed(logic)
     start_timer_(ponger)
 end

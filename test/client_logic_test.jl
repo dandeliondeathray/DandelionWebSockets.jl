@@ -1,3 +1,5 @@
+import DandelionWebSockets: AbstractPonger, pong_received, attach
+
 immutable LogicTestCase
 	description::AbstractString
 	initial_state::DandelionWebSockets.SocketState
@@ -34,6 +36,9 @@ mock_handler = MockHandlerTaskProxy()
 mock_writer = MockWriterTaskProxy()
 @mockfunction(mock_writer, write(::MockWriterTaskProxy, ::Frame))
 
+@mock MockPonger AbstractPonger
+mock_ponger = MockPonger()
+@mockfunction mock_ponger pong_received(::MockPonger) attach(::MockPonger, ::AbstractClientTaskProxy)
 
 logic_tests = [
 
@@ -105,6 +110,15 @@ logic_tests = [
 		                  DandelionWebSockets.FrameFromServer(frame_bin_final)],
 		handler_calls  = [:(@expect mock_handler on_binary(mock_handler, b"Hello"))],
 		writer_calls   = []),
+
+	LogicTestCase(
+		description    = "Pong responses are propagated to Ponger",
+		initial_state  = DandelionWebSockets.STATE_OPEN,
+		rng            = FakeRNG(UInt8),
+		input          = [DandelionWebSockets.FrameFromServer(server_pong_frame)],
+		handler_calls  = [:(@expect mock_ponger pong_received(mock_ponger))],
+		writer_calls   = []),
+
 
 	#
 	# Client to server tests
@@ -236,7 +250,11 @@ facts("ClientLogic") do
 			#mock_handler = MockHandlerTaskProxy(test.handler_calls)
 			#mock_writer  = MockWriterTaskProxy(test.writer_calls)
 
-			logic = ClientLogic(test.initial_state, mock_handler, mock_writer, test.rng)
+			logic = ClientLogic(test.initial_state,
+				                mock_handler,
+				                mock_writer,
+				                test.rng,
+				                mock_ponger)
 
 			for call in test.handler_calls
 				eval(call)
@@ -253,6 +271,7 @@ facts("ClientLogic") do
 
 			check(mock_handler)
 			check(mock_writer)
+			check(mock_ponger)
 		end
 	end
 
