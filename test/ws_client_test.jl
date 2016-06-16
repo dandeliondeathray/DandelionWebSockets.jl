@@ -1,5 +1,6 @@
 import DandelionWebSockets: HandshakeResult, HandshakeFailure,
-    AbstractServerReader, start_reader, stop, attach, start
+    AbstractServerReader, start_reader, stop, attach, start,
+    AbstractPinger, CloseRequest
 
 @mock Mocker WebSocketHandler
 mocker = Mocker()
@@ -21,7 +22,8 @@ mock_writer_proxy = MockWriterProxy()
 mock_client_logic_proxy = MockClientLogicProxy()
 @mockfunction(mock_client_logic_proxy,
     start(::MockClientLogicProxy),
-    attach(::MockClientLogicProxy, ::AbstractClientLogic))
+    attach(::MockClientLogicProxy, ::AbstractClientLogic),
+    handle(::MockClientLogicProxy, ::CloseRequest))
 
 @mock MockHandlerProxy AbstractHandlerTaskProxy
 mock_handler_proxy = MockHandlerProxy()
@@ -36,6 +38,10 @@ mock_server_reader = MockServerReader()
 @mockfunction(mock_server_reader,
     start_reader(::IO, ::MockClientLogicProxy),
     stop(::MockServerReader))
+
+@mock MockPinger AbstractPinger
+mock_pinger = MockPinger()
+@mockfunction mock_pinger attach(::MockPinger, ::AbstractClientTaskProxy) stop(::MockPinger)
 
 accept_field = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 headers = Dict(
@@ -61,7 +67,9 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger,
+            pinger=mock_pinger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -74,6 +82,9 @@ facts("WSClient") do
         @expect mock_client_logic_proxy attach(mock_client_logic_proxy, TypeMatcher(AbstractClientLogic))
         @expect mock_client_logic_proxy start(mock_client_logic_proxy)
 
+        @expect mock_ponger attach(mock_ponger, mock_client_logic_proxy)
+        @expect mock_pinger attach(mock_pinger, mock_client_logic_proxy)
+
         @expect mock_writer_proxy attach(mock_writer_proxy, stream)
         @expect mock_writer_proxy start(mock_writer_proxy)
 
@@ -81,11 +92,17 @@ facts("WSClient") do
 
         @fact wsconnect(client, uri, mocker) --> true
 
+        @expect mock_client_logic_proxy handle(mock_client_logic_proxy, TypeMatcher(CloseRequest))
+
+        stop(client)
+
         check(mocker)
         check(mock_handler_proxy)
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
+        check(mock_pinger)
     end
 
     context("Connection fails") do
@@ -101,7 +118,9 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger,
+            pinger=mock_pinger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -114,6 +133,8 @@ facts("WSClient") do
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
+        check(mock_pinger)
     end
 
     context("Connection succeeds, but Accept value is wrong") do
@@ -133,7 +154,9 @@ facts("WSClient") do
             rng=fake_rng,
             writer=mock_writer_proxy,
             handler_proxy=mock_handler_proxy,
-            logic_proxy=mock_client_logic_proxy)
+            logic_proxy=mock_client_logic_proxy,
+            ponger=mock_ponger,
+            pinger=mock_pinger)
 
         @expect mocker state_connecting(mocker)
         @expect mocker handshake(fake_rng, uri) handshake_result
@@ -146,5 +169,7 @@ facts("WSClient") do
         check(mock_client_logic_proxy)
         check(mock_writer_proxy)
         check(mock_server_reader)
+        check(mock_ponger)
+        check(mock_pinger)
     end
 end

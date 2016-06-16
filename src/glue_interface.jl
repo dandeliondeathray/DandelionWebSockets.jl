@@ -6,3 +6,5 @@ abstract AbstractClientTaskProxy <: TaskProxy
 abstract AbstractWriterTaskProxy <: TaskProxy
 
 abstract AbstractClientLogic
+abstract AbstractPinger
+abstract AbstractPonger

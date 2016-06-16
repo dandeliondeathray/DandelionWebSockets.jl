@@ -59,6 +59,9 @@ immutable CloseRequest <: ClientLogicInput end
 "Used when the underlying network socket was closed."
 immutable SocketClosed <: ClientLogicInput end
 
+"A pong reply was expected, but never received."
+immutable PongMissed <: ClientLogicInput end
+
 #
 # ClientLogic
 #
@@ -88,6 +91,8 @@ type ClientLogic <: AbstractClientLogic
 	writer::AbstractWriterTaskProxy
 	# Random number generation, used for masking frames.
 	rng::AbstractRNG
+	# Keeps track of when a pong is expected to be received from the server.
+	ponger::AbstractPonger
 	# Here we keep data collected when we get a message made up of multiple frames.
 	buffer::Vector{UInt8}
 	# This stores the type of the multiple frame message. This is the opcode of the first frame,
@@ -98,8 +103,9 @@ end
 ClientLogic(state::SocketState,
 			handler::AbstractHandlerTaskProxy,
 			writer::AbstractWriterTaskProxy,
-	        rng::AbstractRNG) =
-	ClientLogic(state, handler, writer, rng, Vector{UInt8}(), OPCODE_TEXT)
+	        rng::AbstractRNG,
+	        ponger::AbstractPonger) =
+	ClientLogic(state, handler, writer, rng, ponger, Vector{UInt8}(), OPCODE_TEXT)
 
 "Send a frame to the other endpoint, using the supplied payload and opcode."
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
@@ -138,9 +144,18 @@ end
 
 "Send a single binary frame."
 handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
-# TODO: Sending ping requests.
-handle(logic::ClientLogic, req::ClientPingRequest) = nothing
-# TODO: Handle pong replies, and disconnect when timing out.
+
+function handle(logic::ClientLogic, req::ClientPingRequest)
+	if logic.state == STATE_OPEN
+		ping_sent(logic.ponger)
+		send(logic, true, OPCODE_PING, b"")
+	end
+end
+
+function handle(logic::ClientLogic, ::PongMissed)
+	logic.state = STATE_CLOSED
+	state_closed(logic.handler)
+end
 
 "Handle a user request to close the WebSocket."
 function handle(logic::ClientLogic, req::CloseRequest)
@@ -167,6 +182,8 @@ function handle(logic::ClientLogic, req::FrameFromServer)
 		handle_close(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_PING
 		handle_ping(logic, req.frame.payload)
+	elseif req.frame.opcode == OPCODE_PONG
+		handle_pong(logic, req.frame.payload)
 	elseif req.frame.opcode == OPCODE_TEXT
 		handle_text(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_BINARY
@@ -197,6 +214,10 @@ end
 
 function handle_ping(logic::ClientLogic, payload::Vector{UInt8})
 	send(logic, true, OPCODE_PONG, payload)
+end
+
+function handle_pong(logic::ClientLogic, ::Vector{UInt8})
+	pong_received(logic.ponger)
 end
 
 function handle_text(logic::ClientLogic, frame::Frame)

@@ -60,6 +60,8 @@ server_close_frame = Frame(true, OPCODE_CLOSE, false, 0, 0, nomask, b"")
 client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, mask, b"")
 server_ping_frame = Frame(true, OPCODE_PING, false, 0, 0, nomask, b"")
 client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, mask, b"")
+server_pong_frame = Frame(true, OPCODE_PONG, false, 0, 0, nomask, b"")
+client_ping_frame = Frame(true, OPCODE_PING, true, 0, 0, mask, b"")
 server_ping_frame_w_pay = Frame(true, OPCODE_PING, false, 5, 0, nomask, b"Hello")
 client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
 
