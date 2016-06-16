@@ -142,6 +142,8 @@ handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, re
 handle(logic::ClientLogic, req::ClientPingRequest) = nothing
 # TODO: Handle pong replies, and disconnect when timing out.
 
+pong_missed(logic::ClientLogic) = nothing
+
 "Handle a user request to close the WebSocket."
 function handle(logic::ClientLogic, req::CloseRequest)
 	logic.state = STATE_CLOSING
