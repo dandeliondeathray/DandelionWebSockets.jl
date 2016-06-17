@@ -25,7 +25,7 @@ function start_timer_(p::Ponger)
 end
 
 function attach(ponger::Ponger, logic::AbstractClientTaskProxy)
-    ponger.pong_missed = x -> pong_missed(logic)
+    ponger.pong_missed = x -> handle(logic, PongMissed())
     start_timer_(ponger)
 end
 

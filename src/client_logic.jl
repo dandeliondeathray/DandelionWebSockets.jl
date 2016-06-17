@@ -59,6 +59,9 @@ immutable CloseRequest <: ClientLogicInput end
 "Used when the underlying network socket was closed."
 immutable SocketClosed <: ClientLogicInput end
 
+"A pong reply was expected, but never received."
+immutable PongMissed <: ClientLogicInput end
+
 #
 # ClientLogic
 #
@@ -141,11 +144,12 @@ end
 
 "Send a single binary frame."
 handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
-# TODO: Sending ping requests.
-handle(logic::ClientLogic, req::ClientPingRequest) = nothing
-# TODO: Handle pong replies, and disconnect when timing out.
 
-pong_missed(logic::ClientLogic) = nothing
+handle(logic::ClientLogic, req::ClientPingRequest) = send(logic, true, OPCODE_PING, b"")
+function handle(logic::ClientLogic, ::PongMissed)
+	logic.state = STATE_CLOSED
+	state_closed(logic.handler)
+end
 
 "Handle a user request to close the WebSocket."
 function handle(logic::ClientLogic, req::CloseRequest)

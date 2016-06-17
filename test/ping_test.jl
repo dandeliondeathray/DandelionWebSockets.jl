@@ -4,7 +4,7 @@
 # is received, and Ponger in return tells the logic when a pong has not been received in the
 # expected timeframe.
 
-import DandelionWebSockets: ClientPingRequest, handle, pong_missed
+import DandelionWebSockets: ClientPingRequest, handle, PongMissed
 
 type FakeLogic <: AbstractClientTaskProxy
     ping_requests::Int
@@ -14,7 +14,7 @@ type FakeLogic <: AbstractClientTaskProxy
 end
 
 handle(logic::FakeLogic, ::ClientPingRequest) = logic.ping_requests += 1
-pong_missed(logic::FakeLogic) = logic.pongs_missed += 1
+handle(logic::FakeLogic, ::PongMissed) = logic.pongs_missed += 1
 
 facts("Pinger/Ponger") do
     context("Sending pings") do

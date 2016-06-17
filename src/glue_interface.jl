@@ -8,5 +8,3 @@ abstract AbstractWriterTaskProxy <: TaskProxy
 abstract AbstractClientLogic
 abstract AbstractPinger
 abstract AbstractPonger
-
-pong_missed(l::AbstractClientLogic) = error("pong_missed undefined for $(typeof(l))")
