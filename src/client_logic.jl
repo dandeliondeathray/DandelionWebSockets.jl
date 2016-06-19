@@ -145,7 +145,13 @@ end
 "Send a single binary frame."
 handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
 
-handle(logic::ClientLogic, req::ClientPingRequest) = send(logic, true, OPCODE_PING, b"")
+function handle(logic::ClientLogic, req::ClientPingRequest)
+	if logic.state == STATE_OPEN
+		ping_sent(logic.ponger)
+		send(logic, true, OPCODE_PING, b"")
+	end
+end
+
 function handle(logic::ClientLogic, ::PongMissed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)

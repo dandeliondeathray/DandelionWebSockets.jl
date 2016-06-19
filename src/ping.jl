@@ -1,5 +1,5 @@
 export Pinger, stop,
-       Ponger, pong_received, attach
+       Ponger, pong_received, attach, ping_sent
 
 type Pinger <: AbstractPinger
     timer::Timer
@@ -14,28 +14,27 @@ stop(p::Pinger) = close(p.timer)
 
 type Ponger <: AbstractPonger
     timeout::Float64
-    timer::Nullable{Timer}
     pong_missed::Function
+    pongs_received::UInt64
 
-    Ponger(timeout::Float64) = new(timeout, Nullable{Timer}(), x -> nothing)
+    Ponger(timeout::Float64) = new(timeout, x -> nothing, 0)
 end
 
 function start_timer_(p::Ponger)
     p.timer = Nullable{Timer}(Timer(p.pong_missed, p.timeout, p.timeout))
 end
 
-function attach(ponger::Ponger, logic::AbstractClientTaskProxy)
-    ponger.pong_missed = x -> handle(logic, PongMissed())
-    start_timer_(ponger)
-end
+attach(ponger::Ponger, logic::AbstractClientTaskProxy) =
+    ponger.pong_missed = () -> handle(logic, PongMissed())
 
-function pong_received(ponger::Ponger)
-    stop(ponger)
-    start_timer_(ponger)
-end
+pong_received(ponger::Ponger) = ponger.pongs_received += 1
 
-function stop(p::Ponger)
-    if !isnull(p.timer)
-        close(get(p.timer))
+function ping_sent(ponger::Ponger)
+    pongs_received_at_send = ponger.pongs_received
+    fun = x -> begin
+        if ponger.pongs_received == pongs_received_at_send
+            ponger.pong_missed()
+        end
     end
+    Timer(fun, ponger.timeout)
 end

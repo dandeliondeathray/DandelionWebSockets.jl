@@ -39,13 +39,28 @@ facts("Pinger/Ponger") do
         ponger = Ponger(timeout)
         attach(ponger, logic)
 
-        sleep(3 * timeout + 0.02)
-        stop(ponger)
+        for i in range(1, 3)
+            ping_sent(ponger)
+            sleep(timeout + 0.02)
+        end
 
         @fact logic.pongs_missed --> 3
 
         sleep(3 * timeout)
         @fact logic.pongs_missed --> 3
+    end
+
+    context("Only expect a pong after a ping") do
+        logic = FakeLogic()
+        timeout = 0.1
+
+        ponger = Ponger(timeout)
+        attach(ponger, logic)
+
+        ping_sent(ponger)
+        sleep(3 * timeout + 0.02)
+
+        @fact logic.pongs_missed --> 1
     end
 
     context("Receiving pongs") do
@@ -56,11 +71,11 @@ facts("Pinger/Ponger") do
         attach(ponger, logic)
 
         for i in range(1, 5)
+            ping_sent(ponger)
             sleep(timeout / 2.0)
             pong_received(ponger)
         end
 
-        stop(ponger)
         @fact logic.pongs_missed --> 0
     end
 end

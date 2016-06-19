@@ -1,5 +1,5 @@
 import DandelionWebSockets: AbstractPonger, pong_received, attach, ClientPingRequest,
-                            FrameFromServer, SendTextFrame
+                            FrameFromServer, SendTextFrame, ping_sent
 
 immutable LogicTestCase
 	description::AbstractString
@@ -39,7 +39,7 @@ mock_writer = MockWriterTaskProxy()
 
 @mock MockPonger AbstractPonger
 mock_ponger = MockPonger()
-@mockfunction mock_ponger pong_received(::MockPonger) attach(::MockPonger, ::AbstractClientTaskProxy)
+@mockfunction mock_ponger pong_received(::MockPonger) attach(::MockPonger, ::AbstractClientTaskProxy) ping_sent(::MockPonger)
 
 logic_tests = [
 
@@ -203,7 +203,7 @@ logic_tests = [
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(mask),
 		input          = [ClientPingRequest()],
-		handler_calls  = [],
+		handler_calls  = [:(@expect mock_ponger ping_sent(mock_ponger))],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, client_ping_frame))]),
 
 	LogicTestCase(
