@@ -20,7 +20,8 @@ facts("Pinger/Ponger") do
     context("Sending pings") do
         logic = FakeLogic()
         interval = 0.1
-        pinger = Pinger(logic, interval)
+        pinger = Pinger(interval)
+        attach(pinger, logic)
 
         sleep(3 * interval + 0.02)
         stop(pinger)

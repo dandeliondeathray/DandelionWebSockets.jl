@@ -2,15 +2,25 @@ export Pinger, stop,
        Ponger, pong_received, attach, ping_sent
 
 type Pinger <: AbstractPinger
-    timer::Timer
+    timer::Nullable{Timer}
+    interval::Float64
 
-    function Pinger(logic::AbstractClientTaskProxy, interval::Float64)
-        send_ping = x -> handle(logic, ClientPingRequest())
-        new(Timer(send_ping, interval, interval))
+    function Pinger(interval::Float64)
+        new(Nullable{Timer}(), interval)
     end
 end
 
-stop(p::Pinger) = close(p.timer)
+function attach(pinger::Pinger, logic::AbstractClientTaskProxy)
+    send_ping = x -> handle(logic, ClientPingRequest())
+    pinger.timer = Nullable{Timer}(Timer(send_ping, pinger.interval, pinger.interval))
+end
+
+function stop(p::Pinger)
+    if !isnull(p.timer)
+        close(get(p.timer))
+        p.timer = Nullable{Timer}()
+    end
+end
 
 type Ponger <: AbstractPonger
     timeout::Float64

@@ -1,7 +1,6 @@
 import DandelionWebSockets: on_text, on_binary,
-                            state_connecting, state_open, state_closing, state_closed
-
-
+                            state_connecting, state_open, state_closing, state_closed,
+                            FrameFromServer
 
 accept_field = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 headers = Dict(
@@ -16,10 +15,11 @@ type TestHandler <: WebSocketHandler
     stop_chan::Channel{Symbol}
     close_on_message::Bool # If true, initiates a closing handshake on the first message.
     client::WSClient
+    is_closed::Bool
 
-    TestHandler(client::WSClient) = new(Vector{UTF8String}(), [], Channel{Symbol}(5), false, client)
+    TestHandler(client::WSClient) = new(Vector{UTF8String}(), [], Channel{Symbol}(5), false, client, false)
     TestHandler(client::WSClient, close_on_message::Bool) =
-        new(Vector{UTF8String}(), [], Channel{Symbol}(5), close_on_message, client)
+        new(Vector{UTF8String}(), [], Channel{Symbol}(5), close_on_message, client, false)
 end
 
 function on_text(h::TestHandler, text::UTF8String)
@@ -40,7 +40,10 @@ end
 state_open(h::TestHandler) = nothing
 state_connecting(h::TestHandler) = nothing
 state_closing(h::TestHandler) = nothing
-state_closed(h::TestHandler) = put!(h.stop_chan, :stop)
+function state_closed(h::TestHandler)
+    h.is_closed = true
+    put!(h.stop_chan, :stop)
+end
 
 wait(t::TestHandler) = take!(t.stop_chan)
 function expect_text(t::TestHandler, expected::UTF8String)
@@ -133,9 +136,9 @@ facts("Integration test") do
 
         @fact handshake_uri --> expected_uri
 
-        # Write a message "Hello"
+        # Send a message "Hello" from client to server.
         send_text(client, utf8("Hello"))
-        # Write a message "Hello"
+        # Send a message "world" from client to server.
         send_text(client, utf8("world"))
 
         # Sleep for a few seconds to let all the messages be sent and received
@@ -149,6 +152,52 @@ facts("Integration test") do
 
         # We expect one close frame and two message "Hello" and "world" to have been sent.
         @fact length(stream.writing) --> 3
+    end
+
+    context("Client is disconnected when no pongs are received") do
+        # test_frame1 is a complete text message with payload "Hello".
+        # test_frame2 and test_frame3 are two fragments that together become a whole text message
+        # also with payload "Hello". frame_bin_1 is a binary message.
+        stream = FakeFrameStream(Vector{Frame}(), Vector{Frame}(), false)
+
+        body = Vector{UInt8}()
+        handshake_result = DandelionWebSockets.HandshakeResult(
+            accept_field, # This is the accept value we expect, and matches that in the headers dict.
+            stream,
+            headers,
+            body)
+
+        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
+
+        pong_timeout = 0.2
+        ping_interval = 0.4
+        client = WSClient(; do_handshake=do_handshake,
+                            ponger=Ponger(pong_timeout),
+                            pinger=Pinger(ping_interval))
+        handler = TestHandler(client)
+        wsconnect(client, uri, handler)
+
+        # Send two pings 0.4 seconds apart. The first receives a pong 0.1 seconds after it's sent.
+        # The other ping never receives a pong reply. We expect the connection to close 0.2 seconds
+        # after the second ping was sent, because pong_timeout = 0.2 above.
+        handle(client.logic_proxy, ClientPingRequest())
+        sleep(pong_timeout / 2.0)
+
+        # Bypass network and inject a pong directly into the client logic, because it's much
+        # simpler.
+        handle(client.logic_proxy, FrameFromServer(server_pong_frame))
+
+        sleep(0.2)
+
+        handle(client.logic_proxy, ClientPingRequest())
+        sleep(pong_timeout / 2.0)
+        handle(client.logic_proxy, FrameFromServer(server_pong_frame))
+
+        # Now we send a ping, but never injecting a pong. This should cause the connection to close.
+        handle(client.logic_proxy, ClientPingRequest())
+        sleep(pong_timeout * 2.0)
+
+        @fact handler.is_closed --> true
     end
 
     context("Check that default callbacks do nothing") do

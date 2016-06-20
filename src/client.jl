@@ -32,6 +32,8 @@ type WSClient <: AbstractWSClient
     rng::AbstractRNG
     # `ponger` keeps track of when a pong response is expected from the server.
     ponger::AbstractPonger
+    # `pinger` requests that the logic send ping frames to the server at regular intervals.
+    pinger::AbstractPinger
 
     function WSClient(;
                       do_handshake=DandelionWebSockets.do_handshake,
@@ -39,8 +41,9 @@ type WSClient <: AbstractWSClient
                       writer::AbstractWriterTaskProxy=WriterTaskProxy(),
                       handler_proxy::AbstractHandlerTaskProxy=HandlerTaskProxy(),
                       logic_proxy::AbstractClientTaskProxy=ClientLogicTaskProxy(),
-                      ponger::AbstractPonger=Ponger(3.0))
-        new(writer, handler_proxy, logic_proxy, Nullable{ServerReader}(), do_handshake, rng, ponger)
+                      ponger::AbstractPonger=Ponger(2.0),
+                      pinger::AbstractPinger=Pinger(5.0))
+        new(writer, handler_proxy, logic_proxy, Nullable{ServerReader}(), do_handshake, rng, ponger, pinger)
     end
 end
 show(io::IO, c::WSClient) =
@@ -88,6 +91,9 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # `Ponger` requires a logic object it can alert when a pong request hasn't been received within
     # the expected time frame. This attaches that logic object to the ponger.
     attach(client.ponger, client.logic_proxy)
+
+    # `Pinger` sends ping requests at regular intervals.
+    attach(client.pinger, client.logic_proxy)
 
     # The target for `reader` is the same stream we're writing to.
     client.reader = Nullable{ServerReader}(
