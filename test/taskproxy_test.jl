@@ -94,4 +94,17 @@ facts("Task proxy") do
         @fact_throws attach(proxy, t) ErrorException
 
     end
+
+    context("Attaching twice after a stop") do
+        t = MockTaskProxyTarget()
+        proxy = MockTaskProxy()
+
+        attach(proxy, t)
+        @fact is_set(proxy) --> true
+
+        stop(proxy)
+
+        attach(proxy, t)
+        foo(proxy)
+    end
 end

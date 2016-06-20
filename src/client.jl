@@ -82,9 +82,22 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # the function call, so that the `handler_proxy` coroutine will make the actual callback.
     state_open(client.handler_proxy)
 
+    # This function stops all the task proxies, effectively cleaning up the WSClient. This is
+    # necessary when one wants to reconnect.
+    cleanup = () -> begin
+        stop(client.writer)
+        stop(client.handler_proxy)
+        stop(client.logic_proxy)
+        stop(client.pinger)
+        if !isnull(client.reader)
+            stop(get(client.reader))
+        end
+    end
+
     # `ClientLogic` starts in the `STATE_OPEN` state, because it isn't responsible for making
     # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
-    logic = ClientLogic(STATE_OPEN, client.handler_proxy, client.writer, client.rng, client.ponger)
+    logic = ClientLogic(STATE_OPEN, client.handler_proxy, client.writer, client.rng, client.ponger,
+                        cleanup)
     attach(client.logic_proxy, logic)
     start(client.logic_proxy)
 

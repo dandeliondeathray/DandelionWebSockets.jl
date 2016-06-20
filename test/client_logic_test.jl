@@ -10,6 +10,7 @@ immutable LogicTestCase
 	handler_calls::Vector{Any}
 	writer_calls::Vector{Any}
 	final_state::DandelionWebSockets.SocketState
+	client_cleanup_called::Int
 end
 
 function LogicTestCase(;
@@ -19,9 +20,10 @@ function LogicTestCase(;
 	input=[],
 	handler_calls=[],
 	writer_calls=[],
-	final_state=initial_state)
+	final_state=initial_state,
+	client_cleanup_called=0)
 
-	LogicTestCase(description, initial_state, rng, input, handler_calls, writer_calls, final_state)
+	LogicTestCase(description, initial_state, rng, input, handler_calls, writer_calls, final_state, client_cleanup_called)
 end
 
 
@@ -253,7 +255,8 @@ logic_tests = [
 		input          = [DandelionWebSockets.SocketClosed()],
 		handler_calls  = [:(@expect(mock_handler, state_closed(mock_handler)))],
 		writer_calls   = [],
-		final_state    = DandelionWebSockets.STATE_CLOSED),
+		final_state    = DandelionWebSockets.STATE_CLOSED,
+		client_cleanup_called = 1),
 
 	LogicTestCase(
 		description    = "Close connection on a missing ping",
@@ -262,7 +265,8 @@ logic_tests = [
 		input          = [PongMissed()],
 		handler_calls  = [:(@expect(mock_handler, state_closed(mock_handler)))],
 		writer_calls   = [],
-		final_state    = DandelionWebSockets.STATE_CLOSED),
+		final_state    = DandelionWebSockets.STATE_CLOSED,
+		client_cleanup_called = 1),
 
 ]
 
@@ -276,12 +280,15 @@ facts("ClientLogic") do
 		context(test.description) do
 			#mock_handler = MockHandlerTaskProxy(test.handler_calls)
 			#mock_writer  = MockWriterTaskProxy(test.writer_calls)
+			client_cleanup_called = 0
+			client_cleanup = () -> client_cleanup_called += 1
 
 			logic = ClientLogic(test.initial_state,
 				                mock_handler,
 				                mock_writer,
 				                test.rng,
-				                mock_ponger)
+				                mock_ponger,
+				                client_cleanup)
 
 			for call in test.handler_calls
 				eval(call)
@@ -295,6 +302,7 @@ facts("ClientLogic") do
 			end
 
 			@fact logic.state --> test.final_state
+			@fact client_cleanup_called --> test.client_cleanup_called
 
 			check(mock_handler)
 			check(mock_writer)
