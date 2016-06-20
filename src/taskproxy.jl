@@ -47,7 +47,10 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
                 @async do_proxy(p, target)
             end
 
-            stop(h::$proxy_type) = close(h.chan)
+            function stop(h::$proxy_type)
+                close(h.chan)
+                h.target = Nullable{$target_type}()
+            end
 
             is_set(p::$proxy_type) = !isnull(p.target)
 

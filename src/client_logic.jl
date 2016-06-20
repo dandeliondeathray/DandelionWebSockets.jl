@@ -98,14 +98,17 @@ type ClientLogic <: AbstractClientLogic
 	# This stores the type of the multiple frame message. This is the opcode of the first frame,
 	# as the following frames have the OPCODE_CONTINUATION opcode.
 	buffered_type::Opcode
+	# This function cleans up the client when the connection is closed.
+	client_cleanup::Function
 end
 
 ClientLogic(state::SocketState,
 			handler::AbstractHandlerTaskProxy,
 			writer::AbstractWriterTaskProxy,
 	        rng::AbstractRNG,
-	        ponger::AbstractPonger) =
-	ClientLogic(state, handler, writer, rng, ponger, Vector{UInt8}(), OPCODE_TEXT)
+	        ponger::AbstractPonger,
+	        client_cleanup::Function) =
+	ClientLogic(state, handler, writer, rng, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
 
 "Send a frame to the other endpoint, using the supplied payload and opcode."
 function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
@@ -155,6 +158,7 @@ end
 function handle(logic::ClientLogic, ::PongMissed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)
+	logic.client_cleanup()
 end
 
 "Handle a user request to close the WebSocket."
@@ -174,6 +178,7 @@ end
 function handle(logic::ClientLogic, ::SocketClosed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)
+	logic.client_cleanup()
 end
 
 "Handle a frame from the server."
