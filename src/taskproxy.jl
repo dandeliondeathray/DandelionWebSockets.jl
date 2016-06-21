@@ -57,7 +57,7 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
             "Set the target object for an empty task proxy."
             function attach(p::$proxy_type, target::$target_type)
                 !isnull(p.target) && error("Target already set")
-
+                p.chan = Channel{ProxyCall}(32)
                 p.target = Nullable{$target_type}(target)
             end
         end

@@ -105,5 +105,6 @@ facts("Task proxy") do
         stop(proxy)
 
         attach(proxy, t)
+        foo(proxy)
     end
 end
