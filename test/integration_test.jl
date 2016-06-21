@@ -107,6 +107,48 @@ facts("Integration test") do
         @fact length(stream.writing) --> 3
     end
 
+    context("Reconnect the client") do
+        # test_frame1 is a complete text message with payload "Hello".
+        # test_frame2 and test_frame3 are two fragments that together become a whole text message
+        # also with payload "Hello". frame_bin_1 is a binary message.
+        server_to_client_frames = [test_frame1, test_frame2, test_frame3,
+                                   frame_bin_1, server_close_frame]
+        stream = FakeFrameStream(server_to_client_frames, Vector{Frame}(), true)
+
+        body = Vector{UInt8}()
+        handshake_result = DandelionWebSockets.HandshakeResult(
+            accept_field, # This is the accept value we expect, and matches that in the headers dict.
+            stream,
+            headers,
+            body)
+
+        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
+
+        client = WSClient(; do_handshake=do_handshake)
+        handler = TestHandler(client)
+        wsconnect(client, uri, handler)
+
+        # Write a message "Hello"
+        send_text(client, utf8("Hello"))
+
+        # Sleep for a few seconds to let all the messages be sent and received
+        sleep(2.0)
+        # Wait for the handler to receive close confirmation.
+        wait(handler)
+
+        # Connect again.
+        wsconnect(client, uri, handler)
+        send_text(client, utf8("Hello"))
+        # Sleep for a few seconds to let all the messages be sent and received
+        sleep(2.0)
+        # Wait for the handler to receive close confirmation.
+        wait(handler)
+
+        # We expect one text message "Hello", one binary message, and one close control frame to
+        # have been sent.
+        @fact length(stream.writing) --> 3
+    end
+
     context("The client initiates closing handshake") do
         # test_frame1 is a complete text message with payload "Hello".
         # test_frame2 and test_frame3 are two fragments that together become a whole text message
