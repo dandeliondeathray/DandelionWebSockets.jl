@@ -41,7 +41,7 @@ type WSClient <: AbstractWSClient
                       writer::AbstractWriterTaskProxy=WriterTaskProxy(),
                       handler_proxy::AbstractHandlerTaskProxy=HandlerTaskProxy(),
                       logic_proxy::AbstractClientTaskProxy=ClientLogicTaskProxy(),
-                      ponger::AbstractPonger=Ponger(2.0),
+                      ponger::AbstractPonger=Ponger(3.0; misses=3),
                       pinger::AbstractPinger=Pinger(5.0))
         new(writer, handler_proxy, logic_proxy, Nullable{ServerReader}(), do_handshake, rng, ponger, pinger)
     end

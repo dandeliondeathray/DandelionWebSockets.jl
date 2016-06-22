@@ -51,6 +51,38 @@ facts("Pinger/Ponger") do
         @fact logic.pongs_missed --> 3
     end
 
+    context("Disconnect only after three pong misses") do
+        logic = FakeLogic()
+        timeout = 0.1
+
+        ponger = Ponger(timeout; misses=3)
+        attach(ponger, logic)
+
+        ping_sent(ponger)
+        sleep(timeout + 0.02)
+
+        @fact logic.pongs_missed --> 0
+
+        ping_sent(ponger)
+        sleep(timeout + 0.02)
+        @fact logic.pongs_missed --> 0
+
+        ping_sent(ponger)
+        sleep(timeout + 0.02)
+        @fact logic.pongs_missed --> 1
+
+        sleep(3 * timeout)
+        @fact logic.pongs_missed --> 1
+
+
+        for i in range(1, 6)
+            ping_sent(ponger)
+            sleep(timeout + 0.02)
+        end
+
+        @fact logic.pongs_missed --> 3
+    end
+
     context("Only expect a pong after a ping") do
         logic = FakeLogic()
         timeout = 0.1
