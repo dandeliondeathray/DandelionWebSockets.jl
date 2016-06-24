@@ -29,7 +29,8 @@ validates that the expected computed value is found in the response headers.
 """
 function validate(handshake::HandshakeResult)
     accept_name = "Sec-WebSocket-Accept"
-    if !haskey(handshake.headers, accept_name)
+    if !haskey(handshake.headers, accept_name) &&
+        !haskey(handshake.headers, lowercase(accept_name))
         println("No key $accept_name in $(handshake.headers)")
         return false
     end
