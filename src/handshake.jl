@@ -28,13 +28,15 @@ WebSocket server, and not another server duped into accepting this HTTP upgrade.
 validates that the expected computed value is found in the response headers.
 """
 function validate(handshake::HandshakeResult)
-    accept_name = "Sec-WebSocket-Accept"
-    if !haskey(handshake.headers, accept_name) &&
-        !haskey(handshake.headers, lowercase(accept_name))
-        println("No key $accept_name in $(handshake.headers)")
+    keys = collect(keys(handshake.headers))
+    lower_keys = map(lowercase, keys)
+    accept_name_index = findfirst(lower_keys, "sec-websocket_accept")
+    if accept_name_index == 0
+        println("No Sec-WebSocket-Accept in $(handshake.headers)")
         return false
     end
 
+    accept_name = keys[accept_name_index]
     accept_value = handshake.headers[accept_name]
 
     is_valid = accept_value == handshake.expected_accept
