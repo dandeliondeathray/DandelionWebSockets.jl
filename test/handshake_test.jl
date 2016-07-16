@@ -137,5 +137,25 @@ facts("Handshake") do
         ssl_handshake_result = DandelionWebSockets.do_handshake(rng, ssl_uri, do_request=do_req)
         @fact isa(ssl_handshake_result.stream, DandelionWebSockets.TLSBufferedIO) --> true
     end
+
+    context("Case insensitive headers in validation") do
+
+        function test_validation_success(accept_header_name)
+            stream = IOBuffer()
+            headers = Dict(accept_header_name => "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+            ok_handshake = DandelionWebSockets.HandshakeResult(
+                "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
+                stream,
+                headers,
+                [])
+
+            @fact ok_handshake --> DandelionWebSockets.validate
+        end
+
+        test_validation_success("sec-websocket-accept")
+        test_validation_success("SEC-WEBSOCKET-ACCEPT")
+        test_validation_success("SEC-websocket-ACCEPT")
+        test_validation_success("SeC-wEbSoCkEt-AcCePt")
+    end
 end
 
