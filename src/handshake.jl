@@ -30,7 +30,7 @@ validates that the expected computed value is found in the response headers.
 function validate(handshake::HandshakeResult)
     normal_keys = collect(keys(handshake.headers))
     lower_keys = map(lowercase, normal_keys)
-    accept_name_index = findfirst(lower_keys, "sec-websocket_accept")
+    accept_name_index = findfirst(lower_keys, "sec-websocket-accept")
     if accept_name_index == 0
         println("No Sec-WebSocket-Accept in $(handshake.headers)")
         return false
