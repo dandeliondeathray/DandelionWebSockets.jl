@@ -14,6 +14,8 @@
 # test the logic of the WebSocket synchronously, without any asynchronicity or concurrency
 # complicating things.
 
+using Compat
+import Compat: String
 export ClientLogic
 
 #
@@ -29,7 +31,7 @@ abstract ClientLogicInput
 
 "Send a text frame, sent to `ClientLogic`."
 immutable SendTextFrame <: ClientLogicInput
-	data::UTF8String
+	data::Compat.UTF8String
 	# True if this is the final frame in the text message.
 	isfinal::Bool
 	# What WebSocket opcode should be used.
@@ -227,7 +229,7 @@ end
 
 function handle_text(logic::ClientLogic, frame::Frame)
 	if frame.fin
-		on_text(logic.handler, utf8(frame.payload))
+		on_text(logic.handler, String(frame.payload))
 	else
 		start_buffer(logic, frame.payload, OPCODE_TEXT)
 	end
@@ -246,7 +248,7 @@ function handle_continuation(logic::ClientLogic, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
 		if logic.buffered_type == OPCODE_TEXT
-			on_text(logic.handler, utf8(logic.buffer))
+			on_text(logic.handler, String(logic.buffer))
 		elseif logic.buffered_type == OPCODE_BINARY
 			on_binary(logic.handler, logic.buffer)
 			logic.buffer = Vector{UInt8}()
@@ -270,7 +272,7 @@ end
 function masking!(input::Vector{UInt8}, mask::Vector{UInt8})
 	m = 1
 	for i in 1:length(input)
-		input[i] = input[i] $ mask[(m - 1) % 4 + 1]
+		input[i] = input[i] ⊻ mask[(m - 1) % 4 + 1]
 		m += 1
 	end
 end
