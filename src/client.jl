@@ -1,6 +1,7 @@
 import Requests: URI
 import Base: show
 using BufferedStreams
+using Compat
 
 # These proxies glue the different coroutines together. For isntance, `ClientLogic` calls callback
 # function such as `on_text` and `state_closing` on the proxy, which is then called on the callback
@@ -144,7 +145,7 @@ end
 stop(c::WSClient) = handle(c.logic_proxy, CloseRequest())
 
 "Send a single text frame."
-send_text(c::WSClient, s::UTF8String) = handle(c.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
+send_text(c::WSClient, s::Compat.UTF8String) = handle(c.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
 
 "Send a single binary frame."
 send_binary(c::WSClient, data::Vector{UInt8}) =
