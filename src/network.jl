@@ -3,12 +3,12 @@ import Base: read, write
 # TODO: Documentation
 
 "An exception thrown into a task in order to stop it."
-type StopTaskException <: Exception end
+mutable struct StopTaskException <: Exception end
 
-abstract AbstractServerReader
+abstract type AbstractServerReader end
 
 "Reading from a network socket and placing the resulting frame on a channel."
-immutable ServerReader <: AbstractServerReader
+struct ServerReader <: AbstractServerReader
     s::IO
     task::Task
 end
@@ -55,7 +55,7 @@ Note: This should have been done by the BufferedStreams.jl package. However, I c
 work with the MbedTLS stream, for reasons unknown. If we can investigate and fix that problem, then
 we should really replace this type with a BufferedInputStream.
 """
-immutable TLSBufferedIO <: IO
+struct TLSBufferedIO <: IO
     tls_stream::IO
     buf::IOBuffer
 

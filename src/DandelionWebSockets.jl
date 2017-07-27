@@ -1,6 +1,6 @@
 __precompile__(true)
 
-using Compat
+module DandelionWebSockets
 
 export AbstractWSClient,
        WSClient,
@@ -17,14 +17,14 @@ export WebSocketHandler,
        state_open,
        wsconnect
 
-abstract AbstractWSClient
+abstract type AbstractWSClient end
 
 # This defines the public interface that the user should implement. These are callbacks called when
 # events arrive from this WebSocket library.
-abstract WebSocketHandler
+abstract type WebSocketHandler end
 
 "Handle a text frame."
-on_text(t::WebSocketHandler, ::Compat.UTF8String) = nothing
+on_text(t::WebSocketHandler, ::String) = nothing
 
 "Handle a binary frame."
 on_binary(t::WebSocketHandler, ::Vector{UInt8}) = nothing

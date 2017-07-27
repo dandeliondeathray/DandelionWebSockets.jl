@@ -7,15 +7,16 @@
 # longer or shorter.
 
 import Base: reset
+
 using Compat
 
 export AbstractBackoff, Backoff, RandomizedBackoff, reset, backoff_min, backoff_max
 export AbstractRetry, Retry, retry, set_function
 
-abstract AbstractBackoff
+abstract type AbstractBackoff end
 
 "A backoff that follows a atan curve, and reaches about 90% of max backoff in 12 attempts."
-type Backoff <: AbstractBackoff
+mutable struct Backoff <: AbstractBackoff
     min::Float64
     max::Float64
     state::Int
@@ -37,7 +38,7 @@ backoff_max(b::Backoff) = b.max
 end
 
 "Randomize another backoff by adding some randomness to the backoff time."
-type RandomizedBackoff <: AbstractBackoff
+mutable struct RandomizedBackoff <: AbstractBackoff
     backoff::AbstractBackoff
     rng::AbstractRNG
     interval::Float64
@@ -55,12 +56,12 @@ backoff_max(b::RandomizedBackoff) = backoff_max(b.backoff)
     max(backoff_min(b), min(backoff_max(b), v + r))
 end
 
-abstract AbstractRetry
+abstract type AbstractRetry end
 
 default_timer_factory = (f, d) -> Timer(f, d)
 
 "Start a timer for some function, based on a backoff."
-type Retry <: AbstractRetry
+mutable struct Retry <: AbstractRetry
     backoff::AbstractBackoff
     fun::Function
     timer_fun::Function

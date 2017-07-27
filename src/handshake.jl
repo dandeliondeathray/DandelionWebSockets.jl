@@ -1,17 +1,16 @@
-using Compat
 import Nettle
 import Requests
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
-immutable HandshakeResult
+struct HandshakeResult
     # The expected `Sec-WebSocket-Accept` value. See `validate`.
-    expected_accept::Compat.ASCIIString
+    expected_accept::String
 
     # The network stream opened by Requests, that we'll use for the WebSocket protocol.
     stream::IO
 
     # Response headers, keeping the WebSocket accept value, among others.
-    headers::Dict{Compat.ASCIIString,Compat.ASCIIString}
+    headers::Dict{String, String}
 
     # When doing the HTTP upgrade, we might have read a part of the first WebSocket frame. This
     # contains that data.
@@ -19,7 +18,7 @@ immutable HandshakeResult
 end
 
 # Currently only used to dispatch a failed HTTP upgrade to another function.
-immutable HandshakeFailure
+struct HandshakeFailure
 
 end
 
@@ -54,14 +53,14 @@ function make_websocket_key(rng::AbstractRNG)
 end
 
 "Calculate the accept value, given the random key supplied by the client."
-function calculate_accept(key::Compat.ASCIIString)
+function calculate_accept(key::String)
     magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     h = Nettle.digest("sha1", key * magic)
     base64encode(h)
 end
 
 "Create headers used to upgrade the HTTP connection to a WebSocket connection."
-function make_headers(key::Compat.ASCIIString)
+function make_headers(key::String)
     headers = Dict(
         "Upgrade" => "websocket",
         "Connection" => "Upgrade",

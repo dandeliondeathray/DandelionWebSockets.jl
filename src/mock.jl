@@ -10,7 +10,7 @@ export @mock, @mockfunction, @expect, Throws, MockExpectationException,
        mock_match
 
 "Tells a mock function that it should throw an exception."
-immutable Throws
+struct Throws
     ex::Exception
 end
 
@@ -18,14 +18,14 @@ mock_action(action::Throws) = throw(action.ex)
 mock_action(x::Any) = x
 
 "An expected function call, along with expected arguments, and an action it should perform."
-type MockCall
+mutable struct MockCall
     sym::Symbol
     args::Vector{Any}
     action::Any
 end
 
 "An exception thrown when an unexpected argument was found or a function was called."
-type MockExpectationException <: Exception
+mutable struct MockExpectationException <: Exception
     s::AbstractString
 end
 
@@ -41,10 +41,10 @@ a string comparison.
 
 All `AbstractMatcher` types `T` must define a function `mock_match(::T, v::Any)`.
 """
-abstract AbstractMatcher
+abstract type AbstractMatcher end
 
 "Simply match a value by equality. This is the default."
-immutable ValueMatcher <: AbstractMatcher
+struct ValueMatcher <: AbstractMatcher
     value::Any
 end
 
@@ -52,7 +52,7 @@ mock_match(m::ValueMatcher, v::Any) = m.value == v || throw(MockExpectationExcep
 show(m::ValueMatcher) = show(m.value)
 
 "Match a value by checking its type only."
-immutable TypeMatcher <: AbstractMatcher
+struct TypeMatcher <: AbstractMatcher
     typ::DataType
 end
 
