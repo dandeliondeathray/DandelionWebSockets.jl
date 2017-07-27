@@ -91,7 +91,7 @@ facts("Writing frames") do
         context(tc.description) do
             s = IOBuffer()
             write(s, tc.frame)
-            @fact takebuf_array(s) --> tc.serialized_frame
+            @fact take!(s) --> tc.serialized_frame
         end
     end
 end

@@ -1,7 +1,7 @@
 import DandelionWebSockets: AbstractPonger, pong_received, attach, ClientPingRequest,
                             FrameFromServer, SendTextFrame, ping_sent
 
-immutable LogicTestCase
+struct LogicTestCase
 	description::AbstractString
 	initial_state::DandelionWebSockets.SocketState
 	rng::FakeRNG{UInt8}
@@ -54,7 +54,7 @@ logic_tests = [
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(b""),
 		input          = [FrameFromServer(test_frame1)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
+		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
 		writer_calls   = []),
 
 	LogicTestCase(
@@ -63,7 +63,7 @@ logic_tests = [
 		rng            = FakeRNG(UInt8),
 		input          = [FrameFromServer(test_frame2),
 		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
+		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
 		writer_calls   = []),
 
 	LogicTestCase(
@@ -74,8 +74,8 @@ logic_tests = [
 		                  FrameFromServer(test_frame3),
 		                  FrameFromServer(test_frame2),
 		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello"))),
-		                  :(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
+		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello")),
+		                  :(@expect mock_handler on_text(mock_handler, "Hello"))],
 		writer_calls   = []),
 
 	LogicTestCase(
@@ -85,7 +85,7 @@ logic_tests = [
 		input          = [FrameFromServer(test_frame2),
 						  FrameFromServer(server_ping_frame),
 		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, utf8("Hello")))],
+		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, client_pong_frame))]),
 
 	LogicTestCase(
@@ -131,7 +131,7 @@ logic_tests = [
 		description    = "Client sends a message",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(mask),
-		input          = [SendTextFrame(utf8("Hello"), true, OPCODE_TEXT)],
+		input          = [SendTextFrame("Hello", true, OPCODE_TEXT)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_frame4))]),
 
@@ -164,8 +164,8 @@ logic_tests = [
 		description    = "Client sends two fragments",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(vcat(mask, mask2)),
-		input          = [SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
-		                  SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		input          = [SendTextFrame("Hel", false, OPCODE_TEXT),
+		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
 		handler_calls  = [],
 		writer_calls   = [:(@expect mock_writer write(mock_writer, test_frame5)),
 		                  :(@expect mock_writer write(mock_writer, test_frame6))]),
@@ -174,9 +174,9 @@ logic_tests = [
 		description    = "Frames are not sent when in CLOSING",
 		initial_state  = DandelionWebSockets.STATE_CLOSING,
 		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
-						  SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
-		                  SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
+						  SendTextFrame("Hel", false, OPCODE_TEXT),
+		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
 		handler_calls  = [],
 		writer_calls   = []),
 
@@ -184,9 +184,9 @@ logic_tests = [
 		description    = "Frames are not sent when in CONNECTING",
 		initial_state  = DandelionWebSockets.STATE_CONNECTING,
 		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
-						  SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
-		                  SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
+						  SendTextFrame("Hel", false, OPCODE_TEXT),
+		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
 		handler_calls  = [],
 		writer_calls   = []),
 
@@ -194,9 +194,9 @@ logic_tests = [
 		description    = "Frames are not sent when in CLOSED",
 		initial_state  = DandelionWebSockets.STATE_CLOSED,
 		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame(utf8("Hello"), true, OPCODE_TEXT),
-						  SendTextFrame(utf8("Hel"), false, OPCODE_TEXT),
-		                  SendTextFrame(utf8("lo"), true, OPCODE_CONTINUATION)],
+		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
+						  SendTextFrame("Hel", false, OPCODE_TEXT),
+		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
 		handler_calls  = [],
 		writer_calls   = []),
 
