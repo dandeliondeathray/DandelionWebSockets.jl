@@ -12,7 +12,7 @@ import DandelionWebSockets: on_text, on_binary,
 
 # A simple WebSocketHandler which sends a few messages, receives echoes back, and then sends a stop
 # signal via a channel when it's done.
-mutable type EchoHandler <: WebSocketHandler
+mutable struct EchoHandler <: WebSocketHandler
     client::WSClient
     stop_channel::Channel{Any}
 end

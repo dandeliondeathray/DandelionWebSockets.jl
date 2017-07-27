@@ -10,7 +10,7 @@ import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open,
                             state_closing, state_closed
 
-type MyHandler <: WebSocketHandler
+mutable struct MyHandler <: WebSocketHandler
     client::WSClient
 end
 
