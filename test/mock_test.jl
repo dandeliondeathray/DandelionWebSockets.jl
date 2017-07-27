@@ -1,13 +1,13 @@
-abstract AbstractMockTester
+abstract type AbstractMockTester end
 
 module Baz
     bar(::Int, ::AbstractString) = nothing
-    immutable BazType end
+    struct BazType end
 end
 
 import Baz: bar, BazType
 
-immutable MyException <: Exception
+struct MyException <: Exception
     msg::AbstractString
 end
 
@@ -15,7 +15,7 @@ end
 t = MockTester()
 @mockfunction(t,
     foo(::MockTester, ::Int, ::Int),
-    bar(a::UTF8String, ::Int),
+    bar(a::String, ::Int),
     baz(x::Vector{UInt8}))
 
 facts("Test mock") do
@@ -23,11 +23,11 @@ facts("Test mock") do
         some_arg = 17
 
         @expect t foo(t, some_arg, 42)
-        @expect t bar(utf8("Hello"), -5) 42
+        @expect t bar("Hello", -5) 42
         @expect t baz(b"Hello")
 
         @fact foo(t, some_arg, 42) --> nothing
-        @fact bar(utf8("Hello"), -5) --> 42
+        @fact bar("Hello", -5) --> 42
         @fact baz(b"Hello") --> nothing
 
         check(t)

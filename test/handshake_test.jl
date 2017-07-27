@@ -5,15 +5,14 @@ headers = Dict(
 )
 
 type MockRequest
-    accept::ASCIIString
+    accept::String
 
     uri::Requests.URI
-    method::ASCIIString
+    method::String
     headers::Dict
 
-
-    MockRequest(accept::ASCIIString) = new(accept, Requests.URI("http://some/uri"),
-        ascii("method"), Dict())
+    MockRequest(accept::String) =
+        new(accept, Requests.URI("http://some/uri"), "method", Dict())
 end
 
 type FakeResponse
@@ -25,7 +24,7 @@ type FakeResponseStream
     response::FakeResponse
 end
 
-function mock_do_stream_request(m::MockRequest, uri::Requests.URI, method::ASCIIString;
+function mock_do_stream_request(m::MockRequest, uri::Requests.URI, method::String;
     headers=Dict(),
     tls_conf=Requests.TLS_VERIFY,
     response_headers=Dict{Any,Any}())
@@ -66,9 +65,9 @@ facts("Handshake") do
     context("Handshake calculations") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         actual_key = DandelionWebSockets.make_websocket_key(rng)
-        @fact actual_key --> ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
+        @fact actual_key --> "AQIDBAUGBwgJCgsMDQ4PEA=="
 
-        key = ascii("dGhlIHNhbXBsZSBub25jZQ==")
+        key = "dGhlIHNhbXBsZSBub25jZQ=="
         @fact DandelionWebSockets.calculate_accept(key) --> "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
     end
 
@@ -85,7 +84,7 @@ facts("Handshake") do
 
     context("Handshake") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
-        key = ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
+        key = "AQIDBAUGBwgJCgsMDQ4PEA=="
         expected_headers = DandelionWebSockets.make_headers(key)
         expected_accept = DandelionWebSockets.calculate_accept(key)
         expected_response_headers = Dict{Any, Any}("some" => "value")
@@ -93,7 +92,7 @@ facts("Handshake") do
         uri = Requests.URI("http://localhost:8000")
 
         m = MockRequest(expected_accept)
-        function do_req(uri::Requests.URI, method::ASCIIString; headers=Dict())
+        function do_req(uri::Requests.URI, method::String; headers=Dict())
             mock_do_stream_request(m, uri, method;
                 headers=headers,
                 response_headers=expected_response_headers)
@@ -101,7 +100,7 @@ facts("Handshake") do
 
         handshake_result = DandelionWebSockets.do_handshake(rng, uri; do_request=do_req)
 
-        @fact m.method --> ascii("GET")
+        @fact m.method --> "GET"
         @fact m.uri --> uri
         @fact m.headers --> expected_headers
 
@@ -120,14 +119,14 @@ facts("Handshake") do
 
     context("SSL handshakes result in a TLSBufferedIO stream") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
-        key = ascii("AQIDBAUGBwgJCgsMDQ4PEA==")
+        key = "AQIDBAUGBwgJCgsMDQ4PEA=="
         expected_accept = DandelionWebSockets.calculate_accept(key)
 
         uri = Requests.URI("http://localhost:8000")
         ssl_uri = Requests.URI("https://localhost:8000")
 
         m = MockRequest(expected_accept)
-        do_req(uri::Requests.URI, method::ASCIIString; headers=Dict()) =
+        do_req(uri::Requests.URI, method::String; headers=Dict()) =
             mock_do_stream_request(m, uri, method; headers=headers)
 
         normal_handshake_result = DandelionWebSockets.do_handshake(rng, uri; do_request=do_req)
@@ -158,4 +157,3 @@ facts("Handshake") do
         test_validation_success("SeC-wEbSoCkEt-AcCePt")
     end
 end
-

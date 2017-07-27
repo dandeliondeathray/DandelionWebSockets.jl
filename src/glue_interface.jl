@@ -1,10 +1,10 @@
 # This file merely define abstract types used by the proxies that glue the different parts together.
 export AbstractClientLogic
 
-abstract AbstractHandlerTaskProxy <: TaskProxy
-abstract AbstractClientTaskProxy <: TaskProxy
-abstract AbstractWriterTaskProxy <: TaskProxy
+abstract type AbstractHandlerTaskProxy <: TaskProxy end
+abstract type AbstractClientTaskProxy <: TaskProxy end
+abstract type AbstractWriterTaskProxy <: TaskProxy end
 
-abstract AbstractClientLogic
-abstract AbstractPinger
-abstract AbstractPonger
+abstract type AbstractClientLogic end
+abstract type AbstractPinger end
+abstract type AbstractPonger end

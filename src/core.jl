@@ -36,7 +36,7 @@ import Base.==
 
 # TODO: Documentation.
 
-immutable Opcode
+struct Opcode
     op::UInt8
 end
 
@@ -49,7 +49,7 @@ const OPCODE_PONG         = Opcode(10)
 
 ==(a::Opcode, b::Opcode) = a.op == b.op
 
-immutable Frame
+struct Frame
     fin::Bool
     rsv1::Bool
     rsv2::Bool

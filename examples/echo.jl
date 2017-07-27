@@ -1,10 +1,10 @@
 # Example of DandelionWebSocket.jl:
-# Send some text and binary frames to ws://echo.websocket.org, which echoes them back.
+# Send some text and binary frames to ws://echo.websocket.org,
+# which echoes them back.
 
-using Compat
-import Compat: String
+using Requests: URI
+
 using DandelionWebSockets
-import Requests: URI
 
 # Explicitly import the callback functions that we're going to add more methods for.
 import DandelionWebSockets: on_text, on_binary,
@@ -12,13 +12,13 @@ import DandelionWebSockets: on_text, on_binary,
 
 # A simple WebSocketHandler which sends a few messages, receives echoes back, and then sends a stop
 # signal via a channel when it's done.
-type EchoHandler <: WebSocketHandler
+mutable type EchoHandler <: WebSocketHandler
     client::WSClient
     stop_channel::Channel{Any}
 end
 
 # These are called when you get text/binary frames, respectively.
-on_text(::EchoHandler, s::Compat.UTF8String)  = println("Received text: $s")
+on_text(::EchoHandler, s::String)  = println("Received text: $s")
 on_binary(::EchoHandler, data::Vector{UInt8}) = println("Received data: $data")
 
 # These are called when the WebSocket state changes.
@@ -32,7 +32,7 @@ function state_open(handler::EchoHandler)
 
     # Send some text frames, and a binary frame.
     @schedule begin
-        texts = [String("Hello"), String("world"), String("!")]
+        texts = ["Hello", "world", "!"]
 
         for text in texts
             println("Sending  text: $text")

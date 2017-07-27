@@ -39,7 +39,7 @@ facts("Reader task") do
     context("Start and stop, with one frame read") do
         framebuf = IOBuffer(Array{UInt8, 1}(), true, true)
         write(framebuf, test_frame1)
-        iobuf = IOBuffer(takebuf_array(framebuf))
+        iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
         logic = MockClientLogic([
             (:handle, Any[FrameFromServer(test_frame1)]),
@@ -70,7 +70,7 @@ facts("Reader task") do
     context("Read a frame and stop") do
         framebuf = IOBuffer(Array{UInt8, 1}(), true, true)
         write(framebuf, test_frame1)
-        iobuf = IOBuffer(takebuf_array(framebuf))
+        iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
 
         logic = MockClientLogic([
@@ -97,7 +97,7 @@ facts("Reader task") do
         write(framebuf, test_frame1)
         write(framebuf, test_frame2)
         write(framebuf, test_frame3)
-        iobuf = IOBuffer(takebuf_array(framebuf))
+        iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
 
         logic = MockClientLogic([
@@ -193,7 +193,7 @@ write(s::FakeTLSStream, t::UInt64) = write(s.write_buf, t)
 
 
 read{T}(::FakeTLSStream, ::T) = throw(ErrorException())
-readavailable(s::FakeTLSStream) = takebuf_array(s.buf)
+readavailable(s::FakeTLSStream) = take!(s.buf)
 
 facts("Byte stream from SSL socket") do
     # MbedTLS.SSLContext does not allow you to read bytes from the IO stream. It throws an exception

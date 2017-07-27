@@ -6,16 +6,15 @@
 # The other layer is a randomization of the previous backoff, jiggling the timeout a few seconds
 # longer or shorter.
 
-import Base: reset
-using Compat
+import Base: reset, retry
 
 export AbstractBackoff, Backoff, RandomizedBackoff, reset, backoff_min, backoff_max
 export AbstractRetry, Retry, retry, set_function
 
-abstract AbstractBackoff
+abstract type AbstractBackoff end
 
 "A backoff that follows a atan curve, and reaches about 90% of max backoff in 12 attempts."
-type Backoff <: AbstractBackoff
+mutable struct Backoff <: AbstractBackoff
     min::Float64
     max::Float64
     state::Int
@@ -29,38 +28,41 @@ reset(b::Backoff) = b.state = 0
 backoff_min(b::Backoff) = b.min
 backoff_max(b::Backoff) = b.max
 
+# make Backoff callable
 "Get the next backoff value."
-@compat function (b::Backoff)()
+function (b::Backoff)()
     v = b.min + atan(b.state*b.state/32) * 2 / pi * (b.max - b.min)
     b.state += 1
     v
 end
 
 "Randomize another backoff by adding some randomness to the backoff time."
-type RandomizedBackoff <: AbstractBackoff
+mutable struct RandomizedBackoff <: AbstractBackoff
     backoff::AbstractBackoff
     rng::AbstractRNG
     interval::Float64
 end
 
-show(io::IO, r::RandomizedBackoff) = show(io, "RandomizedBackoff($(r.backoff), $(r.interval))")
+show(io::IO, r::RandomizedBackoff) =
+    show(io, "RandomizedBackoff($(r.backoff), $(r.interval))")
 
 reset(b::RandomizedBackoff) = reset(b.backoff)
 backoff_min(b::RandomizedBackoff) = backoff_min(b.backoff)
 backoff_max(b::RandomizedBackoff) = backoff_max(b.backoff)
 
-@compat function (b::RandomizedBackoff)()
+# make RandomizedBackoff callable
+function (b::RandomizedBackoff)()
     (r,) = (rand(b.rng, Float64, 1) - 0.5) * 2 * b.interval
     v = b.backoff()
     max(backoff_min(b), min(backoff_max(b), v + r))
 end
 
-abstract AbstractRetry
+abstract type AbstractRetry end
 
 default_timer_factory = (f, d) -> Timer(f, d)
 
 "Start a timer for some function, based on a backoff."
-type Retry <: AbstractRetry
+mutable struct Retry <: AbstractRetry
     backoff::AbstractBackoff
     fun::Function
     timer_fun::Function

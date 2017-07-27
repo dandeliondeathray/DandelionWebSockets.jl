@@ -5,13 +5,17 @@ DandelionWebSockets is a client side WebSocket package.
 Create a subtype of `WebSocketHandler`, with callbacks for WebSocket events. Create a `WSClient` and
 connect to a WebSocket server.
 
-```
+```julia
+import DandelionWebSockets: on_text, on_binary,
+import DandelionWebSockets: state_connecting, state_open,
+                            state_closing, state_closed
+
 type MyHandler <: WebSocketHandler
     client::WSClient
 end
 
 # These are called when you get a text or binary frame, respectively.
-on_text(handler::MyHandler, text::UTF8String) = ...
+on_text(handler::MyHandler, text::String) = ...
 on_binary(handler::MyHandler, data::Vector{UInt8}) = ...
 
 # These are called when the state of the WebSocket changes.
@@ -24,7 +28,7 @@ state_closed(handler::MyHandler)     = ...
 The following functions are available on `WSClient`, to send frames to the server.
 
 ```
-send_text(c::WSClient, s::UTF8String)
+send_text(c::WSClient, s::String)
 send_binary(c::WSClient, data::Vector{UInt8})
 
 # Close the WebSocket.

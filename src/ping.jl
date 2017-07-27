@@ -1,7 +1,7 @@
 export Pinger, stop,
        Ponger, pong_received, attach, ping_sent
 
-type Pinger <: AbstractPinger
+mutable struct Pinger <: AbstractPinger
     timer::Nullable{Timer}
     interval::Float64
 
@@ -22,7 +22,7 @@ function stop(p::Pinger)
     end
 end
 
-type Ponger <: AbstractPonger
+mutable struct Ponger <: AbstractPonger
     timeout::Float64
     pong_missed::Function
     pongs_received::UInt64
