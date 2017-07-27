@@ -6,7 +6,7 @@
 # The other layer is a randomization of the previous backoff, jiggling the timeout a few seconds
 # longer or shorter.
 
-import Base: reset
+import Base: reset, retry
 
 using Compat
 
