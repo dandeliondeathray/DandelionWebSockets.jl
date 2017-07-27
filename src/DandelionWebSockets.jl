@@ -1,4 +1,4 @@
-module DandelionWebSockets
+__precompile__(true)
 
 using Compat
 
