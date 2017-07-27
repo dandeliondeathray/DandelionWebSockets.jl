@@ -2,7 +2,7 @@ import DandelionWebSockets: on_text, on_binary,
                             state_connecting, state_open, state_closing, state_closed,
                             FrameFromServer
 
-accept_field = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+accept_field = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 headers = Dict(
     # This is the expected response when the client sends
     # Sec-WebSocket-Key => "dGhlIHNhbXBsZSBub25jZQ=="

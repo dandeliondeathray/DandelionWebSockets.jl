@@ -49,7 +49,7 @@ end
 
 "Create a random key that the server will use to compute its response."
 function make_websocket_key(rng::AbstractRNG)
-    ascii(base64encode(rand(rng, UInt8, 16)))
+    base64encode(rand(rng, UInt8, 16))
 end
 
 "Calculate the accept value, given the random key supplied by the client."
@@ -73,7 +73,7 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
     key = make_websocket_key(rng)
     expected_accept = calculate_accept(key)
     headers = make_headers(key)
-    result = do_request(uri, ascii("GET"); headers=headers)
+    result = do_request(uri, "GET"; headers=headers)
 
     stream = result.socket
     if uri.scheme == "https"

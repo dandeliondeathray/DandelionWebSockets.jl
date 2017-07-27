@@ -19,7 +19,7 @@ A WebSocket client, used to connect to a server, and send messages.
 
 Note: The keyword arguments in the constructor are primarily for testing.
 """
-type WSClient <: AbstractWSClient
+mutable struct WSClient <: AbstractWSClient
     # `writer` writes frames to the socket.
     writer::AbstractWriterTaskProxy
     # `handler_proxy` does the callbacks, in its own coroutine.
@@ -39,7 +39,7 @@ type WSClient <: AbstractWSClient
 
     function WSClient(;
                       do_handshake=DandelionWebSockets.do_handshake,
-                      rng::AbstractRNG=MersenneTwister(),
+                      rng::AbstractRNG=MersenneTwister(0),
                       writer::AbstractWriterTaskProxy=WriterTaskProxy(),
                       handler_proxy::AbstractHandlerTaskProxy=HandlerTaskProxy(),
                       logic_proxy::AbstractClientTaskProxy=ClientLogicTaskProxy(),

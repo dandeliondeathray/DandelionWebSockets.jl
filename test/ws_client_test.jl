@@ -43,7 +43,7 @@ mock_server_reader = MockServerReader()
 mock_pinger = MockPinger()
 @mockfunction mock_pinger attach(::MockPinger, ::AbstractClientTaskProxy) stop(::MockPinger)
 
-accept_field = ascii("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+accept_field = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 headers = Dict(
     # This is the expected response when the client sends
     # Sec-WebSocket-Key => "dGhlIHNhbXBsZSBub25jZQ=="
