@@ -8,8 +8,6 @@
 
 import Base: reset, retry
 
-using Compat
-
 export AbstractBackoff, Backoff, RandomizedBackoff, reset, backoff_min, backoff_max
 export AbstractRetry, Retry, retry, set_function
 
@@ -30,8 +28,9 @@ reset(b::Backoff) = b.state = 0
 backoff_min(b::Backoff) = b.min
 backoff_max(b::Backoff) = b.max
 
+# make Backoff callable
 "Get the next backoff value."
-@compat function (b::Backoff)()
+function (b::Backoff)()
     v = b.min + atan(b.state*b.state/32) * 2 / pi * (b.max - b.min)
     b.state += 1
     v
@@ -44,13 +43,15 @@ mutable struct RandomizedBackoff <: AbstractBackoff
     interval::Float64
 end
 
-show(io::IO, r::RandomizedBackoff) = show(io, "RandomizedBackoff($(r.backoff), $(r.interval))")
+show(io::IO, r::RandomizedBackoff) =
+    show(io, "RandomizedBackoff($(r.backoff), $(r.interval))")
 
 reset(b::RandomizedBackoff) = reset(b.backoff)
 backoff_min(b::RandomizedBackoff) = backoff_min(b.backoff)
 backoff_max(b::RandomizedBackoff) = backoff_max(b.backoff)
 
-@compat function (b::RandomizedBackoff)()
+# make RandomizedBackoff callable
+function (b::RandomizedBackoff)()
     (r,) = (rand(b.rng, Float64, 1) - 0.5) * 2 * b.interval
     v = b.backoff()
     max(backoff_min(b), min(backoff_max(b), v + r))
