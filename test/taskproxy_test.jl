@@ -14,8 +14,8 @@ end
 
 foo(m::MockTaskProxyTarget) = called(m, :foo)
 bar(m::MockTaskProxyTarget, i::Int) = called(m, :bar, i)
-baz(m::MockTaskProxyTarget, s::UTF8String) = called(m, :baz, s)
-qux(m::MockTaskProxyTarget, i::Int, s::UTF8String) = called(m, :qux, i, s)
+baz(m::MockTaskProxyTarget, s::String) = called(m, :baz, s)
+qux(m::MockTaskProxyTarget, i::Int, s::String) = called(m, :qux, i, s)
 
 function expect_call(m::MockTaskProxyTarget, f::Symbol, expected_args...)
     @fact isempty(m.call) --> false
@@ -55,15 +55,15 @@ facts("Task proxy") do
 
                 foo(pump)
                 bar(pump, 42)
-                baz(pump, utf8("Hitchhiker"))
-                qux(pump, 42, utf8("Hitchhiker"))
+                baz(pump, "Hitchhiker")
+                qux(pump, 42, "Hitchhiker")
                 sleep(0.3)
 
                 stop(pump)
                 expect_call(t, :foo)
                 expect_call(t, :bar, 42)
-                expect_call(t, :baz, utf8("Hitchhiker"))
-                expect_call(t, :qux, 42, utf8("Hitchhiker"))
+                expect_call(t, :baz, "Hitchhiker")
+                expect_call(t, :qux, 42, "Hitchhiker")
             end
         end
     end

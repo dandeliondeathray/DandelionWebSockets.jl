@@ -4,14 +4,14 @@ import DandelionWebSockets: on_text, on_binary,
 
 
 immutable MockHandler <: DandelionWebSockets.WebSocketHandler
-    texts::Vector{UTF8String}
+    texts::Vector{String}
     datas::Vector{Vector{UInt8}}
     states::Vector{Symbol}
 
     MockHandler() = new([], [], [])
 end
 
-on_text(h::MockHandler, text::UTF8String) = push!(h.texts, text)
+on_text(h::MockHandler, text::String) = push!(h.texts, text)
 on_binary(h::MockHandler, data::Vector{UInt8}) = push!(h.datas, data)
 
 state_connecting(h::MockHandler) = push!(h.states, :state_connecting)
@@ -19,7 +19,7 @@ state_open(h::MockHandler) = push!(h.states, :state_open)
 state_closing(h::MockHandler) = push!(h.states, :state_closing)
 state_closed(h::MockHandler) = push!(h.states, :state_closed)
 
-function expect_text(h::MockHandler, expected::UTF8String)
+function expect_text(h::MockHandler, expected::String)
     @fact h.texts --> x -> !isempty(x)
 
     actual = shift!(h.texts)
@@ -51,7 +51,7 @@ facts("Task proxy") do
 
         state_connecting(proxy)
         state_open(proxy)
-        on_text(proxy, utf8("Hello"))
+        on_text(proxy, "Hello")
         on_binary(proxy, b"Hello")
         state_closing(proxy)
         state_closed(proxy)
@@ -64,7 +64,7 @@ facts("Task proxy") do
 
         expect_state(handler, :state_connecting)
         expect_state(handler, :state_open)
-        expect_text(handler, utf8("Hello"))
+        expect_text(handler, "Hello")
         expect_data(handler, b"Hello")
         expect_state(handler, :state_closing)
         expect_state(handler, :state_closed)

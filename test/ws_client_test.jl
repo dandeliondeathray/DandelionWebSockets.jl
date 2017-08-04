@@ -7,7 +7,7 @@ mocker = Mocker()
 
 @mockfunction mocker handshake(::AbstractRNG, ::Requests.URI)
 @mockfunction(mocker,
-    on_text(::Mocker, ::UTF8String),
+    on_text(::Mocker, ::String),
     on_binary(::Mocker, ::Vector{UInt8}),
     state_connecting(::Mocker),
     state_open(::Mocker),
