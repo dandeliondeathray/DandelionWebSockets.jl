@@ -135,9 +135,9 @@ end
 
 ==(a::FrameFromServer, b::FrameFromServer) = a.frame == b.frame
 
-typealias MockLogicCall Tuple{Symbol, Vector{Any}}
+const MockLogicCall = Tuple{Symbol, Vector{Any}}
 
-type MockClientLogic <: AbstractClientLogic
+mutable struct MockClientLogic <: AbstractClientLogic
     actuals::Vector{MockLogicCall}
     expected::Vector{MockLogicCall}
 
