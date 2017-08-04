@@ -6,10 +6,11 @@ type FakeBackoff <: AbstractBackoff
     max::Float64
     i::Int
 
-    FakeBackoff(values::Vector{Float64}, min::Float64, max::Float64) = new(values, min, max, 1)
+    FakeBackoff(values::Vector{Float64}, min::Float64, max::Float64) =
+        new(values, min, max, 1)
 end
 
-function call(b::FakeBackoff)
+function (b::FakeBackoff)()
     v = b.values[b.i]
     b.i += 1
     v
