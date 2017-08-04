@@ -14,10 +14,10 @@ import Base.==
 # pseudo-randomly.
 #
 
-type FakeRNG{T} <: AbstractRNG
+mutable struct FakeRNG{T} <: AbstractRNG
     values::Array{T, 1}
 
-    FakeRNG{T}(v::Array{T, 1}) = new(copy(v))
+    FakeRNG{T}(v::Array{T, 1}) where {T} = new{T}(copy(v))
 end
 
 FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
