@@ -29,7 +29,7 @@ end
 
 mock_handler = MockHandlerTaskProxy()
 @mockfunction(mock_handler,
-    on_text(::MockHandlerTaskProxy, ::UTF8String),
+    on_text(::MockHandlerTaskProxy, ::String),
     on_binary(::MockHandlerTaskProxy, ::Vector{UInt8}),
     state_connecting(::MockHandlerTaskProxy),
     state_open(::MockHandlerTaskProxy),

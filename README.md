@@ -6,11 +6,11 @@ Create a subtype of `WebSocketHandler`, with callbacks for WebSocket events. Cre
 connect to a WebSocket server.
 
 ```julia
-import DandelionWebSockets: on_text, on_binary,
+import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open,
                             state_closing, state_closed
 
-type MyHandler <: WebSocketHandler
+mutable struct MyHandler <: WebSocketHandler
     client::WSClient
 end
 
@@ -37,6 +37,8 @@ stop(c::WSClient)
 
 To connect to a WebSocket server, call
 `wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)`.
+
+For the full example code, please check out `examples/echo.jl`.
 
 ## Releases and Julia
 If you use Julia 0.6, use master for the time being. I intend to register this
