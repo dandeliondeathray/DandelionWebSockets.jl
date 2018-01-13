@@ -25,7 +25,11 @@ function do_reader(s::IO, logic::AbstractClientTaskProxy)
     catch ex
         # TODO: Handle errors better.
     end
-    handle(logic, SocketClosed())
+    try
+        handle(logic, SocketClosed())
+    catch ex
+        # TODO: Log this error.
+    end
 end
 
 function start_reader(s::IO, logic::AbstractClientTaskProxy)
