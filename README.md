@@ -41,15 +41,9 @@ To connect to a WebSocket server, call
 For the full example code, please check out `examples/echo.jl`.
 
 ## Releases and Julia
-TL;DR: If on Julia 0.4 or 0.5, use master. If on Julia 0.6, use branch
-`release_1.0.0`.
-
-The current master branch was originally built for julia 0.4, with compatibility
-for 0.5 added later.
-The branch `release_1.0.0` contains updates for Julia 0.6. Work will continue on
-that branch until it's ready for a release, and it's expected that people have
-moved on to Julia 0.6. I will then merge it to master and tag it with a release
-tag.
+If you use Julia 0.6, use master for the time being. I intend to register this
+package with a proper version, soon. The package will not remain compatible with
+Julia prior to 0.6.
 
 ## Needs work
 
