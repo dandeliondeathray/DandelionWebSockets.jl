@@ -48,10 +48,8 @@ Julia prior to 0.6.
 ## Needs work
 
 - Implement regular pings, to ensure the connection is up.
-- Wait for Requests.jl next release.
-  This package needs a HTTP Upgrade feature of Requests.jl, which is only present in master, not in
-  the release 0.3.7.
 - Ability to send multi-frame messages.
+- Verify functionality with current Requests.jl release.
 
 ## License
 DandelionWebSockets is licensed under the MIT license.
