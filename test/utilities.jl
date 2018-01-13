@@ -14,10 +14,10 @@ import Base.==
 # pseudo-randomly.
 #
 
-type FakeRNG{T} <: AbstractRNG
+mutable struct FakeRNG{T} <: AbstractRNG
     values::Array{T, 1}
 
-    FakeRNG{T}(v::Array{T, 1}) = new(copy(v))
+    FakeRNG{T}(v::Array{T, 1}) where {T} = new{T}(copy(v))
 end
 
 FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
@@ -67,8 +67,8 @@ client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\
 
 zero256 = Array{UInt8}([UInt8(0) for x in range(1, 256)])
 zero65k = Array{UInt8}([UInt8(0) for x in range(1, 65536 + 1024)])
-zero256_masked = Array{UInt8}([zero256[i] $ mask[(i-1)%4 + 1] for i in 1:length(zero256)])
-zero65k_masked = Array{UInt8}([zero65k[i] $ mask[(i-1)%4 + 1] for i in 1:length(zero65k)])
+zero256_masked = Array{UInt8}([zero256[i] ⊻ mask[(i-1)%4 + 1] for i in 1:length(zero256)])
+zero65k_masked = Array{UInt8}([zero65k[i] ⊻ mask[(i-1)%4 + 1] for i in 1:length(zero65k)])
 
 # Binary message, payload is 256 bytes, single masked
 test_bin_frame_256 = Frame(true, OPCODE_BINARY, true, 126, 256, mask, zero256_masked)
@@ -135,9 +135,9 @@ end
 
 ==(a::FrameFromServer, b::FrameFromServer) = a.frame == b.frame
 
-typealias MockLogicCall Tuple{Symbol, Vector{Any}}
+const MockLogicCall = Tuple{Symbol, Vector{Any}}
 
-type MockClientLogic <: AbstractClientLogic
+mutable struct MockClientLogic <: AbstractClientLogic
     actuals::Vector{MockLogicCall}
     expected::Vector{MockLogicCall}
 

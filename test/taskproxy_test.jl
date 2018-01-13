@@ -29,7 +29,7 @@ function expect_call(m::MockTaskProxyTarget, f::Symbol, expected_args...)
     @fact args --> expected
 end
 
-abstract AbstractMockTaskProxy
+abstract type AbstractMockTaskProxy end
 @taskproxy MockTaskProxy AbstractMockTaskProxy MockTaskProxyTarget foo bar baz qux
 
 facts("Task proxy") do
