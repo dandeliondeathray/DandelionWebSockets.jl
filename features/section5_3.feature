@@ -13,6 +13,7 @@ Feature: Client to server masking
      Then the client must choose a fresh mask key
       And it must be derived from a strong source of entropy
 
+  @5_3-3 @must
   Scenario: Mask operation
      When octet at index i is masked or unmasked
      Then is is XOR'ed with the mask at index i MOD 4

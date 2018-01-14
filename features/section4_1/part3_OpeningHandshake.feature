@@ -47,7 +47,7 @@ Feature: Opening handshake
      Then the request must contain a "Sec-WebSocket-Key" header field
       And and its value must be a randomly selected nonce
 
-  @4_1_OpeningHandshake_8 @must @irrelevant
+  @4_1_OpeningHandshake_8 @must @inapplicable
   Scenario: Opening handshake Origin header field for browser clients
     Given that the client is a browser client
      When the client sends an opening handshake

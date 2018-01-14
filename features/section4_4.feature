@@ -1,4 +1,4 @@
-@section4 @section4_4 @client @server @irrelevant
+@section4 @section4_4 @client @server @inapplicable
 Feature: Supporting Multiple Versions of WebSocket Protocol
   A client and server may choose to support multiple versions of the protocol.
 

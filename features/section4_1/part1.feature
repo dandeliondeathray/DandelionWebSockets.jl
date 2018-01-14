@@ -7,7 +7,7 @@ Feature: Connection
      When a connection is initially created
      Then it is in state CONNECTING
 
-  @4_1_P2 @may @irrelevant
+  @4_1_P2 @may @inapplicable
   Scenario: Offload connection management
      When a client is running in a controlled environment
      Then it may offload connection management to another agent

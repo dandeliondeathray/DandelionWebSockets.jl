@@ -1,4 +1,4 @@
-@section4 @section4_2 @server @irrelevant
+@section4 @section4_2 @server @inapplicable
 Feature: Send the handshake response
   The opening handshake details how the server handles a new connection.
 

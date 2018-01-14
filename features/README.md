@@ -50,7 +50,7 @@ tags I've used are
   The requirement is a MAY, according to the conformance requirements in RFC
   2119.
 
-- @irrelevant
+- @inapplicable
 
   The requirement is not relevant to DandelionWebSockets. This may be by choice,
   such as a MAY requirement, or by environment, such as this not being a browser

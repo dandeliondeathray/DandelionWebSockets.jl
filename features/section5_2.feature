@@ -80,7 +80,7 @@ Feature: Framing details
      When no extensions have been negotiated
      Then the Extension data is 0 bytes long
 
-  @5_2-13 @client @server @irrelevant
+  @5_2-13 @client @server @inapplicable
   Scenario: Extensions must specify how extension data is calculated
      When an extension is defined
      Then it must define how the Extension data length is calculated

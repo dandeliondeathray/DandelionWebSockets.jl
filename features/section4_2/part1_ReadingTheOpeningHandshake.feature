@@ -1,8 +1,8 @@
-@section4 @section4_2 @server @irrelevant
+@section4 @section4_2 @server @inapplicable
 Feature: Connection
   The opening handshake details how the server handles a new connection.
 
-  @4_2_P1 @may @irrelevant
+  @4_2_P1 @may @inapplicable
   Scenario: Offload connection management
      When a server handles many connections
      Then it may offload connection management to another agent

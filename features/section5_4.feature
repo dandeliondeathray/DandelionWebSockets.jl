@@ -50,18 +50,18 @@ Feature: Fragmentation
      When an endpoint handles messages
      Then it must be able to handle both fragmented and unfragmented messages
 
-  @5_4-10 @must @irrelevant
+  @5_4-10 @must @inapplicable
   Scenario: Intermediary with control frames
      When an intermediary is processing fragments
      Then it must not change the fragmentation of a control frame
 
-  @5_4-11 @must @irrelevant
+  @5_4-11 @must @inapplicable
   Scenario: Intermediary with reserved bits
     Given that an intermediary does not know the meaning of reserved bits
      When a message with reserved bits set is processed
      Then it must not change the fragmentation of the message
 
-  @5_4-12 @must @irrelevant
+  @5_4-12 @must @inapplicable
   Scenario: Intermediary with extensions
     Given that extensions have been negotiated
       And that the intermediary is not aware of the sematics of the extension
