@@ -11,7 +11,7 @@ Tags
 Features and scenarios have tags, which categorises and identifies them. The
 tags I've used are
 
-- @section<n>
+- @section{n}
 
   Identifies which section of the specification the requirement comes from.
 
@@ -19,8 +19,11 @@ tags I've used are
 
   This identifies a requirement from section 4.1 (4_1), in _paragraph_ 1.
 
+- @4_1-n
 
-- @4_1_<subject>_<n>
+  This identifies the nth requirement in section 4.1
+
+- @4_1_{subject}_{n}
 
   Some requirements are in numbered lists, concerning a specific subject. To
   identify each list, since there may be more than one in each section, we use
@@ -48,6 +51,11 @@ tags I've used are
 - @may
 
   The requirement is a MAY, according to the conformance requirements in RFC
+  2119.
+
+- @should
+
+  The requirement is a SHOULD, according to the conformance requirements in RFC
   2119.
 
 - @inapplicable
