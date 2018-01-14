@@ -89,3 +89,25 @@ Feature: Control frames
      When a connection is established
       And it is not closed
      Then an endpoint may sent a Ping frame at any time
+
+  @5_5_3-1 @client @server @must
+  Scenario: Pong frame Application data
+    Given that an endpoint has received a Ping frame with Application data
+     When and endpoint sends a Pong frame in response the ping
+     Then the Pong frame must have identical Application data as the Ping frame
+
+  @5_5_3-1 @client @server @may
+  Scenario: Pong frame for multiple Ping frames
+    Given that an endpoint has received multiple Ping frames without sending a Pong frame
+     When it sends a Pong frame
+     Then it may elect to only send a Pong frame for the most recent Ping frame
+
+  @5_5_3-1 @client @server @may
+  Scenario: Unsolicited Pong frame
+     When an endpoint needs to have a unidirectional heartbeat
+     Then it may send an unsolicited Pong frame
+
+  @5_5_3-1 @client @server @must
+  Scenario: Unsolicited Pong frame response
+     When an endpoint receives an unsolicited Pong frame
+     Then it is not expected to send a response
