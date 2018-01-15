@@ -51,5 +51,12 @@ Julia prior to 0.6.
 - Ability to send multi-frame messages.
 - Verify functionality with current Requests.jl release.
 
+# Contributors
+These brave people have contributed to this package:
+
+- @hlaaftana
+- @TotalVerb
+- @iblis17
+
 ## License
 DandelionWebSockets is licensed under the MIT license.
