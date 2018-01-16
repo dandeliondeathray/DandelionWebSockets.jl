@@ -40,6 +40,13 @@ To connect to a WebSocket server, call
 
 For the full example code, please check out `examples/echo.jl`.
 
+## Note on I/O and thread safety
+Note that print and I/O functions are not thread safe in Julia. Using them in the message and state
+callbacks (as is currently done in the examples) may lead to unexpected behaviour, or crashes. See
+https://github.com/JuliaLang/julia/issues/17388 for more details.
+
+Thank you to @alessandrousseglioviretta for bringing up this issue.
+
 ## Releases and Julia
 If you use Julia 0.6, use master for the time being. I intend to register this
 package with a proper version, soon. The package will not remain compatible with
