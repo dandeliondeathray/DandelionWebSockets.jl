@@ -1,5 +1,6 @@
 # DandelionWebSockets
 [![Build Status](https://travis-ci.org/dandeliondeathray/DandelionWebSockets.jl.svg?branch=master)](https://travis-ci.org/dandeliondeathray/DandelionWebSockets.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/7ajck5bv9wxfjxax/branch/master?svg=true)](https://ci.appveyor.com/project/erikedin/dandelionwebsockets-jl/branch/master)
 
 DandelionWebSockets is a client side WebSocket package.
 
