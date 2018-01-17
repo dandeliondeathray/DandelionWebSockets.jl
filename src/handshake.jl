@@ -1,4 +1,4 @@
-import Nettle
+import SHA
 import Requests
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
@@ -55,8 +55,7 @@ end
 "Calculate the accept value, given the random key supplied by the client."
 function calculate_accept(key::String)
     magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-    h = Nettle.digest("sha1", key * magic)
-    base64encode(h)
+    base64encode(SHA.sha1(key * magic))
 end
 
 "Create headers used to upgrade the HTTP connection to a WebSocket connection."
