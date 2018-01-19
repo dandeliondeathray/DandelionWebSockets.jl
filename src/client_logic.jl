@@ -119,9 +119,10 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 
 	# Each frame is masked with four random bytes.
 	mask    = rand(logic.rng, UInt8, 4)
-	masking!(payload, mask)
+	masked_payload = copy(payload)
+	masking!(masked_payload, mask)
 
-	len::UInt64  = length(payload)
+	len::UInt64  = length(masked_payload)
 	extended_len = 0
 
 	if 128 <= len <= 65536
@@ -134,7 +135,7 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 
 	# Create a Frame and write it to the underlying socket, via the `writer` proxy.
 	frame = Frame(
-		isfinal, false, false, false, opcode, true, len, extended_len, mask, payload)
+		isfinal, false, false, false, opcode, true, len, extended_len, mask, masked_payload)
 
 	write(logic.writer, frame)
 end
