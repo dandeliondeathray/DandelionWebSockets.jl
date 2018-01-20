@@ -26,9 +26,9 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
                 target::Nullable{$target_type}
                 chan::Channel{ProxyCall}
 
-                $(proxy_type)() = new(Nullable{$target_type}(), Channel{ProxyCall}(32))
+                $(proxy_type)() = new(Nullable{$target_type}(), Channel{ProxyCall}(Inf))
                 $(proxy_type)(target::$target_type) =
-                    new(Nullable{$target_type}(target), Channel{ProxyCall}(32))
+                    new(Nullable{$target_type}(target), Channel{ProxyCall}(Inf))
             end
 
             $(proxy_functions...)
@@ -57,7 +57,7 @@ macro taskproxy(proxy_type::Symbol, abstract_type::Symbol, target_type::Symbol, 
             "Set the target object for an empty task proxy."
             function attach(p::$proxy_type, target::$target_type)
                 !isnull(p.target) && error("Target already set")
-                p.chan = Channel{ProxyCall}(32)
+                p.chan = Channel{ProxyCall}(Inf)
                 p.target = Nullable{$target_type}(target)
             end
         end
