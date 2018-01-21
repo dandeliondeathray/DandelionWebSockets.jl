@@ -15,4 +15,6 @@ include("ws_client_test.jl")
 include("reconnect_test.jl")
 include("integration_test.jl")
 
+include("stubs.jl")
 include("issues_test.jl")
+include("client_logic_base_test.jl")

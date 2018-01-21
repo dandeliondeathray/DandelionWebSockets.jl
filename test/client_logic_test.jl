@@ -50,23 +50,6 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "A text message from the server is received",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(b""),
-		input          = [FrameFromServer(test_frame1)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
-		writer_calls   = []),
-
-	LogicTestCase(
-		description    = "Two text fragments are received from the server",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(UInt8),
-		input          = [FrameFromServer(test_frame2),
-		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
-		writer_calls   = []),
-
-	LogicTestCase(
 		description    = "Buffer is cleared between two separate multi-fragment messages",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG(UInt8),
