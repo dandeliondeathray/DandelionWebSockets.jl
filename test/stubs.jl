@@ -1,6 +1,8 @@
 using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
+using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy
+import DandelionWebSockets: write
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception
@@ -70,3 +72,23 @@ struct PongerStub <: AbstractPonger end
 
 ping_sent(::PongerStub) = nothing
 pong_received(::PongerStub) = nothing
+
+#
+# A fake RNG allows us to deterministically test functions that would otherwise behave
+# pseudo-randomly.
+#
+
+mutable struct FakeRNG{T} <: AbstractRNG
+    values::Array{T, 1}
+
+    FakeRNG{T}(v::Array{T, 1}) where {T} = new{T}(copy(v))
+end
+
+FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
+
+function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
+    if isempty(rng.values)
+        throw(InvalidPrecondition("FakeRNG requires more random data"))
+    end
+    splice!(rng.values, 1:n)
+end

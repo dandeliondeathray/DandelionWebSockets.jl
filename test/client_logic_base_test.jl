@@ -1,8 +1,5 @@
 using Base.Test
 
-using DandelionWebSockets
-using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
-using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
 
 function textframe_from_server(text::String; final_frame=true)
     Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))

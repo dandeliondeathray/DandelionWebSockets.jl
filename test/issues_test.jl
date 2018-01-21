@@ -1,6 +1,4 @@
 using Base.Test
-using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
-using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame
 
 @testset "Issue #12: Masking frames should be done on a copy of data" begin
     # Arrange
