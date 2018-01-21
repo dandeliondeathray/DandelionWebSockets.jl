@@ -50,18 +50,6 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "Buffer is cleared between two separate multi-fragment messages",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(UInt8),
-		input          = [FrameFromServer(test_frame2),
-		                  FrameFromServer(test_frame3),
-		                  FrameFromServer(test_frame2),
-		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello")),
-		                  :(@expect mock_handler on_text(mock_handler, "Hello"))],
-		writer_calls   = []),
-
-	LogicTestCase(
 		description    = "A ping request is received between two fragments",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(mask),
