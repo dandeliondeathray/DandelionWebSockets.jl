@@ -102,6 +102,8 @@ type ClientLogic <: AbstractClientLogic
 	client_cleanup::Function
 end
 
+# TODO: handler should require the abstract type WebSocketHandler.
+# TODO: writer should require the abstract type IO
 ClientLogic(state::SocketState,
 			handler::AbstractHandlerTaskProxy,
 			writer::AbstractWriterTaskProxy,

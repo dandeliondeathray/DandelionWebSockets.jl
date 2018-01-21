@@ -14,3 +14,5 @@ include("handshake_test.jl")
 include("ws_client_test.jl")
 include("reconnect_test.jl")
 include("integration_test.jl")
+
+include("issues_test.jl")
