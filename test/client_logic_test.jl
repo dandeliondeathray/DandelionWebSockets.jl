@@ -50,14 +50,6 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "Client sends a message",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [SendTextFrame("Hello", true, OPCODE_TEXT)],
-		handler_calls  = [],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, test_frame4))]),
-
-	LogicTestCase(
 		description    = "Client sends a binary message",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(mask),

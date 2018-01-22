@@ -7,5 +7,7 @@ import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
 
 include("stubs.jl")
+include("test_factories.jl")
 include("issues_test.jl")
-include("client_logic_base_test.jl")
+include("client_logic_from_server_test.jl")
+include("client_logic_from_client_test.jl")

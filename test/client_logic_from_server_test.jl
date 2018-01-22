@@ -25,22 +25,6 @@ function pongframe_from_server(; payload=Vector{UInt8}())
     Frame(true, OPCODE_PONG, false, 0, 0, Vector{UInt8}(), payload)
 end
 
-function makeclientlogic(; state=STATE_OPEN, fake_rng=FakeRNG{UInt8}(b"\x01\x02\x03\x04"))
-    handler = WebSocketHandlerStub()
-    writer = FrameWriterStub()
-    mask_generator = fake_rng
-    ponger = PongerStub()
-    client_cleanup = () -> nothing
-
-    logic = ClientLogic(state,
-                        handler,
-                        writer,
-                        mask_generator,
-                        ponger,
-                        client_cleanup)
-    logic, handler, writer, ponger
-end
-
 @testset "Server to client" begin
     @testset "single frame text message; handler receives message" begin
         # Arrange
@@ -119,17 +103,13 @@ end
 
     @testset "a ping with a payload is received; a pong with the same payload is sent" begin
         mask = b"\x01\x02\x03\x04"
-        fake_rng = FakeRNG{UInt8}(mask)
-        logic, handler, writer = makeclientlogic(fake_rng=fake_rng)
+        logic, handler, writer = makeclientlogic(mask=mask)
 
         ping_frame = pingframe_from_server(payload=b"Some payload")
 
         handle(logic, FrameFromServer(ping_frame))
 
-        written_frame = getframe(writer, 1)
-        # The written pong frame has its payload masked, using the mask defined above. This code
-        # unmasks the payload, so we can compare it against the expected value.
-        masking!(written_frame.payload, mask)
+        written_frame = getframeunmasked(writer, 1, mask)
         @test written_frame.payload == b"Some payload"
     end
 
@@ -158,7 +138,7 @@ end
         @test getbinaryat(handler, 1) == b"Hello"
     end
 
-    @testset "a ping with a payload is received; a pong with the same payload is sent" begin
+    @testset "a pong is received from the server; ponger is made aware" begin
         logic, handler, writer, ponger = makeclientlogic()
 
         pong_frame = pongframe_from_server()

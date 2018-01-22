@@ -1,7 +1,7 @@
 using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
-using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy
+using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, masking!
 import DandelionWebSockets: write, pong_received
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
@@ -77,6 +77,12 @@ function getframe(w::FrameWriterStub, i::Int)
         throw(InvalidPrecondition("required frame at index $i, but only has $(length(w.frames))"))
     end
     w.frames[i]
+end
+
+function getframeunmasked(w::FrameWriterStub, i::Int, mask::Vector{UInt8})
+    frame = getframe(w, i)
+    masking!(frame.payload, mask)
+    frame
 end
 
 #
