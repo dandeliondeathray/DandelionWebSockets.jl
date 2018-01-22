@@ -46,55 +46,6 @@ mock_ponger = MockPonger()
 logic_tests = [
 
 	#
-	# Server to client tests
-	#
-
-	LogicTestCase(
-		description    = "A ping request is received between two fragments",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [FrameFromServer(test_frame2),
-						  FrameFromServer(server_ping_frame),
-		                  FrameFromServer(test_frame3)],
-		handler_calls  = [:(@expect mock_handler on_text(mock_handler, "Hello"))],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, client_pong_frame))]),
-
-	LogicTestCase(
-		description    = "A pong response has the same payload as the ping",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [FrameFromServer(server_ping_frame_w_pay)],
-		handler_calls  = [],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, client_pong_frame_w_pay))]),
-
-
-	LogicTestCase(
-		description    = "A binary message from the server is received",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(b""),
-		input          = [FrameFromServer(frame_bin_1)],
-		handler_calls  = [:(@expect mock_handler on_binary(mock_handler, b"Hello"))],
-		writer_calls   = []),
-
-	LogicTestCase(
-		description    = "Two binary fragments are received from the server",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(UInt8),
-		input          = [FrameFromServer(frame_bin_start),
-		                  FrameFromServer(frame_bin_final)],
-		handler_calls  = [:(@expect mock_handler on_binary(mock_handler, b"Hello"))],
-		writer_calls   = []),
-
-	LogicTestCase(
-		description    = "Pong responses are propagated to Ponger",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(UInt8),
-		input          = [FrameFromServer(server_pong_frame)],
-		handler_calls  = [:(@expect mock_ponger pong_received(mock_ponger))],
-		writer_calls   = []),
-
-
-	#
 	# Client to server tests
 	#
 

@@ -2,7 +2,7 @@ using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
 using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy
-import DandelionWebSockets: write
+import DandelionWebSockets: write, pong_received
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception
@@ -52,6 +52,14 @@ function gettextat(h::WebSocketHandlerStub, i::Int)
     h.texts[i]
 end
 
+function getbinaryat(h::WebSocketHandlerStub, i::Int)
+    if length(h.binaries) < i
+        throw(InvalidPrecondition(
+            "require binary at index $i, but only $(length(h.binaries)) messages received"))
+    end
+    h.binaries[i]
+end
+
 #
 # WriterStub
 #
@@ -64,14 +72,26 @@ end
 
 write(w::FrameWriterStub, frame::Frame) = push!(w.frames, frame)
 
+function getframe(w::FrameWriterStub, i::Int)
+    if length(w.frames) < i
+        throw(InvalidPrecondition("required frame at index $i, but only has $(length(w.frames))"))
+    end
+    w.frames[i]
+end
+
 #
 # Ponger stub
 #
 
-struct PongerStub <: AbstractPonger end
+mutable struct PongerStub <: AbstractPonger
+    no_of_pongs::Int
+    no_of_pings_sent::Int
 
-ping_sent(::PongerStub) = nothing
-pong_received(::PongerStub) = nothing
+    PongerStub() = new(0, 0)
+end
+
+ping_sent(p::PongerStub) = p.no_of_pings_sent += 1
+pong_received(p::PongerStub) = p.no_of_pongs += 1
 
 #
 # A fake RNG allows us to deterministically test functions that would otherwise behave

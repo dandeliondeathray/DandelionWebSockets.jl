@@ -1,22 +1,34 @@
 using Base.Test
-
+using DandelionWebSockets: OPCODE_PONG, masking!
 
 function textframe_from_server(text::String; final_frame=true)
     Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
+end
+
+function binaryframe_from_server(data::Vector{UInt8}; final_frame=true)
+    Frame(final_frame, OPCODE_BINARY, false, length(data), 0, Vector{UInt8}(), data)
 end
 
 function continuation_textframe_from_server(text::String; final_frame=true)
     Frame(final_frame, OPCODE_CONTINUATION, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
 end
 
+function continuation_binaryframe_from_server(data::Vector{UInt8}; final_frame=true)
+    Frame(final_frame, OPCODE_CONTINUATION, false, length(data), 0, Vector{UInt8}(), data)
+end
+
 function pingframe_from_server(; payload=Vector{UInt8}())
     Frame(true, OPCODE_PING, false, 0, 0, Vector{UInt8}(), payload)
 end
 
-function makeclientlogic(; state=STATE_OPEN)
+function pongframe_from_server(; payload=Vector{UInt8}())
+    Frame(true, OPCODE_PONG, false, 0, 0, Vector{UInt8}(), payload)
+end
+
+function makeclientlogic(; state=STATE_OPEN, fake_rng=FakeRNG{UInt8}(b"\x01\x02\x03\x04"))
     handler = WebSocketHandlerStub()
     writer = FrameWriterStub()
-    mask_generator = FakeRNG{UInt8}(b"\x01\x02\x03\x04")
+    mask_generator = fake_rng
     ponger = PongerStub()
     client_cleanup = () -> nothing
 
@@ -26,7 +38,7 @@ function makeclientlogic(; state=STATE_OPEN)
                         mask_generator,
                         ponger,
                         client_cleanup)
-    logic, handler, writer
+    logic, handler, writer, ponger
 end
 
 @testset "Server to client" begin
@@ -76,21 +88,83 @@ end
         @test gettextat(handler, 2) == "world"
     end
 
-    @testset "a ping request is received between two fragments; pong is sent" begin
+    @testset "a ping request is received between two fragments; pong reply is sent" begin
+        logic, handler, writer = makeclientlogic()
+
+        frame1 = textframe_from_server("Hel"; final_frame=false)
+        frame2 = continuation_textframe_from_server("lo";  final_frame=true)
+        ping_frame = pingframe_from_server()
+
+        handle(logic, FrameFromServer(frame1))
+        handle(logic, FrameFromServer(ping_frame))
+        handle(logic, FrameFromServer(frame2))
+
+        written_frame = getframe(writer, 1)
+        @test written_frame.opcode == OPCODE_PONG
     end
 
     @testset "a ping request is received between two fragments; message is still delivered" begin
         logic, handler, writer = makeclientlogic()
 
-        frame1_1 = textframe_from_server("Hel"; final_frame=false)
-        frame1_2 = continuation_textframe_from_server("lo";  final_frame=true)
+        frame1 = textframe_from_server("Hel"; final_frame=false)
+        frame2 = continuation_textframe_from_server("lo";  final_frame=true)
         ping_frame = pingframe_from_server()
 
-        handle(logic, FrameFromServer(frame1_1))
+        handle(logic, FrameFromServer(frame1))
         handle(logic, FrameFromServer(ping_frame))
-        handle(logic, FrameFromServer(frame1_2))
+        handle(logic, FrameFromServer(frame2))
 
         @test gettextat(handler, 1) == "Hello"
     end
 
+    @testset "a ping with a payload is received; a pong with the same payload is sent" begin
+        mask = b"\x01\x02\x03\x04"
+        fake_rng = FakeRNG{UInt8}(mask)
+        logic, handler, writer = makeclientlogic(fake_rng=fake_rng)
+
+        ping_frame = pingframe_from_server(payload=b"Some payload")
+
+        handle(logic, FrameFromServer(ping_frame))
+
+        written_frame = getframe(writer, 1)
+        # The written pong frame has its payload masked, using the mask defined above. This code
+        # unmasks the payload, so we can compare it against the expected value.
+        masking!(written_frame.payload, mask)
+        @test written_frame.payload == b"Some payload"
+    end
+
+    @testset "a binary single-frame message is received; handler receives message" begin
+        # Arrange
+        logic, handler, writer = makeclientlogic()
+
+        frame = binaryframe_from_server(b"Hello")
+
+        # Act
+        handle(logic, FrameFromServer(frame))
+
+        # Assert
+        @test getbinaryat(handler, 1) == b"Hello"
+    end
+
+    @testset "two binary fragments are received; full message is delivered" begin
+        logic, handler, writer = makeclientlogic()
+
+        frame1 = binaryframe_from_server(b"Hel"; final_frame=false)
+        frame2 = continuation_binaryframe_from_server(b"lo";  final_frame=true)
+
+        handle(logic, FrameFromServer(frame1))
+        handle(logic, FrameFromServer(frame2))
+
+        @test getbinaryat(handler, 1) == b"Hello"
+    end
+
+    @testset "a ping with a payload is received; a pong with the same payload is sent" begin
+        logic, handler, writer, ponger = makeclientlogic()
+
+        pong_frame = pongframe_from_server()
+
+        handle(logic, FrameFromServer(pong_frame))
+
+        @test ponger.no_of_pongs == 1
+    end
 end
