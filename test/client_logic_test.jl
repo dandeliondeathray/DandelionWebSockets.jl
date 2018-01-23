@@ -50,35 +50,6 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "Client sends a binary message, 65k",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [DandelionWebSockets.SendBinaryFrame(zero65k, true, OPCODE_BINARY)],
-		handler_calls  = [],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, test_bin_frame_65k))]),
-
-
-	LogicTestCase(
-		description    = "Client sends two fragments",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(vcat(mask, mask2)),
-		input          = [SendTextFrame("Hel", false, OPCODE_TEXT),
-		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
-		handler_calls  = [],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, test_frame5)),
-		                  :(@expect mock_writer write(mock_writer, test_frame6))]),
-
-	LogicTestCase(
-		description    = "Frames are not sent when in CLOSING",
-		initial_state  = DandelionWebSockets.STATE_CLOSING,
-		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
-						  SendTextFrame("Hel", false, OPCODE_TEXT),
-		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
-		handler_calls  = [],
-		writer_calls   = []),
-
-	LogicTestCase(
 		description    = "Frames are not sent when in CONNECTING",
 		initial_state  = DandelionWebSockets.STATE_CONNECTING,
 		rng            = FakeRNG(UInt8),

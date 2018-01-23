@@ -85,6 +85,8 @@ function getframeunmasked(w::FrameWriterStub, i::Int, mask::Vector{UInt8})
     frame
 end
 
+get_no_of_frames_written(w::FrameWriterStub) = length(w.frames)
+
 #
 # Ponger stub
 #

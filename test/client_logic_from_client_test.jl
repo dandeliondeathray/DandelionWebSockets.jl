@@ -140,4 +140,31 @@ using DandelionWebSockets: SendBinaryFrame
             @test frame.extended_len == 65536
         end
     end
+
+    @testset "send a message in two fragments; two fragments are written" begin
+        mask1 = b"\x01\x02\x03\x04"
+        mask2 = b"\x05\x06\x07\x08"
+        logic, handler, writer = makeclientlogic(mask=[mask1; mask2])
+
+        handle(logic, SendTextFrame("Hel", false, OPCODE_TEXT))
+        handle(logic, SendTextFrame("lo", true, OPCODE_TEXT))
+
+        frame1 = getframeunmasked(writer, 1, mask1)
+        @test frame1.opcode == OPCODE_TEXT
+        @test frame1.payload == b"Hel"
+        @test frame1.fin == false
+
+        frame2 = getframeunmasked(writer, 2, mask2)
+        @test frame2.opcode == OPCODE_TEXT
+        @test frame2.payload == b"lo"
+        @test frame2.fin == true
+    end
+
+    @testset "connection is in CLOSING, requesting to send a message; no message is sent" begin
+        logic, handler, writer = makeclientlogic(state=STATE_CLOSING)
+
+        handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
+
+        @test get_no_of_frames_written(writer) == 0
+    end
 end
