@@ -127,10 +127,10 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 	len::UInt64  = length(masked_payload)
 	extended_len = 0
 
-	if 126 <= len <= 65536
+	if 126 <= len <= 65535
 		extended_len = len
 		len = 126
-	elseif 65536 + 1 <= len
+	elseif 65536 <= len
 		extended_len = len
 		len = 127
 	end

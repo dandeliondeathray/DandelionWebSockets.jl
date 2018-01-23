@@ -107,5 +107,37 @@ using DandelionWebSockets: SendBinaryFrame
             @test frame.len == 126
             @test frame.extended_len == 256
         end
+
+        @testset "payload size 65535 (0xFFFF); extended payload length is 65536" begin
+            # This is the max payload size representable by the 16-bit extended length,
+            # where len is 126.
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            # Act
+            payload = zeros(UInt8, 65535)
+            handle(logic, SendBinaryFrame(payload, true, OPCODE_BINARY))
+
+            # Assert
+            frame = getframe(writer, 1)
+            @test frame.len == 126
+            @test frame.extended_len == 65535
+        end
+
+        @testset "payload size is 65536; len is 127 and extended length is 65536" begin
+            # This is one byte more than the max payload size representable by the 16-bit extended
+            # length, and then len is 127 and the 64-bit extended length is used.
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            # Act
+            payload = zeros(UInt8, 65536)
+            handle(logic, SendBinaryFrame(payload, true, OPCODE_BINARY))
+
+            # Assert
+            frame = getframe(writer, 1)
+            @test frame.len == 127
+            @test frame.extended_len == 65536
+        end
     end
 end
