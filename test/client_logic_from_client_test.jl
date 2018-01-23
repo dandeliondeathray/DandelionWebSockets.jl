@@ -1,5 +1,5 @@
 using Base.Test
-using DandelionWebSockets: SendBinaryFrame
+using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
 @testset "Client to server" begin
     @testset "send single-frame text message; message is sent" begin
@@ -160,11 +160,73 @@ using DandelionWebSockets: SendBinaryFrame
         @test frame2.fin == true
     end
 
-    @testset "connection is in CLOSING, requesting to send a message; no message is sent" begin
+    @testset "connection is in CLOSING, trying to send a message; no message is sent" begin
         logic, handler, writer = makeclientlogic(state=STATE_CLOSING)
 
         handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
 
         @test get_no_of_frames_written(writer) == 0
+    end
+
+    @testset "connection is in CONNECTING, trying to send a message; no message is sent" begin
+        logic, handler, writer = makeclientlogic(state=STATE_CONNECTING)
+
+        handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
+
+        @test get_no_of_frames_written(writer) == 0
+    end
+
+    @testset "connection is in CLOSED, trying to send a message; no message is sent" begin
+        logic, handler, writer = makeclientlogic(state=STATE_CLOSED)
+
+        handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
+
+        @test get_no_of_frames_written(writer) == 0
+    end
+
+    @testset "sending a ping to the server; Ponger is made aware that a ping was sent" begin
+        logic, handler, writer, ponger = makeclientlogic()
+
+        handle(logic, ClientPingRequest())
+
+        @test ponger.no_of_pings_sent == 1
+    end
+
+    @testset "sending a ping to the server; a ping frame is sent" begin
+        logic, handler, writer = makeclientlogic()
+
+        handle(logic, ClientPingRequest())
+
+        frame = getframe(writer, 1)
+        @test frame.opcode == OPCODE_PING
+    end
+
+    @testset "pings are not sent in non-open states" begin
+        @testset "state is CONNECTING; no ping is sent" begin
+            logic, handler, writer, ponger = makeclientlogic(state=STATE_CONNECTING)
+    
+            handle(logic, ClientPingRequest())
+    
+            @test ponger.no_of_pings_sent == 0
+            @test get_no_of_frames_written(writer) == 0
+        end
+
+        @testset "state is CLOSING; no ping is sent" begin
+            logic, handler, writer, ponger = makeclientlogic(state=STATE_CLOSING)
+
+            handle(logic, ClientPingRequest())
+
+            @test ponger.no_of_pings_sent == 0
+            @test get_no_of_frames_written(writer) == 0
+        end
+
+        @testset "state is CLOSED; no ping is sent" begin
+            logic, handler, writer, ponger = makeclientlogic(state=STATE_CLOSED)
+
+            handle(logic, ClientPingRequest())
+
+            @test ponger.no_of_pings_sent == 0
+            @test get_no_of_frames_written(writer) == 0
+        end
     end
 end

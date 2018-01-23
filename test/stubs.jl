@@ -2,7 +2,7 @@ using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
 using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, masking!
-import DandelionWebSockets: write, pong_received
+import DandelionWebSockets: write, pong_received, ping_sent
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception

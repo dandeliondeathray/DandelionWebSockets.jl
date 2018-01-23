@@ -46,47 +46,6 @@ mock_ponger = MockPonger()
 logic_tests = [
 
 	#
-	# Client to server tests
-	#
-
-	LogicTestCase(
-		description    = "Frames are not sent when in CONNECTING",
-		initial_state  = DandelionWebSockets.STATE_CONNECTING,
-		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
-						  SendTextFrame("Hel", false, OPCODE_TEXT),
-		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
-		handler_calls  = [],
-		writer_calls   = []),
-
-	LogicTestCase(
-		description    = "Frames are not sent when in CLOSED",
-		initial_state  = DandelionWebSockets.STATE_CLOSED,
-		rng            = FakeRNG(UInt8),
-		input          = [SendTextFrame("Hello", true, OPCODE_TEXT),
-						  SendTextFrame("Hel", false, OPCODE_TEXT),
-		                  SendTextFrame("lo", true, OPCODE_CONTINUATION)],
-		handler_calls  = [],
-		writer_calls   = []),
-
-	LogicTestCase(
-		description    = "Sending a ping request to the server",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [ClientPingRequest()],
-		handler_calls  = [:(@expect mock_ponger ping_sent(mock_ponger))],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, client_ping_frame))]),
-
-	LogicTestCase(
-		description    = "Pings are not sent in non-open states.",
-		initial_state  = DandelionWebSockets.STATE_CLOSED,
-		rng            = FakeRNG(UInt8),
-		input          = [ClientPingRequest()],
-		handler_calls  = [],
-		writer_calls   = []),
-
-
-	#
 	# Closing the connection
 	#
 
