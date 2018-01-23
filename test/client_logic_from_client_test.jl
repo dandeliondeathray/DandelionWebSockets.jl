@@ -1,7 +1,7 @@
 using Base.Test
 using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
-@testset "Client to server" begin
+@testset "Client to server     " begin
     @testset "send single-frame text message; message is sent" begin
         # Arrange
         mask = b"\x01\x02\x03\x04"
