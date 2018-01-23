@@ -50,15 +50,6 @@ logic_tests = [
 	#
 
 	LogicTestCase(
-		description    = "The server initiates a closing handshake.",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [FrameFromServer(server_close_frame)],
-		handler_calls  = [:(@expect mock_handler state_closing(mock_handler))],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, client_close_reply))],
-		final_state    = DandelionWebSockets.STATE_CLOSING_SOCKET),
-
-	LogicTestCase(
 		description    = "The client initiates a closing handshake.",
 		initial_state  = DandelionWebSockets.STATE_OPEN,
 		rng            = FakeRNG{UInt8}(mask),

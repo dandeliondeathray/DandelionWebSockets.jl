@@ -17,7 +17,7 @@ end
 #       but because of implementation reasons it needs to be an AbstractHandlerTaskProxy instead.
 #       I should change this.
 "WebSocketHandlerStub acts as a handler for the tests, storing state and incoming messages."
-struct WebSocketHandlerStub <: AbstractHandlerTaskProxy
+mutable struct WebSocketHandlerStub <: AbstractHandlerTaskProxy
     state::SocketState
     texts::Vector{String}
     binaries::Vector{Vector{UInt8}}
