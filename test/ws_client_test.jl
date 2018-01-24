@@ -1,6 +1,7 @@
 import DandelionWebSockets: HandshakeResult, HandshakeFailure,
     AbstractServerReader, start_reader, stop, attach, start,
-    AbstractPinger, CloseRequest
+    AbstractPinger, AbstractPonger, CloseRequest
+import DandelionWebSockets: ping_received, pong_received, ping_sent
 
 @mock Mocker WebSocketHandler
 mocker = Mocker()
@@ -42,6 +43,10 @@ mock_server_reader = MockServerReader()
 @mock MockPinger AbstractPinger
 mock_pinger = MockPinger()
 @mockfunction mock_pinger attach(::MockPinger, ::AbstractClientTaskProxy) stop(::MockPinger)
+
+@mock MockPonger AbstractPonger
+mock_ponger = MockPonger()
+@mockfunction mock_ponger pong_received(::MockPonger) attach(::MockPonger, ::AbstractClientTaskProxy) ping_sent(::MockPonger)
 
 accept_field = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 headers = Dict(
