@@ -34,74 +34,73 @@
 #      *  0x82 0x7F 0x0000000000010000 [65536 bytes of binary data]
 #
 
+using Base.Test
 using BufferedStreams
 
-immutable FrameTestCase
+struct FrameTestCase
     description::AbstractString
     serialized_frame::Array{UInt8}
     frame::Frame
 end
 
 
-frame_test_cases = [
-    FrameTestCase("A single frame unmasked text message, body Hello",
-        b"\x81\x05\x48\x65\x6c\x6c\x6f",
-        Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")),
+@testset "Frame serialization  " begin
+    nomask = b""
+    mask = b"\x37\xfa\x21\x3d"
 
-    FrameTestCase("A single-frame masked text message",
-        b"\x81\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58",
-        Frame(true, false, false, false, OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")),
+    frame_test_cases = [
+        FrameTestCase("A single frame unmasked text message, body Hello",
+            b"\x81\x05\x48\x65\x6c\x6c\x6f",
+            Frame(true, false, false, false, OPCODE_TEXT, false, 5, 0, nomask, b"Hello")),
 
-    FrameTestCase("Fragmented unmasked text message, first fragment",
-        b"\x01\x03\x48\x65\x6c",
-        Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")),
+        FrameTestCase("A single-frame masked text message",
+            b"\x81\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58",
+            Frame(true, false, false, false, OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")),
 
-    FrameTestCase("Fragmented unmasked text message, last fragment",
-        b"\x80\x02\x6c\x6f",
-        Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")),
+        FrameTestCase("Fragmented unmasked text message, first fragment",
+            b"\x01\x03\x48\x65\x6c",
+            Frame(false, false, false, false, OPCODE_TEXT, false, 3, 0, nomask, b"Hel")),
 
-    FrameTestCase("Unmasked ping request",
-        b"\x89\x05\x48\x65\x6c\x6c\x6f",
-        Frame(true, false, false, false, OPCODE_PING, false, 5, 0, nomask, b"Hello")),
+        FrameTestCase("Fragmented unmasked text message, last fragment",
+            b"\x80\x02\x6c\x6f",
+            Frame(true, false, false, false, OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")),
 
-    FrameTestCase("Masked ping response",
-        b"\x8a\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58",
-        Frame(true, false, false, false, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")),
+        FrameTestCase("Unmasked ping request",
+            b"\x89\x05\x48\x65\x6c\x6c\x6f",
+            Frame(true, false, false, false, OPCODE_PING, false, 5, 0, nomask, b"Hello")),
 
-    FrameTestCase("Binary message, payload is 256 bytes, single unmasked",
-        vcat(b"\x82\x7E\x01\x00", zero256),
-        Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zero256)),
+        FrameTestCase("Masked ping response",
+            b"\x8a\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58",
+            Frame(true, false, false, false, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")),
 
-    FrameTestCase("Binary message, payload is 65KiB",
-        vcat(b"\x82\x7f\x00\x00\x00\x00\x00\x01\x04\x00", zero65k),
-        Frame(true, false, false, false, OPCODE_BINARY, false, 127, 65536 + 1024, nomask, zero65k))
-]
+        FrameTestCase("Binary message, payload is 256 bytes, single unmasked",
+            vcat(b"\x82\x7E\x01\x00", zero256),
+            Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zeros(UInt8, 256))),
 
-facts("Reading frames") do
-    for tc in frame_test_cases
-        context(tc.description) do
-            s = IOBuffer(tc.serialized_frame)
-            @fact read(s, Frame) --> tc.frame
-        end
-    end
-end
+        FrameTestCase("Binary message, payload is 65KiB",
+            vcat(b"\x82\x7f\x00\x00\x00\x00\x00\x01\x04\x00", zeros(UInt8, 65536+1024)),
+            Frame(true, false, false, false, OPCODE_BINARY, false, 127, 65536 + 1024, nomask, zeros(UInt8, 65536+1024)))
+    ]
 
-facts("Writing frames") do
-    for tc in frame_test_cases
-        context(tc.description) do
-            s = IOBuffer()
-            write(s, tc.frame)
-            @fact take!(s) --> tc.serialized_frame
-        end
-    end
-end
 
-facts("BufferedStreams") do
-    for tc in frame_test_cases
-        context(tc.description) do
-            s = IOBuffer(tc.serialized_frame)
-            buffered = BufferedInputStream(s)
-            @fact read(buffered, Frame) --> tc.frame
+    for testcase in frame_test_cases
+        @testset "$(testcase.description)" begin
+            @testset "Read frame from IOBuffer" begin
+                s = IOBuffer(testcase.serialized_frame)
+                @test read(s, Frame) == testcase.frame
+            end
+
+            @testset "Write frame to IOBuffer" begin
+                s = IOBuffer()
+                write(s, testcase.frame)
+                @test take!(s) == testcase.serialized_frame
+            end
+
+            @testset "Read frame from BufferedInputStream" begin
+                s = IOBuffer(testcase.serialized_frame)
+                buffered = BufferedInputStream(s)
+                @fact read(buffered, Frame) --> testcase.frame
+            end
         end
     end
 end
