@@ -43,51 +43,7 @@ mock_writer = MockWriterTaskProxy()
 mock_ponger = MockPonger()
 @mockfunction mock_ponger pong_received(::MockPonger) attach(::MockPonger, ::AbstractClientTaskProxy) ping_sent(::MockPonger)
 
-logic_tests = [
-
-	#
-	# Closing the connection
-	#
-
-	LogicTestCase(
-		description    = "The client initiates a closing handshake.",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG{UInt8}(mask),
-		input          = [DandelionWebSockets.CloseRequest()],
-		handler_calls  = [:(@expect mock_handler state_closing(mock_handler))],
-		writer_calls   = [:(@expect mock_writer write(mock_writer, client_close_reply))],
-		final_state    = DandelionWebSockets.STATE_CLOSING),
-
-	LogicTestCase(
-		description    = "The server replies to a client initiated handshake",
-		initial_state  = DandelionWebSockets.STATE_CLOSING,
-		rng            = FakeRNG(UInt8),
-		input          = [FrameFromServer(server_close_frame)],
-		handler_calls  = [],
-		writer_calls   = [],
-		final_state    = DandelionWebSockets.STATE_CLOSING_SOCKET),
-
-	LogicTestCase(
-		description    = "The socket is closed cleanly",
-		initial_state  = DandelionWebSockets.STATE_CLOSING_SOCKET,
-		rng            = FakeRNG(UInt8),
-		input          = [DandelionWebSockets.SocketClosed()],
-		handler_calls  = [:(@expect(mock_handler, state_closed(mock_handler)))],
-		writer_calls   = [],
-		final_state    = DandelionWebSockets.STATE_CLOSED,
-		client_cleanup_called = 1),
-
-	LogicTestCase(
-		description    = "Close connection on a missing ping",
-		initial_state  = DandelionWebSockets.STATE_OPEN,
-		rng            = FakeRNG(UInt8),
-		input          = [PongMissed()],
-		handler_calls  = [:(@expect(mock_handler, state_closed(mock_handler)))],
-		writer_calls   = [],
-		final_state    = DandelionWebSockets.STATE_CLOSED,
-		client_cleanup_called = 1),
-
-]
+logic_tests = []
 
 
 facts("ClientLogic") do
