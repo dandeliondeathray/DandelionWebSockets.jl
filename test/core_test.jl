@@ -74,7 +74,7 @@ end
             Frame(true, false, false, false, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")),
 
         FrameTestCase("Binary message, payload is 256 bytes, single unmasked",
-            vcat(b"\x82\x7E\x01\x00", zero256),
+            vcat(b"\x82\x7E\x01\x00", zeros(UInt8, 256)),
             Frame(true, false, false, false, OPCODE_BINARY, false, 126, 256, nomask, zeros(UInt8, 256))),
 
         FrameTestCase("Binary message, payload is 65KiB",
@@ -99,7 +99,7 @@ end
             @testset "Read frame from BufferedInputStream" begin
                 s = IOBuffer(testcase.serialized_frame)
                 buffered = BufferedInputStream(s)
-                @fact read(buffered, Frame) --> testcase.frame
+                @test read(buffered, Frame) == testcase.frame
             end
         end
     end
