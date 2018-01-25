@@ -37,15 +37,6 @@ function mock_do_stream_request(m::MockRequest, uri::Requests.URI, method::Strin
 end
 
 facts("Handshake") do
-    context("Handshake calculations") do
-        rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
-        actual_key = DandelionWebSockets.make_websocket_key(rng)
-        @fact actual_key --> "AQIDBAUGBwgJCgsMDQ4PEA=="
-
-        key = "dGhlIHNhbXBsZSBub25jZQ=="
-        @fact DandelionWebSockets.calculate_accept(key) --> "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
-    end
-
     context("Make headers") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         key = DandelionWebSockets.make_websocket_key(rng)
