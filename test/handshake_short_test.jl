@@ -1,5 +1,6 @@
 using Base.Test
-using DandelionWebSockets: HandshakeResult, validate
+using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
+using Requests: URI
 
 @testset "Handshake            " begin
     @testset "validate a handshake" begin
@@ -78,4 +79,29 @@ using DandelionWebSockets: HandshakeResult, validate
         end
     end
 
+    @testset "Convert URIs from ws:// to http://" begin
+        @test convert_ws_uri(URI("ws://some/uri")) == URI("http://some/uri")
+        @test convert_ws_uri(URI("wss://some/uri")) == URI("https://some/uri")
+        @test convert_ws_uri(URI("http://some/uri")) == URI("http://some/uri")
+    end
+
+    @testset "Case insensitive headers in validation" begin
+        handshake_result_with_accept(accept_header_name::String) = HandshakeResult(
+            "expected accept key",
+            IOBuffer(),
+            Dict(accept_header_name => "expected accept key"),
+            [])
+
+        @testset "all lowercase name" begin
+            @test validate(handshake_result_with_accept("sec-websocket-accept")) == true
+        end
+
+        @testset "all uppercase name" begin
+            @test validate(handshake_result_with_accept("SEC-WEBSOCKET-ACCEPT")) == true
+        end
+
+        @testset "mixed case" begin
+            @test validate(handshake_result_with_accept("SEC-websocket-ACCEPT")) == true
+        end
+    end
 end

@@ -63,15 +63,6 @@ facts("Handshake") do
         @fact handshake_result.headers --> expected_response_headers
     end
 
-    context("Convert URIs from ws to http") do
-        ws_uri = Requests.URI("ws://some/uri")
-        wss_uri = Requests.URI("wss://some/uri")
-        http_uri = Requests.URI("http://some/uri")
-        @fact DandelionWebSockets.convert_ws_uri(ws_uri) --> Requests.URI("http://some/uri")
-        @fact DandelionWebSockets.convert_ws_uri(wss_uri) --> Requests.URI("https://some/uri")
-        @fact DandelionWebSockets.convert_ws_uri(http_uri) --> http_uri
-    end
-
     context("SSL handshakes result in a TLSBufferedIO stream") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         key = "AQIDBAUGBwgJCgsMDQ4PEA=="
@@ -90,25 +81,5 @@ facts("Handshake") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         ssl_handshake_result = DandelionWebSockets.do_handshake(rng, ssl_uri, do_request=do_req)
         @fact isa(ssl_handshake_result.stream, DandelionWebSockets.TLSBufferedIO) --> true
-    end
-
-    context("Case insensitive headers in validation") do
-
-        function test_validation_success(accept_header_name)
-            stream = IOBuffer()
-            headers = Dict(accept_header_name => "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
-            ok_handshake = DandelionWebSockets.HandshakeResult(
-                "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
-                stream,
-                headers,
-                [])
-
-            @fact ok_handshake --> DandelionWebSockets.validate
-        end
-
-        test_validation_success("sec-websocket-accept")
-        test_validation_success("SEC-WEBSOCKET-ACCEPT")
-        test_validation_success("SEC-websocket-ACCEPT")
-        test_validation_success("SeC-wEbSoCkEt-AcCePt")
     end
 end
