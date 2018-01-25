@@ -37,31 +37,6 @@ function mock_do_stream_request(m::MockRequest, uri::Requests.URI, method::Strin
 end
 
 facts("Handshake") do
-    context("Validation") do
-        stream = IOBuffer()
-        ok_handshake = DandelionWebSockets.HandshakeResult(
-            "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
-            stream,
-            headers,
-            [])
-
-        bad_handshake = DandelionWebSockets.HandshakeResult(
-            "notagoodreply",
-            stream,
-            headers,
-            [])
-
-        missing_header = DandelionWebSockets.HandshakeResult(
-            "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
-            stream,
-            Dict(),
-            [])
-
-        @fact ok_handshake --> DandelionWebSockets.validate
-        @fact bad_handshake --> x -> !DandelionWebSockets.validate(x)
-        @fact missing_header --> x -> !DandelionWebSockets.validate(x)
-    end
-
     context("Handshake calculations") do
         rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
         actual_key = DandelionWebSockets.make_websocket_key(rng)

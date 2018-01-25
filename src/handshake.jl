@@ -32,7 +32,6 @@ function validate(handshake::HandshakeResult)
     lower_keys = map(lowercase, normal_keys)
     accept_name_index = findfirst(lower_keys, "sec-websocket-accept")
     if accept_name_index == 0
-        println("No Sec-WebSocket-Accept in $(handshake.headers)")
         return false
     end
 
@@ -40,9 +39,6 @@ function validate(handshake::HandshakeResult)
     accept_value = handshake.headers[accept_name]
 
     is_valid = accept_value == handshake.expected_accept
-    if !is_valid
-        println("Expected accept value $(handshake.expected_accept) does not match actual $accept_value")
-    end
 
     is_valid
 end
