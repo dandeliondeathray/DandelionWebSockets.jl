@@ -54,4 +54,28 @@ using DandelionWebSockets: HandshakeResult, validate
             @test DandelionWebSockets.calculate_accept(key) == "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
         end
     end
+
+    @testset "Client side handshake headers" begin
+        @testset "Sec-WebSocket-Version field must be 13" begin
+            headers = DandelionWebSockets.make_headers("")
+            @test headers["Sec-WebSocket-Version"] == "13"
+        end
+
+        @testset "Upgrade field must be websocket" begin
+            headers = DandelionWebSockets.make_headers("")
+            @test headers["Upgrade"] == "websocket"
+        end
+
+        @testset "Connection field must be Upgrade" begin
+            headers = DandelionWebSockets.make_headers("")
+            @test headers["Connection"] == "Upgrade"
+        end
+
+        @testset "Sec-WebSocket-Key must match supplied key" begin
+            key = "Some key value"
+            headers = DandelionWebSockets.make_headers(key)
+            @test headers["Sec-WebSocket-Key"] == key
+        end
+    end
+
 end
