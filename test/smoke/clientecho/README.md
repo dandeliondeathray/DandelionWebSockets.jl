@@ -15,3 +15,23 @@ The test does not check the contents of any response, only that all responses we
 by the server.
 
 If the server has not received all messages within a minute, then it signals failure.
+
+Usage
+-----
+Build the Docker containers using the build.sh command. Because the Docker context needs to include
+all source files for DandelionWebSockets, the command needs to be executed from the project root
+directory.
+
+    DandelionWebSockets$ bash test/smoke/clientecho/build.sh
+
+In the directory `test/smoke/clientecho`, run
+
+    $ docker-compose up
+
+to start both containers, and commence the test. The server will print "SUCCESS!" on a successful
+test run. Both containers will stop once the test is successful. If the test fails because messages
+were dropped, then the test will time out one minute after the client connected. If the client fails
+to connect at all, then the containers will hang indefinitely.
+
+Note: This can be improved by having the server container time out some time after start, even if
+no client ever connects.
