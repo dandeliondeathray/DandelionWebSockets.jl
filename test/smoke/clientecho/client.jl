@@ -64,7 +64,7 @@ client = WSClient()
 
 handler = EchoHandler(client, stop_chan, 0, 0)
 
-uri = URI("ws://localhost:8080")
+uri = URI("ws://server:8080")
 println("Connecting to $uri... ")
 
 wsconnect(client, uri, handler)
