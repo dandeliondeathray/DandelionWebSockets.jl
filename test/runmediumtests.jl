@@ -2,7 +2,7 @@ using Base.Test
 using DandelionWebSockets
 using DandelionWebSockets: WebSocketsHandlerProxy
 import DandelionWebSockets: on_text, on_binary
-import DandelionWebSockets: state_connecting
+import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
 
 """
 This is a mock WebSocketHandler which is designed to verify that calls are made to the on_*
@@ -27,6 +27,9 @@ takenotification!(h::MockWebSocketsHandler) = take!(h.notification)
 on_text(h::MockWebSocketsHandler, text::String) = put!(h.notification, Notification("on_text", text))
 on_binary(h::MockWebSocketsHandler, data::Vector{UInt8}) = put!(h.notification, Notification("on_binary", data))
 state_connecting(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_connecting", ""))
+state_open(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_open", ""))
+state_closing(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_closing", ""))
+state_closed(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_closed", ""))
 
 @testset "WebSocketHandler" begin
     @testset "Callbacks are done in a separate task" begin
@@ -69,6 +72,45 @@ state_connecting(h::MockWebSocketsHandler) = put!(h.notification, Notification("
             # Assert
             notification = takenotification!(handler)
             @test notification.method_name == "state_connecting"
+        end
+
+        @testset "state_open callback" begin
+            # Arrange
+            handler = MockWebSocketsHandler()
+            handlerproxy = WebSocketsHandlerProxy(handler)
+
+            # Act
+            state_open(handlerproxy)
+
+            # Assert
+            notification = takenotification!(handler)
+            @test notification.method_name == "state_open"
+        end
+
+        @testset "state_closing callback" begin
+            # Arrange
+            handler = MockWebSocketsHandler()
+            handlerproxy = WebSocketsHandlerProxy(handler)
+
+            # Act
+            state_closing(handlerproxy)
+
+            # Assert
+            notification = takenotification!(handler)
+            @test notification.method_name == "state_closing"
+        end
+
+        @testset "state_closed callback" begin
+            # Arrange
+            handler = MockWebSocketsHandler()
+            handlerproxy = WebSocketsHandlerProxy(handler)
+
+            # Act
+            state_closed(handlerproxy)
+
+            # Assert
+            notification = takenotification!(handler)
+            @test notification.method_name == "state_closed"
         end
     end
 end

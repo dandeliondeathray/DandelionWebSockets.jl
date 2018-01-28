@@ -25,7 +25,15 @@ end
 handle(w::WebSocketsHandlerProxy, text::String) = on_text(w.handler, text)
 handle(w::WebSocketsHandlerProxy, payload::Vector{UInt8}) = on_binary(w.handler, payload)
 function handle(w::WebSocketsHandlerProxy, state::SocketState)
-    state_connecting(w.handler)
+    if state == STATE_CONNECTING
+        state_connecting(w.handler)
+    elseif state == STATE_OPEN
+        state_open(w.handler) 
+    elseif state == STATE_CLOSING
+        state_closing(w.handler)
+    elseif state == STATE_CLOSED
+        state_closed(w.handler)
+    end
 end
 
 notify!(w::WebSocketsHandlerProxy, notification::Any) = put!(w.callbacks, notification)
@@ -33,3 +41,6 @@ notify!(w::WebSocketsHandlerProxy, notification::Any) = put!(w.callbacks, notifi
 on_text(w::WebSocketsHandlerProxy, payload::String) = notify!(w, payload)
 on_binary(w::WebSocketsHandlerProxy, payload::Vector{UInt8}) = notify!(w, payload)
 state_connecting(w::WebSocketsHandlerProxy) = notify!(w, STATE_CONNECTING)
+state_open(w::WebSocketsHandlerProxy) = notify!(w, STATE_OPEN)
+state_closing(w::WebSocketsHandlerProxy) = notify!(w, STATE_CLOSING)
+state_closed(w::WebSocketsHandlerProxy) = notify!(w, STATE_CLOSED)
