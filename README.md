@@ -51,15 +51,15 @@ https://github.com/JuliaLang/julia/issues/17388 for more details.
 Thank you to @alessandrousseglioviretta for bringing up this issue.
 
 ## Releases and Julia
-If you use Julia 0.6, use master for the time being. I intend to register this
-package with a proper version, soon. The package will not remain compatible with
-Julia prior to 0.6.
+This package is now registered with Julias package manager. Please only use version 0.1.1 and
+higher. Version 0.1.0 contains three serious bugs, which were fixed for 0.1.1.
+
+This package only supports Julia 0.6. Support for 0.7 and later releases is coming.
 
 ## Needs work
 
 - Implement regular pings, to ensure the connection is up.
 - Ability to send multi-frame messages.
-- Verify functionality with current Requests.jl release.
 
 # Contributors
 These brave people have contributed to this package:
