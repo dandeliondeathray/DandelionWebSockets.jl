@@ -1,3 +1,8 @@
+using DandelionWebSockets
+using DandelionWebSockets: SocketState
+using DandelionWebSockets: STATE_CONNECTING, STATE_OPEN, STATE_CLOSING, STATE_CLOSED
+import DandelionWebSockets: on_text, on_binary
+import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
 
 """
 WebSocketsHandlerProxy is a proxy object that calls the users WebSocketsHandler callbacks on a

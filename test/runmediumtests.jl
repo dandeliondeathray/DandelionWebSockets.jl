@@ -1,6 +1,6 @@
 using Base.Test
 using DandelionWebSockets
-using DandelionWebSockets: WebSocketsHandlerProxy
+using DandelionWebSockets.Proxy: WebSocketsHandlerProxy
 import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
 
@@ -31,7 +31,7 @@ state_open(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_
 state_closing(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_closing", ""))
 state_closed(h::MockWebSocketsHandler) = put!(h.notification, Notification("state_closed", ""))
 
-@testset "WebSocketHandler" begin
+@testset "Proxies              " begin
     @testset "Callbacks are done in a separate task" begin
         @testset "on_text callback" begin
             # Arrange

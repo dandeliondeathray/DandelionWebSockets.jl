@@ -46,11 +46,11 @@ include("taskproxy.jl")
 include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")
-include("handler_proxy.jl")
 include("ping.jl")
 include("handshake.jl")
 include("client.jl")
 include("reconnect.jl")
 include("mock.jl")
+include("Proxy/Proxy.jl")
 
 end # module
