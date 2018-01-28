@@ -3,7 +3,7 @@
 # function, which is defined for the different input types below. It performs internal logic and
 # produces a call to its outbound interface.
 #
-# The outbound interface is composed of two abstract types `AbstractHandlerTaskProxy` and
+# The outbound interface is composed of two abstract types `WebSocketHandler` and
 # `AbstractWriterTaskProxy`. The concrete implementations will be `TaskProxy` objects, which will
 # store the calls (function and arguments) and call it on a target object in another coroutine. This
 # means that as long as the channels don't block, the logic will be performed concurrently with the
@@ -86,7 +86,7 @@ type ClientLogic <: AbstractClientLogic
 	state::SocketState
 	# The object to which callbacks should be made. This proxy will make the callbacks
 	# asynchronously.
-	handler::AbstractHandlerTaskProxy
+	handler::WebSocketHandler
 	# A proxy for the stream where we write our frames.
 	writer::AbstractWriterTaskProxy
 	# Random number generation, used for masking frames.
@@ -105,7 +105,7 @@ end
 # TODO: handler should require the abstract type WebSocketHandler.
 # TODO: writer should require the abstract type IO
 ClientLogic(state::SocketState,
-			handler::AbstractHandlerTaskProxy,
+			handler::WebSocketHandler,
 			writer::AbstractWriterTaskProxy,
 	        rng::AbstractRNG,
 	        ponger::AbstractPonger,

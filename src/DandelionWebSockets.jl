@@ -48,9 +48,9 @@ include("network.jl")
 include("client_logic.jl")
 include("ping.jl")
 include("handshake.jl")
+include("Proxy/Proxy.jl")
 include("client.jl")
 include("reconnect.jl")
 include("mock.jl")
-include("Proxy/Proxy.jl")
 
 end # module

@@ -4,6 +4,8 @@ using DandelionWebSockets: STATE_CONNECTING, STATE_OPEN, STATE_CLOSING, STATE_CL
 import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
 
+export WebSocketsHandlerProxy
+
 """
 WebSocketsHandlerProxy is a proxy object that calls the users WebSocketsHandler callbacks on a
 dedicated task.
@@ -49,3 +51,4 @@ state_connecting(w::WebSocketsHandlerProxy) = notify!(w, STATE_CONNECTING)
 state_open(w::WebSocketsHandlerProxy) = notify!(w, STATE_OPEN)
 state_closing(w::WebSocketsHandlerProxy) = notify!(w, STATE_CLOSING)
 state_closed(w::WebSocketsHandlerProxy) = notify!(w, STATE_CLOSED)
+stopproxy(w::WebSocketsHandlerProxy) = close(w.callbacks)

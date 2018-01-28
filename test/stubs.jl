@@ -1,7 +1,7 @@
 using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
-using DandelionWebSockets: AbstractHandlerTaskProxy, AbstractWriterTaskProxy, masking!
+using DandelionWebSockets: AbstractWriterTaskProxy, masking!
 import DandelionWebSockets: write, pong_received, ping_sent
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
@@ -13,11 +13,8 @@ end
 # WebSocketHandlerStub
 #
 
-# TODO: The handler type you send in to ClientLogic should reasonably be a WebSocketHandler type,
-#       but because of implementation reasons it needs to be an AbstractHandlerTaskProxy instead.
-#       I should change this.
 "WebSocketHandlerStub acts as a handler for the tests, storing state and incoming messages."
-mutable struct WebSocketHandlerStub <: AbstractHandlerTaskProxy
+mutable struct WebSocketHandlerStub <: WebSocketHandler
     state::SocketState
     texts::Vector{String}
     binaries::Vector{Vector{UInt8}}
