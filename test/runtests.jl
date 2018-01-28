@@ -44,3 +44,4 @@ include("reconnect_test.jl")
 include("integration_test.jl")
 
 include("runsmalltests.jl")
+include("runmediumtests.jl")
