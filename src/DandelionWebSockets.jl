@@ -43,10 +43,10 @@ state_open(t::WebSocketHandler) = nothing
 
 include("core.jl")
 include("taskproxy.jl")
-include("handler_proxy.jl")
 include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")
+include("handler_proxy.jl")
 include("ping.jl")
 include("handshake.jl")
 include("client.jl")
