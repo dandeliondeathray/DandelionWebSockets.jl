@@ -25,13 +25,13 @@ end
 
 function handler_task(w::WebSocketsHandlerProxy)
     for notification in w.callbacks
-        handle(w, notification)
+        handler_proxy(w, notification)
     end
 end
 
-handle(w::WebSocketsHandlerProxy, text::String) = on_text(w.handler, text)
-handle(w::WebSocketsHandlerProxy, payload::Vector{UInt8}) = on_binary(w.handler, payload)
-function handle(w::WebSocketsHandlerProxy, state::SocketState)
+handler_proxy(w::WebSocketsHandlerProxy, text::String) = on_text(w.handler, text)
+handler_proxy(w::WebSocketsHandlerProxy, payload::Vector{UInt8}) = on_binary(w.handler, payload)
+function handler_proxy(w::WebSocketsHandlerProxy, state::SocketState)
     if state == STATE_CONNECTING
         state_connecting(w.handler)
     elseif state == STATE_OPEN

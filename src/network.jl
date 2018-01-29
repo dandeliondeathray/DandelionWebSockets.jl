@@ -14,7 +14,7 @@ struct ServerReader <: AbstractServerReader
 end
 
 "Read frames from the network, until an exception is thrown in this task."
-function do_reader(s::IO, logic::AbstractClientTaskProxy)
+function do_reader(s::IO, logic::AbstractClientLogic)
     try
         while true
             frame = read(s, Frame)
@@ -32,7 +32,7 @@ function do_reader(s::IO, logic::AbstractClientTaskProxy)
     end
 end
 
-function start_reader(s::IO, logic::AbstractClientTaskProxy)
+function start_reader(s::IO, logic::AbstractClientLogic)
     t = @schedule do_reader(s, logic)
     ServerReader(s, t)
 end

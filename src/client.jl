@@ -9,14 +9,13 @@ using DandelionWebSockets.Proxy: stopproxy
 # These proxies glue the different coroutines together. For isntance, `ClientLogic` calls callback
 # function such as `on_text` and `state_closing` on the proxy, which is then called on the callback
 # object by another coroutine. This lets the logic run independently of the callbacks.
-@taskproxy ClientLogicTaskProxy AbstractClientTaskProxy AbstractClientLogic handle
 @taskproxy WriterTaskProxy AbstractWriterTaskProxy IO write
 
 mutable struct WebSocketsConnection
     # `writer` writes frames to the socket.
     writer::AbstractWriterTaskProxy
     # `logic_proxy` forwards commands to the `ClientLogic` object, in its own coroutine.
-    logic_proxy::AbstractClientTaskProxy
+    logic_proxy::Nullable{ClientLogicProxy}
     # `reader` reads frames from the server.
     reader::Nullable{ServerReader}
     # handler receives the users callbacks.
@@ -29,7 +28,7 @@ mutable struct WebSocketsConnection
     pinger::AbstractPinger
 
     WebSocketsConnection(handler::WebSocketsHandlerProxy) = new(WriterTaskProxy(),
-                                                                ClientLogicTaskProxy(),
+                                                                Nullable{ClientLogicProxy}(),
                                                                 Nullable{ServerReader}(),
                                                                 handler,
                                                                 MersenneTwister(0),
@@ -87,7 +86,6 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     cleanup = () -> begin
         stop(connection.writer)
         stopproxy(connection.handler)
-        stop(connection.logic_proxy)
         stop(connection.pinger)
         if !isnull(connection.reader)
             stop(get(connection.reader))
@@ -98,19 +96,18 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
     logic = ClientLogic(STATE_OPEN, connection.handler, connection.writer, connection.rng, connection.ponger,
                         cleanup)
-    attach(connection.logic_proxy, logic)
-    start(connection.logic_proxy)
+    connection.logic_proxy = Nullable{ClientLogicProxy}(ClientLogicProxy(logic))
 
     # `Ponger` requires a logic object it can alert when a pong request hasn't been received within
     # the expected time frame. This attaches that logic object to the ponger.
-    attach(connection.ponger, connection.logic_proxy)
+    attach(connection.ponger, get(connection.logic_proxy))
 
     # `Pinger` sends ping requests at regular intervals.
-    attach(connection.pinger, connection.logic_proxy)
+    attach(connection.pinger, get(connection.logic_proxy))
 
     # The target for `reader` is the same stream we're writing to.
     connection.reader = Nullable{ServerReader}(
-        start_reader(result.stream, connection.logic_proxy))
+        start_reader(result.stream, get(connection.logic_proxy)))
     true
 end
 
@@ -142,11 +139,11 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
 end
 
 "Close the WebSocket connection."
-stop(c::WSClient) = handle(get(c.connection).logic_proxy, CloseRequest())
+stop(c::WSClient) = handle(get(get(c.connection).logic_proxy), CloseRequest())
 
 "Send a single text frame."
-send_text(c::WSClient, s::String) = handle(get(c.connection).logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
+send_text(c::WSClient, s::String) = handle(get(get(c.connection).logic_proxy), SendTextFrame(s, true, OPCODE_TEXT))
 
 "Send a single binary frame."
 send_binary(c::WSClient, data::Vector{UInt8}) =
-    handle(get(c.connection).logic_proxy, SendBinaryFrame(data, true, OPCODE_BINARY))
+    handle(get(get(c.connection).logic_proxy), SendBinaryFrame(data, true, OPCODE_BINARY))
