@@ -22,4 +22,13 @@ takeframe!(m::MockWriter) = take!(m.channel)
         written_frame = takeframe!(mockwriter)
         @test written_frame == frame
     end
+
+    @testset "Stop WriterProxy" begin
+        mockwriter = MockWriter()
+        proxywriter = WriterProxy(mockwriter)
+
+        stopproxy(proxywriter)
+
+        @test isopen(proxywriter.channel) == false
+    end
 end

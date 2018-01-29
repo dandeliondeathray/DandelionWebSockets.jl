@@ -21,3 +21,4 @@ function run_writerproxy(w::WriterProxy)
 end
 
 write(w::WriterProxy, frame::Frame) = put!(w.channel, frame)
+stopproxy(w::WriterProxy) = close(w.channel)
