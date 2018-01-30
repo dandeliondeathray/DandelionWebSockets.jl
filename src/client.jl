@@ -85,8 +85,8 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
 
     # `ClientLogic` starts in the `STATE_OPEN` state, because it isn't responsible for making
     # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
-    logic = ClientLogic(STATE_OPEN, connection.handler, writer, connection.rng, connection.ponger,
-                        cleanup)
+    logic = ClientLogic(connection.handler, writer, connection.rng, connection.ponger,
+                        cleanup; state = STATE_OPEN)
     connection.logic_proxy = Nullable{ClientLogicProxy}(ClientLogicProxy(logic))
 
     # `Ponger` requires a logic object it can alert when a pong request hasn't been received within

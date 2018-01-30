@@ -102,12 +102,12 @@ type ClientLogic <: AbstractClientLogic
 	client_cleanup::Function
 end
 
-ClientLogic(state::SocketState,
-			handler::WebSocketHandler,
+ClientLogic(handler::WebSocketHandler,
 			writer::IO,
 	        rng::AbstractRNG,
 	        ponger::AbstractPonger,
-	        client_cleanup::Function) =
+			client_cleanup::Function;
+			state::SocketState = STATE_OPEN) =
 	ClientLogic(state, handler, writer, rng, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
 
 "Send a frame to the other endpoint, using the supplied payload and opcode."

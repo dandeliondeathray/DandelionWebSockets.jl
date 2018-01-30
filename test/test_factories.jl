@@ -8,11 +8,11 @@ function makeclientlogic(; state=STATE_OPEN,
     mask_generator = FakeRNG{UInt8}(mask)
     ponger = PongerStub()
 
-    logic = ClientLogic(state,
-                        handler,
+    logic = ClientLogic(handler,
                         writer,
                         mask_generator,
                         ponger,
-                        client_cleanup)
+                        client_cleanup;
+                        state = state)
     logic, handler, writer, ponger
 end

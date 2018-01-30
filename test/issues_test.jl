@@ -9,12 +9,12 @@ using Base.Test
         ponger = PongerStub()
         client_cleanup = () -> nothing
 
-        logic = ClientLogic(STATE_OPEN,
-                            handler,
+        logic = ClientLogic(handler,
                             writer,
                             mask_generator,
                             ponger,
-                            client_cleanup)
+                            client_cleanup;
+                            state = STATE_OPEN)
 
         text = "Foo"
 
