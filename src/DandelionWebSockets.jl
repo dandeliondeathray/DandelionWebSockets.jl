@@ -42,7 +42,6 @@ state_connecting(t::WebSocketHandler) = nothing
 state_open(t::WebSocketHandler) = nothing
 
 include("core.jl")
-include("taskproxy.jl")
 include("glue_interface.jl")
 include("network.jl")
 include("client_logic.jl")

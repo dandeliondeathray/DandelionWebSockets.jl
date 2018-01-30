@@ -1,11 +1,8 @@
-import DandelionWebSockets: AbstractWriterTaskProxy, AbstractClientTaskProxy,
-    on_text, on_binary,
+import DandelionWebSockets: on_text, on_binary,
     state_connecting, state_open, state_closing, state_closed,
     write, handle, FrameFromServer
 
 import Base.==
-
-@mock MockWriterTaskProxy AbstractWriterTaskProxy
 
 #
 # A fake RNG allows us to deterministically test functions that would otherwise behave

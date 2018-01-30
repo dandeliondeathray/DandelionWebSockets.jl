@@ -1,7 +1,7 @@
 using DandelionWebSockets
 using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CLOSED
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
-using DandelionWebSockets: AbstractWriterTaskProxy, masking!
+using DandelionWebSockets: masking!
 import DandelionWebSockets: write, pong_received, ping_sent
 import Base: write
 

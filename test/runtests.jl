@@ -36,7 +36,6 @@ include("utilities.jl")
 
 # include("network_test.jl")
 include("ping_test.jl")
-include("taskproxy_test.jl")
 include("handshake_test.jl")
 include("reconnect_test.jl")
 include("integration_test.jl")
