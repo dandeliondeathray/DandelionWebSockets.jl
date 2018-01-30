@@ -3,6 +3,7 @@ using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CL
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
 using DandelionWebSockets: AbstractWriterTaskProxy, masking!
 import DandelionWebSockets: write, pong_received, ping_sent
+import Base: write
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception
@@ -61,7 +62,7 @@ end
 # WriterStub
 #
 
-struct FrameWriterStub <: AbstractWriterTaskProxy
+struct FrameWriterStub <: IO
     frames::Vector{Frame}
 
     FrameWriterStub() = new(Vector{Frame}())

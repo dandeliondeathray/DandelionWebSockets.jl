@@ -3,7 +3,7 @@ import Base: write
 
 export WriterProxy
 
-struct WriterProxy
+struct WriterProxy <: IO
     channel::Channel{Frame}
     writer::IO
 

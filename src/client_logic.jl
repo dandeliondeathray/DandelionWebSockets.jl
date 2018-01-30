@@ -88,7 +88,7 @@ type ClientLogic <: AbstractClientLogic
 	# asynchronously.
 	handler::WebSocketHandler
 	# A proxy for the stream where we write our frames.
-	writer::AbstractWriterTaskProxy
+	writer::IO
 	# Random number generation, used for masking frames.
 	rng::AbstractRNG
 	# Keeps track of when a pong is expected to be received from the server.
@@ -102,11 +102,9 @@ type ClientLogic <: AbstractClientLogic
 	client_cleanup::Function
 end
 
-# TODO: handler should require the abstract type WebSocketHandler.
-# TODO: writer should require the abstract type IO
 ClientLogic(state::SocketState,
 			handler::WebSocketHandler,
-			writer::AbstractWriterTaskProxy,
+			writer::IO,
 	        rng::AbstractRNG,
 	        ponger::AbstractPonger,
 	        client_cleanup::Function) =

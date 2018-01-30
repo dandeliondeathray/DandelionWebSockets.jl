@@ -6,14 +6,7 @@ using BufferedStreams
 using DandelionWebSockets.Proxy
 using DandelionWebSockets.Proxy: stopproxy
 
-# These proxies glue the different coroutines together. For isntance, `ClientLogic` calls callback
-# function such as `on_text` and `state_closing` on the proxy, which is then called on the callback
-# object by another coroutine. This lets the logic run independently of the callbacks.
-@taskproxy WriterTaskProxy AbstractWriterTaskProxy IO write
-
 mutable struct WebSocketsConnection
-    # `writer` writes frames to the socket.
-    writer::AbstractWriterTaskProxy
     # `logic_proxy` forwards commands to the `ClientLogic` object, in its own coroutine.
     logic_proxy::Nullable{ClientLogicProxy}
     # `reader` reads frames from the server.
@@ -27,8 +20,7 @@ mutable struct WebSocketsConnection
     # `pinger` requests that the logic send ping frames to the server at regular intervals.
     pinger::AbstractPinger
 
-    WebSocketsConnection(handler::WebSocketsHandlerProxy) = new(WriterTaskProxy(),
-                                                                Nullable{ClientLogicProxy}(),
+    WebSocketsConnection(handler::WebSocketsHandlerProxy) = new(Nullable{ClientLogicProxy}(),
                                                                 Nullable{ServerReader}(),
                                                                 handler,
                                                                 MersenneTwister(0),
@@ -76,15 +68,14 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     connection = get(client.connection)
 
     # For `writer` the target object is the IO stream for the WebSocket connection.
-    attach(connection.writer, result.stream)
-    start(connection.writer)
+    writer = WriterProxy(result.stream)
 
     state_open(handler)
 
     # This function stops all the task proxies, effectively cleaning up the WSClient. This is
     # necessary when one wants to reconnect.
     cleanup = () -> begin
-        stop(connection.writer)
+        stopproxy(writer)
         stopproxy(connection.handler)
         stop(connection.pinger)
         if !isnull(connection.reader)
@@ -94,7 +85,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
 
     # `ClientLogic` starts in the `STATE_OPEN` state, because it isn't responsible for making
     # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
-    logic = ClientLogic(STATE_OPEN, connection.handler, connection.writer, connection.rng, connection.ponger,
+    logic = ClientLogic(STATE_OPEN, connection.handler, writer, connection.rng, connection.ponger,
                         cleanup)
     connection.logic_proxy = Nullable{ClientLogicProxy}(ClientLogicProxy(logic))
 
