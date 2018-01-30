@@ -11,8 +11,6 @@ mutable struct WebSocketsConnection
     logic_proxy::Nullable{ClientLogicProxy}
     # `reader` reads frames from the server.
     reader::Nullable{ServerReader}
-    # handler receives the users callbacks.
-    handler::WebSocketsHandlerProxy
     # `rng` is used for random generation of masks when sending frames.
     rng::AbstractRNG
     # `ponger` keeps track of when a pong response is expected from the server.
@@ -20,12 +18,11 @@ mutable struct WebSocketsConnection
     # `pinger` requests that the logic send ping frames to the server at regular intervals.
     pinger::AbstractPinger
 
-    WebSocketsConnection(handler::WebSocketsHandlerProxy) = new(Nullable{ClientLogicProxy}(),
-                                                                Nullable{ServerReader}(),
-                                                                handler,
-                                                                MersenneTwister(0),
-                                                                Ponger(3.0, misses=3),
-                                                                Pinger(5.0))
+    WebSocketsConnection() = new(Nullable{ClientLogicProxy}(),
+                                 Nullable{ServerReader}(),
+                                 MersenneTwister(0),
+                                 Ponger(3.0, misses=3),
+                                 Pinger(5.0))
 end
 
 """
@@ -76,7 +73,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # necessary when one wants to reconnect.
     cleanup = () -> begin
         stopproxy(writer)
-        stopproxy(connection.handler)
+        stopproxy(handler)
         stopproxy(get(connection.logic_proxy))
         stop(connection.pinger)
         if !isnull(connection.reader)
@@ -86,7 +83,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
 
     # `ClientLogic` starts in the `STATE_OPEN` state, because it isn't responsible for making
     # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
-    logic = ClientLogic(connection.handler, writer, connection.rng, connection.ponger,
+    logic = ClientLogic(handler, writer, connection.rng, connection.ponger,
                         cleanup; state = STATE_OPEN)
     connection.logic_proxy = Nullable{ClientLogicProxy}(ClientLogicProxy(logic))
 
@@ -121,7 +118,7 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     # Requests.jl expects.
     new_uri = convert_ws_uri(uri)
 
-    client.connection = Nullable{WebSocketsConnection}(WebSocketsConnection(handler_proxy))
+    client.connection = Nullable{WebSocketsConnection}(WebSocketsConnection())
 
     # This makes a HTTP request to the URI and attempts to upgrade the connection to the WebSocket
     # protocol.
