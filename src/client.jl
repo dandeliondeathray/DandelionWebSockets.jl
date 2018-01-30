@@ -77,6 +77,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     cleanup = () -> begin
         stopproxy(writer)
         stopproxy(connection.handler)
+        stopproxy(get(connection.logic_proxy))
         stop(connection.pinger)
         if !isnull(connection.reader)
             stop(get(connection.reader))
