@@ -41,11 +41,15 @@ Feature: Opening handshake
      Then the request must contain a "Connection" header field
       And it must include the "Upgrade" token
 
-  @4_1_OpeningHandshake_7 @must
+  @4_1_OpeningHandshake_7-1 @must
   Scenario: Opening handshake Sec-WebSocket-Key header field
      When the client sends an opening handshake
      Then the request must contain a "Sec-WebSocket-Key" header field
-      And and its value must be a randomly selected nonce
+
+  @4_1_OpeningHandshake_7-2 @must
+  Scenario: Opening handshake Sec-WebSocket-Key header field
+     When the client sends an opening handshake
+     Then the "Sec-WebSocket-Key" header field must be a randomly selected nonce
 
   @4_1_OpeningHandshake_8 @must @inapplicable
   Scenario: Opening handshake Origin header field for browser clients

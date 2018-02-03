@@ -19,6 +19,10 @@ using Requests: URI
         end
 
         @testset "mismatching Sec-WebSocket-Accept header field; validatio fails" begin
+            """
+            # Requirement
+            @4_1_HandshakeResponse_4
+            """
             headers = Dict(
                 "Sec-WebSocket-Accept" => "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
             )
@@ -33,6 +37,10 @@ using Requests: URI
         end
 
         @testset "missing Sec-WebSocket-Accept header field; validation fails" begin
+            """
+            # Requirement
+            @4_1_HandshakeResponse_4
+            """
             headers = Dict()
 
             handshake_result = HandshakeResult(
@@ -58,21 +66,37 @@ using Requests: URI
 
     @testset "Client side handshake headers" begin
         @testset "Sec-WebSocket-Version field must be 13" begin
+            """
+            # Requirement
+            @4_1_OpeningHandshake_9
+            """
             headers = DandelionWebSockets.make_headers("")
             @test headers["Sec-WebSocket-Version"] == "13"
         end
 
         @testset "Upgrade field must be websocket" begin
+            """
+            # Requirement
+            @4_1_OpeningHandshake_5
+            """
             headers = DandelionWebSockets.make_headers("")
             @test headers["Upgrade"] == "websocket"
         end
 
         @testset "Connection field must be Upgrade" begin
+            """
+            # Requirement
+            @4_1_OpeningHandshake_6
+            """
             headers = DandelionWebSockets.make_headers("")
             @test headers["Connection"] == "Upgrade"
         end
 
         @testset "Sec-WebSocket-Key must match supplied key" begin
+            """
+            # Requirement
+            @4_1_OpeningHandshake_7-1
+            """
             key = "Some key value"
             headers = DandelionWebSockets.make_headers(key)
             @test headers["Sec-WebSocket-Key"] == key
