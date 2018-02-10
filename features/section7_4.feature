@@ -10,6 +10,7 @@ Feature: Status codes
   Scenario Outline: Pre-defined status codes
      When sending a Close frame
      Then the endpoint may use the status code <code> to indicate reason <reason>
+
      Examples:
      | code | reason                          |
      | 1000 | normal closure                  |
@@ -27,6 +28,7 @@ Feature: Status codes
   Scenario Outline: Unusable status codes
      When sending a Close frame
      Then the endpoint may not use the status code <code> because it is used to indicate that <reason>
+
      Examples:
      | code | reason                                    |
      | 1005 | no status code was present in Close frame |
@@ -37,6 +39,7 @@ Feature: Status codes
   Scenario Outline: Reserved status code ranges
      Given the reserved status code range <range>
       Then the expected use is <use>
+
      Examples:
      | range     | use                                             |
      | 0-999     | unused                                          |

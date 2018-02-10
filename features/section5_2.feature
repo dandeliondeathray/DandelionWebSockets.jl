@@ -17,6 +17,7 @@ Feature: Framing details
   Scenario Outline: Opcodes
      When a frame with opcode <opcode> is received
      Then it is known to be a <type> frame
+
      Examples:
      | opcode | type         |
      | 0x0    | continuation |
@@ -30,6 +31,7 @@ Feature: Framing details
   Scenario Outline: Reserved frames
      When the opcode is in the range <range>
      Then it is a reserved <type> frame
+
      Examples:
      | range   | type        |
      | 0x3-0x7 | non-control |
@@ -39,6 +41,7 @@ Feature: Framing details
   Scenario Outline: Mask bit
      When the mask bit is <value>
      Then the frame is <ismasked>
+
      Examples:
      | value | ismasked   |
      | 0     | not masked |
