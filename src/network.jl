@@ -15,6 +15,10 @@ end
 
 "Read frames from the network, until an exception is thrown in this task."
 function do_reader(s::IO, logic::AbstractClientLogic)
+    # Requirement
+    # @6_2-1 Incoming data
+    # @7_1_1-2 Discard trailing bytes
+
     try
         while true
             frame = read(s, Frame)

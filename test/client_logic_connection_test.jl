@@ -39,6 +39,9 @@ end
 
     @testset "the client initiates a closing handshake" begin
         @testset "state is CLOSING" begin
+            # Requirement
+            # @7_1_2-1 Start the closing handshake
+
             logic, handler, writer = makeclientlogic(state=STATE_OPEN)
 
             handle(logic, CloseRequest())

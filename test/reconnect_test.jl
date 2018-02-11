@@ -22,6 +22,11 @@ reset(b::FakeBackoff) = b.i = 1
 
 facts("Reconnect") do
     context("Backoff") do
+        # Requirement
+        # @7_2_3-1 Client backoff
+        # @7_2_3-2 First client reconnect
+        # @7_2_3-4 Subsequent reconnection attempts
+
         min = 30.0
         max = 200.0
         backoff_range = max - min

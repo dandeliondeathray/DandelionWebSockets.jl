@@ -6,6 +6,8 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         # Requirement
         # @5_1-1 Client masks frame
         # @5_4-1 Unfragmented message
+        # @6_1-3 Encapsulating data in a single frame message
+        # @6_1-7 Masking client frames
 
         # Arrange
         mask = b"\x01\x02\x03\x04"
@@ -207,6 +209,8 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     @testset "connection is in CLOSING, trying to send a message; no message is sent" begin
         # Requirement
         # @5_5_1-4 No frames after Close frame
+        # @6_1-1   Sending data only on OPEN connections
+        # @6_1-2   Connection closes when sending data
 
         logic, handler, writer = makeclientlogic(state=STATE_CLOSING)
 
@@ -216,6 +220,10 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     end
 
     @testset "connection is in CONNECTING, trying to send a message; no message is sent" begin
+        # Requirement
+        # @6_1-1 Sending data only on OPEN connections
+        # @6_1-2   Connection closes when sending data
+
         logic, handler, writer = makeclientlogic(state=STATE_CONNECTING)
 
         handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
@@ -226,6 +234,8 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     @testset "connection is in CLOSED, trying to send a message; no message is sent" begin
         # Requirement
         # @5_5_1-4 No frames after Close frame
+        # @6_1-1   Sending data only on OPEN connections
+        # @6_1-2   Connection closes when sending data
 
         logic, handler, writer = makeclientlogic(state=STATE_CLOSED)
 

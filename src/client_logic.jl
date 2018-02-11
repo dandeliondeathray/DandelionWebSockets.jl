@@ -193,6 +193,9 @@ end
 
 "Handle a frame from the server."
 function handle(logic::ClientLogic, req::FrameFromServer)
+	# Requirement
+	# @6_2-3 Receiving a data frame
+
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_PING

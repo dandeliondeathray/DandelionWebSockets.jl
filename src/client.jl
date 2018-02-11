@@ -139,8 +139,16 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     connection_result_(client, handshake_result, handler_proxy)
 end
 
+# Requirement
+# @7_3-2 Clients should not close the WebSocket connection arbitrarily
+
 "Close the WebSocket connection."
 stop(c::WSClient) = handle(get(get(c.connection).logic_proxy), CloseRequest())
+
+# Requirement
+# @6_1-5 Opcode in the first frame
+#
+# Covered by design, by `send_text` and `send_binary`.
 
 "Send a single text frame."
 send_text(c::WSClient, s::String) = handle(get(get(c.connection).logic_proxy), SendTextFrame(s, true, OPCODE_TEXT))

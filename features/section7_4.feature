@@ -24,7 +24,7 @@ Feature: Section 7.4: Status codes
      | 1010 | no expected extension           |
      | 1011 | server had unexpected condition |
 
-  @7_4_1-2 @client @server @must
+  @7_4_1-2 @client @server @must @inapplicable
   Scenario Outline: Unusable status codes
      When sending a Close frame
      Then the endpoint may not use the status code <code> because it is used to indicate that <reason>
@@ -35,7 +35,7 @@ Feature: Section 7.4: Status codes
      | 1006 | the connection was closed abnormally      |
      | 1015 | TLS handshake failure                     |
 
-  @7_4_2 @client @server @must
+  @7_4_2 @client @server @must @inapplicable
   Scenario Outline: Reserved status code ranges
      Given the reserved status code range <range>
       Then the expected use is <use>

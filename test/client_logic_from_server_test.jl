@@ -27,6 +27,9 @@ end
 
 @testset "Server to client       " begin
     @testset "single frame text message; handler receives message" begin
+        # Requirement
+        # @6_2-4 Message has been received, single frame
+
         # Arrange
         logic, handler, writer = makeclientlogic()
 
@@ -56,6 +59,9 @@ end
     end
 
     @testset "two messages, both in two frames; handler receives both messages" begin
+        # Requirement
+        # @6_2-5 Message has been received, multi-frame
+
         logic, handler, writer = makeclientlogic()
 
         frame1_1 = textframe_from_server("Hel"; final_frame=false)
