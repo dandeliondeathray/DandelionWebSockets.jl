@@ -73,6 +73,10 @@ end
     end
 
     @testset "a ping request is received between two fragments; pong reply is sent" begin
+        # Requirement
+        # @5_4-3 Control frames in a fragment sequence
+        # @5_4-7 Handling control frames in fragment sequences
+
         logic, handler, writer = makeclientlogic()
 
         frame1 = textframe_from_server("Hel"; final_frame=false)
@@ -88,6 +92,10 @@ end
     end
 
     @testset "a ping request is received between two fragments; message is still delivered" begin
+        # Requirement
+        # @5_4-3 Control frames in a fragment sequence
+        # @5_4-7 Handling control frames in fragment sequences
+
         logic, handler, writer = makeclientlogic()
 
         frame1 = textframe_from_server("Hel"; final_frame=false)

@@ -43,7 +43,7 @@ Feature: Fragmentation
   @5_4-8 @may
   Scenario: Fragment size for non control messages
      When a sender is creating non-control fragments
-     Then they may be of any size for
+     Then they may be of any size
 
   @5_4-9 @must
   Scenario: Fragmented and unfragmented messages

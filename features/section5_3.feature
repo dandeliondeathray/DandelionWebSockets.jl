@@ -7,11 +7,15 @@ Feature: Client to server masking
      When a frame is masked
      Then it must have the mask bit set to 1
 
-  @5_3-2 @must
+  @5_3-2-1 @must
   Scenario: Fresh masking key
      When a frame is masked
      Then the client must choose a fresh mask key
-      And it must be derived from a strong source of entropy
+
+  @5_3-2-2 @must
+  Scenario: Masking uses strong source of entropy
+     When a frame is masked
+     Then the mask key must be derived from a strong source of entropy
 
   @5_3-3 @must
   Scenario: Mask operation

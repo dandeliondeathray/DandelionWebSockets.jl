@@ -5,6 +5,7 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     @testset "Send single-frame text message; message is sent" begin
         # Requirement
         # @5_1-1 Client masks frame
+        # @5_4-1 Unfragmented message
 
         # Arrange
         mask = b"\x01\x02\x03\x04"
@@ -22,6 +23,7 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     @testset "Send single-frame text message; FIN bit is set on first frame" begin
         # Requirement
         # @5_2-1 FIN bit is set on the first frame
+        # @5_4-1 Unfragmented message
 
         # Arrange
         mask = b"\x01\x02\x03\x04"

@@ -6,7 +6,8 @@
 @testset "Security considerations" begin
     @testset "Client must choose a new masking key for each frame" begin
         # Requirement
-        # @10_3-1
+        # @5_3-2-1 Client chooses a fresh masking key
+        # @10_3-1  Client must choose a new masking key for each frame
 
         # Arrange
         mask = b"\x01\x02\x03\x04\x05\x06\x07\x08"
