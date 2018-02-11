@@ -111,6 +111,9 @@ end
 function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     handler_proxy = WebSocketsHandlerProxy(handler)
 
+    # Requirement
+    # @4_1_P1 Initial connection state
+
     # The first state is always Connecting.
     state_connecting(handler_proxy)
 
