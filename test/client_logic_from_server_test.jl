@@ -25,7 +25,7 @@ function pongframe_from_server(; payload=Vector{UInt8}())
     Frame(true, OPCODE_PONG, false, 0, 0, Vector{UInt8}(), payload)
 end
 
-@testset "Server to client     " begin
+@testset "Server to client       " begin
     @testset "single frame text message; handler receives message" begin
         # Arrange
         logic, handler, writer = makeclientlogic()

@@ -1,7 +1,7 @@
 using Base.Test
 using DandelionWebSockets: masking!
 
-@testset "Masking              " begin
+@testset "Masking                " begin
     mask = b"\x37\xfa\x21\x3d"
     masking_test_examples = [
         # The first element in each tuple is the input, and the second element

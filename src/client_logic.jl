@@ -119,6 +119,15 @@ function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector
 
 	# Each frame is masked with four random bytes.
 	mask    = rand(logic.rng, UInt8, 4)
+
+	# Requirement
+	# @10_3-2
+	#
+	# We must make a copy of the payload here, for two reasons:
+	# 1. Section 10 of the specification states that we MUST not be modifiable by the user during
+	#    transmission.
+	# 2. Masking the data will modify it, and the users data should not be modified. This was fixed
+	#    in issue #12.
 	masked_payload = copy(payload)
 	masking!(masked_payload, mask)
 

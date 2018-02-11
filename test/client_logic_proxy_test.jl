@@ -25,7 +25,7 @@ handle(c::MockProxiedClientLogic, s::CloseRequest) = put!(c.call_notifications, 
 handle(c::MockProxiedClientLogic, s::SocketClosed) = put!(c.call_notifications, ClientLogicNotification(:SocketClosed, s))
 handle(c::MockProxiedClientLogic, s::FrameFromServer) = put!(c.call_notifications, ClientLogicNotification(:FrameFromServer, s))
 
-@testset "Client logic proxy   " begin
+@testset "Client logic proxy     " begin
     @testset "Callbacks are done one a separate task" begin
         tests = [
             (SendTextFrame("some data", true, OPCODE_TEXT), :SendTextFrame),
@@ -54,7 +54,7 @@ handle(c::MockProxiedClientLogic, s::FrameFromServer) = put!(c.call_notification
 
         @testset "Stop a client logic proxy" begin
             client_logic = MockProxiedClientLogic()
-            proxy = ClientLogicProxy(client_logic)   
+            proxy = ClientLogicProxy(client_logic)
 
             stopproxy(proxy)
 

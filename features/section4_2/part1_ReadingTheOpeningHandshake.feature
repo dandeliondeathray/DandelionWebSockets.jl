@@ -1,5 +1,5 @@
 @section4 @section4_2 @server @inapplicable
-Feature: Connection
+Feature: Server connection
   The opening handshake details how the server handles a new connection.
 
   @4_2_P1 @may @inapplicable

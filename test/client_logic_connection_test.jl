@@ -6,7 +6,7 @@ function closeframe_from_server(; payload::Vector{UInt8} = b"")
     Frame(true, OPCODE_CLOSE, false, length(payload), 0, Vector{UInt8}(), payload)
 end
 
-@testset "Connection management" begin
+@testset "Connection management  " begin
     @testset "the server initiates a closing handshake" begin
         @testset "state is CLOSING_SOCKET" begin
             logic, handler, writer = makeclientlogic(state=STATE_OPEN)

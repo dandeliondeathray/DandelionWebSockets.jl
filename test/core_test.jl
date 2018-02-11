@@ -44,7 +44,7 @@ struct FrameTestCase
 end
 
 
-@testset "Frame serialization  " begin
+@testset "Frame serialization    " begin
     nomask = b""
     mask = b"\x37\xfa\x21\x3d"
 

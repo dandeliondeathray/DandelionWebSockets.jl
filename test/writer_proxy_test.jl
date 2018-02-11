@@ -11,7 +11,7 @@ end
 write(m::MockWriter, frame::Frame) = put!(m.channel, frame)
 takeframe!(m::MockWriter) = take!(m.channel)
 
-@testset "WriterProxy          " begin
+@testset "WriterProxy            " begin
     @testset "WriterProxy works in a separate task" begin
         mockwriter = MockWriter()
         proxywriter = WriterProxy(mockwriter)

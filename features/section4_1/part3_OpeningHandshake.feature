@@ -47,7 +47,7 @@ Feature: Opening handshake
      Then the request must contain a "Sec-WebSocket-Key" header field
 
   @4_1_OpeningHandshake_7-2 @must
-  Scenario: Opening handshake Sec-WebSocket-Key header field
+  Scenario: Opening handshake Sec-WebSocket-Key header field is randomly chosen
      When the client sends an opening handshake
      Then the "Sec-WebSocket-Key" header field must be a randomly selected nonce
 

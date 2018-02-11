@@ -2,7 +2,7 @@ using Base.Test
 using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
 using Requests: URI
 
-@testset "Handshake            " begin
+@testset "Handshake              " begin
     @testset "validate a handshake" begin
         @testset "the handshake is valid" begin
             headers = Dict(

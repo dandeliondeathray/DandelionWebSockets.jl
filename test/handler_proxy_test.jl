@@ -31,7 +31,7 @@ state_open(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNot
 state_closing(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_closing", ""))
 state_closed(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_closed", ""))
 
-@testset "User handler proxy   " begin
+@testset "User handler proxy     " begin
     @testset "Callbacks are done in a separate task" begin
         @testset "on_text callback" begin
             # Arrange
