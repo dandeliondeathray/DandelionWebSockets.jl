@@ -1,13 +1,5 @@
 # These tests cover section 5.6 in the RFC6455 WebSocket specification.
 
-function textframe_from_server(text::String; final_frame=true)
-    Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
-end
-
-function continuation_textframe_from_server(text::String; final_frame=true)
-    Frame(final_frame, OPCODE_CONTINUATION, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
-end
-
 @testset "Data frames            " begin
     @testset "A text message fragment may include only a partial UTF-8 sequence" begin
         # Tests that the client supports getting two text frames that are separately invalid UTF-8,
