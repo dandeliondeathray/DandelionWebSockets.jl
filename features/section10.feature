@@ -1,5 +1,5 @@
 @section10
-Feature: Security considerations
+Feature: Section 10: Security considerations
 
   @10_2-1 @section10_2 @server @should
   Scenario: Origin considerations

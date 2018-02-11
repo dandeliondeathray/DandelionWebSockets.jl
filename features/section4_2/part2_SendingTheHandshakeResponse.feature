@@ -1,5 +1,5 @@
 @section4 @section4_2 @server @inapplicable
-Feature: Send the handshake response
+Feature: Section 4.2: Send the handshake response
   The opening handshake details how the server handles a new connection.
 
   @4_2_2_P1 @must

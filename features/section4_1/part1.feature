@@ -1,5 +1,5 @@
 @section4 @section4_1 @client
-Feature: Connection
+Feature: Section 4.1: Connection
   The opening handshake details how the client opens the connection.
 
   @4_1_P1

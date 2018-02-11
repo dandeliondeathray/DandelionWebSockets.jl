@@ -1,5 +1,5 @@
 @section6 @section6_1
-Feature: Sending data
+Feature: Section 6.1: Sending data
   Sending a WebSocket message over a connection.
 
   @6_1-1 @client @server @must

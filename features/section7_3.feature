@@ -1,5 +1,5 @@
 @section7 @section7_3
-Feature: Normal closure of connections
+Feature: Section 7.3: Normal closure of connections
 
   @7_3-1 @server @may
   Scenario: Servers may close the connection when desired

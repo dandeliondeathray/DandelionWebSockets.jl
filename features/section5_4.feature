@@ -1,5 +1,5 @@
 @section5 @section5_4 @client @server
-Feature: Fragmentation
+Feature: Section 5.4: Fragmentation
   Messages are sent in fragments, to avoid having to buffer entire messages.
 
   @5_4-1 @must

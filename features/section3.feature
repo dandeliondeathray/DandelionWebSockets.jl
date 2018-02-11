@@ -1,5 +1,5 @@
 @section3 @client @server
-Feature: WebSocket URIs
+Feature: Section 3: WebSocket URIs
 
   Scenario Outline: Schemas
     Given a WebSocket URI <schema>://example.org:1234/examplepath?foo=bar

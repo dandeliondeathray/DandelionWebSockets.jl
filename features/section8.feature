@@ -1,5 +1,5 @@
 @section8 @section8_1
-Feature: Error handling
+Feature: Section 8: Error handling
 
   @8_1 @client @server @must
   Scenario: Errors in UTF-8 encoded data

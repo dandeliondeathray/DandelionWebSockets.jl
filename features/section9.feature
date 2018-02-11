@@ -1,5 +1,5 @@
 @section9
-Feature: Extensions
+Feature: Section 9: Extensions
 
   @9_1-1 @section9_1 @client @server @must
   Scenario: Invalid extensions handshake data

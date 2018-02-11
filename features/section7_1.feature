@@ -1,5 +1,5 @@
 @section7 @section7_1
-Feature: Close the WebSocket connection
+Feature: Section 7.1: Close the WebSocket connection
   The WebSocket connection refers to the entirety of the WebSocket protocol as
   well as the underlying connection. The TCP connection refers only to the
   underlying connection.

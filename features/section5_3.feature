@@ -1,5 +1,5 @@
 @section5 @section5_3 @client
-Feature: Client to server masking
+Feature: Section 5.3: Client to server masking
   Frames sent from the client to the server is always masked.
 
   @5_3-1 @must

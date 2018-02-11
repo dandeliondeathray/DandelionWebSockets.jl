@@ -1,5 +1,5 @@
 @section4 @section4_1 @client
-Feature: Opening handshake
+Feature: Section 4.1: Opening handshake
   The opening handshake details the initial HTTP handshake after the connection
   has been opened.
 

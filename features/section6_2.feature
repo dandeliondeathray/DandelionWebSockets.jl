@@ -1,5 +1,5 @@
 @section6 @section6_2
-Feature: Receiving data
+Feature: Section 6.2: Receiving data
 
   @6_2-1 @client @server @must
   Scenario: Incoming data

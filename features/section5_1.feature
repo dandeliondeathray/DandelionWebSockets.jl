@@ -1,5 +1,5 @@
 @section5 @section5_1
-Feature: Framing overview
+Feature: Section 5.1: Framing overview
   Data is transmitted between client and server using a sequence of frames.
 
   @5_1-1 @must @client

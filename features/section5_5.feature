@@ -1,5 +1,5 @@
 @section5 @section5_5
-Feature: Control frames
+Feature: Section 5.5: Control frames
 
   @5_5-1 @client @server @must
   Scenario: Control frame length

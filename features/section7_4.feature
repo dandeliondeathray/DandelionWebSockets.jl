@@ -1,5 +1,5 @@
 @section7 @section7_4
-Feature: Status codes
+Feature: Section 7.4: Status codes
 
   @7_4 @client @server @may
   Scenario: Reason for closure

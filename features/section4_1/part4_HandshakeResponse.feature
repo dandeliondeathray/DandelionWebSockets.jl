@@ -1,5 +1,5 @@
 @section4 @section4_1 @client
-Feature: Validate handshake response
+Feature: Section 4.1: Validate handshake response
   The handshake response from the server must be validated.
 
   @4_1_P5 @must

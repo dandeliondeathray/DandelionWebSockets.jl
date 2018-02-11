@@ -1,5 +1,5 @@
 @section4 @section4_1 @client
-Feature: Establishing a connection
+Feature: Section 4.1: Establishing a connection
   Establishing a connection details the requirement on how the TCP connection is
   opened.
 

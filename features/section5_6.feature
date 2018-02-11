@@ -1,5 +1,5 @@
 @section5 @section5_6 @client @server @must
-Feature: Data frames
+Feature: Section 5.6: Data frames
 
   @5_6-1
   Scenario: Partial UTF-8 sequences

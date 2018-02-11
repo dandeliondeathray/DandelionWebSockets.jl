@@ -1,5 +1,5 @@
 @section5 @section5_8 @client @server @must
-Feature: Extensibility
+Feature: Section 5.8: Extensibility
   The WebSocket protocol allows extensions, which add to the capabilities of the
   base protocol.
 

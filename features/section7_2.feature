@@ -1,5 +1,5 @@
 @section7 @section7_2
-Feature: Abnormal closures
+Feature: Section 7.2: Abnormal closures
 
   @7_2_1-1 @client @must
   Scenario: Client initiated close on fail
