@@ -67,6 +67,10 @@ immutable FakeHandler <: WebSocketHandler end
 
 facts("Integration test") do
     context("Receive two Hello messages, and one binary.") do
+        # Requirement
+        # @4_1_P3 Establish a WebSocket connection
+        # @4_1_P4 WebSocket opening handshake
+
         # test_frame1 is a complete text message with payload "Hello".
         # test_frame2 and test_frame3 are two fragments that together become a whole text message
         # also with payload "Hello". frame_bin_1 is a binary message.

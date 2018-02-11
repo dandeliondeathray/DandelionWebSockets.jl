@@ -40,7 +40,7 @@ Feature: Section 4.1: Establishing a connection
      When the client cannot determine the IP addresses of remote hosts
      Then the client should limit the total number of pending connections
 
-  @4_1_EstablishConnection_3-1 @should
+  @4_1_EstablishConnection_3-1 @should @inapplicable
   Scenario: Using a proxy
      When the client is configured to use a proxy
      Then the client should use the proxy to connect to the remote host

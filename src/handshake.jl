@@ -65,6 +65,13 @@ end
 
 "Make a HTTP connection and upgrade it to a WebSocket connection."
 function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.do_stream_request)
+    # Requirement
+    # @4_1_OpeningHandshake_1 Opening handshake is a valid HTTP request
+    # @4_1_OpeningHandshake_4 Opening handshake Host header field
+    #
+    # Covered by design, as we use Requests.jl, which can be assumed to make valid HTTP requests.
+
+
     key = make_websocket_key(rng)
     expected_accept = calculate_accept(key)
     headers = make_headers(key)

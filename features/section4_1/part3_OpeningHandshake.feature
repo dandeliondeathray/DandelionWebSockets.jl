@@ -57,7 +57,7 @@ Feature: Section 4.1: Opening handshake
      When the client sends an opening handshake
      Then the request must contain a "Origin" header field
 
-  @4_1_OpeningHandshake_8 @may
+  @4_1_OpeningHandshake_8 @may @inapplicable
   Scenario: Opening handshake Origin header field for non-browser clients
     Given that the client is not a browser client
      When the client sends an opening handshake
@@ -79,7 +79,7 @@ Feature: Section 4.1: Opening handshake
      When the client sends an opening handshake
      Then the request may contain a "Sec-WebSocket-Extensions" header field
 
-  @4_1_OpeningHandshake_12 @may
+  @4_1_OpeningHandshake_12 @may @inapplicable
   Scenario: Opening handshake other fields
      When the client sends an opening handshake
      Then the request may contain other fields

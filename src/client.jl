@@ -46,6 +46,14 @@ show(io::IO, c::WSClient) =
 Note: As of right now the handshake is not validated, because the response headers aren't set here.
 "
 function connection_result_(client::WSClient, result::HandshakeResult, handler::WebSocketHandler)
+    # Requirement
+    # @4_1_P5 Waiting for a handshake response
+    #
+    # Covered by design, as we only get the network socket if and only if the handshake is done.
+
+    # Requirement
+    # @4_1_P6 Handshake response is invalid
+    #
     # Validation of a HTTP Upgrade to a WebSocket is done by checking the response headers for a key
     # which should contain a computed value.
     if !validate(result)
@@ -54,19 +62,13 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
         return false
     end
 
-    # Each `TaskProxy` used here acts as a proxy for another object. When you call some predefined
-    # functions on a proxy, it takes the function and arguments and puts them on a channel. A
-    # coroutine takes there function/arguments from the channel and calls the same function, but on
-    # the target object it acts as a proxy for. This is because we want some parts to work
-    # concurrently with others
-    # Calling `attach` on a proxy sets the target object.
-    # Calling `start` on a proxy starts the coroutine that calls functions on that target.
-
     connection = get(client.connection)
 
     # For `writer` the target object is the IO stream for the WebSocket connection.
     writer = WriterProxy(result.stream)
 
+    # Requirement
+    # @4_1_8 Handshake response is valid
     state_open(handler)
 
     # This function stops all the task proxies, effectively cleaning up the WSClient. This is
@@ -102,6 +104,10 @@ end
 
 "The HTTP Upgrade failed, for whatever reason."
 function connection_result_(client::WSClient, result::HandshakeFailure, handler::WebSocketHandler)
+    # Requirement
+    # @4_1_EstablishConnection_4   Could not open the connection
+    # @4_1_EstablishConnection_5-2 TLS Connection fails
+
     # Calling `state_closed` here, because that's where we're expected to attempt to reconnect.
     state_closed(handler)
     false
@@ -122,6 +128,9 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     new_uri = convert_ws_uri(uri)
 
     client.connection = Nullable{WebSocketsConnection}(WebSocketsConnection())
+
+    # Requirement
+    # @4_1_EstablishConnection_3-2 Not using a proxy
 
     # This makes a HTTP request to the URI and attempts to upgrade the connection to the WebSocket
     # protocol.

@@ -104,6 +104,11 @@ using Requests: URI
     end
 
     @testset "Convert URIs from ws:// to http://" begin
+        # Requirement
+        # @4_1_EstablishConnection_5-1
+        #
+        # This covers the above requirement with the additional information that we use Requests.jl
+        # for making the connection, and that is what _actually_ covers the requirement.
         @test convert_ws_uri(URI("ws://some/uri")) == URI("http://some/uri")
         @test convert_ws_uri(URI("wss://some/uri")) == URI("https://some/uri")
         @test convert_ws_uri(URI("http://some/uri")) == URI("http://some/uri")

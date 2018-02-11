@@ -55,6 +55,9 @@ facts("Handshake") do
 
         handshake_result = DandelionWebSockets.do_handshake(rng, uri; do_request=do_req)
 
+        # Requirement
+        # @4_1_OpeningHandshake_2 Opening handshake is an HTTP GET
+
         @fact m.method --> "GET"
         @fact m.uri --> uri
         @fact m.headers --> expected_headers
