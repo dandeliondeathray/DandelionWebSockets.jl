@@ -35,7 +35,7 @@ Feature: Control frames
 
   @5_5_1-5 @client @server @must
   Scenario: Respond to Close frame
-     Given that the endpoint has not send a Close frame
+     Given that the endpoint has not sent a Close frame
       When it receives a Close frame
       Then it must send a Close frame in response
 

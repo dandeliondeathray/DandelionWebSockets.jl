@@ -76,6 +76,8 @@ end
         # Requirement
         # @5_4-3 Control frames in a fragment sequence
         # @5_4-7 Handling control frames in fragment sequences
+        # @5_5_2-2 Pong response
+        # @5_5_2-3 Pong response time
 
         logic, handler, writer = makeclientlogic()
 
@@ -110,6 +112,9 @@ end
     end
 
     @testset "a ping with a payload is received; a pong with the same payload is sent" begin
+        # Requirement
+        # @5_5_3-1 Pong frame Application data
+
         mask = b"\x01\x02\x03\x04"
         logic, handler, writer = makeclientlogic(mask=mask)
 
