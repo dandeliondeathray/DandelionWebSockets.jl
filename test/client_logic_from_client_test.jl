@@ -2,7 +2,10 @@ using Base.Test
 using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
 @testset "Client to server       " begin
-    @testset "send single-frame text message; message is sent" begin
+    @testset "Send single-frame text message; message is sent" begin
+        # Requirement
+        # @5_1-1 Client masks frame
+
         # Arrange
         mask = b"\x01\x02\x03\x04"
         logic, handler, writer = makeclientlogic(mask=mask)
@@ -13,11 +16,29 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         # Assert
         frame = getframeunmasked(writer, 1, mask)
         @test frame.payload == b"Hello"
-        @test frame.fin == true
         @test frame.opcode == OPCODE_TEXT
     end
 
-    @testset "send single-frame binary message; message is sent" begin
+    @testset "Send single-frame text message; FIN bit is set on first frame" begin
+        # Requirement
+        # @5_2-1 FIN bit is set on the first frame
+
+        # Arrange
+        mask = b"\x01\x02\x03\x04"
+        logic, handler, writer = makeclientlogic(mask=mask)
+
+        # Act
+        handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
+
+        # Assert
+        frame = getframeunmasked(writer, 1, mask)
+        @test frame.fin == true
+    end
+
+    @testset "Send single-frame binary message; message is sent" begin
+        # Requirement
+        # @5_1-1 Client masks frame
+
         # Arrange
         mask = b"\x01\x02\x03\x04"
         logic, handler, writer = makeclientlogic(mask=mask)
@@ -34,6 +55,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
     @testset "extended payload" begin
         @testset "payload size is 125; payload length is 125, no extended payload" begin
+            # Requirement
+            # @5_2-6 Payload length, 0-125 bytes
+
             # Arrange
             logic, handler, writer = makeclientlogic()
 
@@ -48,6 +72,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         end
 
         @testset "payload size is 126; payload length is 126, extended payload is 126" begin
+            # Requirement
+            # @5_2-7 Payload length, 126 bytes
+
             # Arrange
             logic, handler, writer = makeclientlogic()
 
@@ -64,6 +91,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
 
         @testset "payload size is 127; payload length is 126, extended payload is 127" begin
+            # Requirement
+            # @5_2-8 Payload length, 127 bytes
+
             # Arrange
             logic, handler, writer = makeclientlogic()
 
@@ -80,6 +110,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
 
 
         @testset "payload size is 128; payload length is 126, extended payload is 128" begin
+            # Requirement
+            # @5_2-9 Minimal encoding of payload length
+
             # Arrange
             logic, handler, writer = makeclientlogic()
 
@@ -95,6 +128,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         end
 
         @testset "payload size is 256; extended payload length is 256" begin
+            # Requirement
+            # @5_2-9 Minimal encoding of payload length
+
             # Arrange
             logic, handler, writer = makeclientlogic()
 
@@ -109,6 +145,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         end
 
         @testset "payload size 65535 (0xFFFF); extended payload length is 65536" begin
+            # Requirement
+            # @5_2-9 Minimal encoding of payload length
+
             # This is the max payload size representable by the 16-bit extended length,
             # where len is 126.
             # Arrange
@@ -125,6 +164,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         end
 
         @testset "payload size is 65536; len is 127 and extended length is 65536" begin
+            # Requirement
+            # @5_2-9 Minimal encoding of payload length
+
             # This is one byte more than the max payload size representable by the 16-bit extended
             # length, and then len is 127 and the 64-bit extended length is used.
             # Arrange

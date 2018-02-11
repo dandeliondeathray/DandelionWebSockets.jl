@@ -40,6 +40,8 @@ struct Opcode
     op::UInt8
 end
 
+# Requirement
+# @5_2-3 Opcodes
 const OPCODE_CONTINUATION = Opcode(0)
 const OPCODE_TEXT         = Opcode(1)
 const OPCODE_BINARY       = Opcode(2)
@@ -78,6 +80,8 @@ function Base.read(s::IO, ::Type{Frame})
   rsv3 = x & 0b0001_0000 != 0
   op   = x & 0b0000_1111
 
+  # Requirement
+  # @5_2-5 The mask bit is 1 if set, 0 if not.
   y        = read(s, UInt8)
   ismasked = y & 0b1000_0000 != 0
   len      = y & 0b0111_1111
@@ -108,6 +112,8 @@ function Base.write(s::IO, frame::Frame)
     UInt8(frame.rsv3) << 4 |
     frame.opcode.op & 0b0000_1111
 
+  # Requirement
+  # @5_2-5 The mask bit is 1 if set, 0 if not.
   x2 = UInt8(frame.ismasked) << 7 |
        frame.len & 0b0111_1111
 
