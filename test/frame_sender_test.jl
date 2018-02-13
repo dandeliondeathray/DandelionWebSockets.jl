@@ -85,8 +85,23 @@ handle(f::FakeClientLogic, s::SendTextFrame) = push!(f.text_frame, s)
 
             # Act
             sendframe(sender, "lastframe"; isfinal=true)
-            @test_throws FinalFrameAlreadySentException sendframe(sender, "another frame")
 
+            # Assert
+            @test_throws FinalFrameAlreadySentException sendframe(sender, "another frame")
+        end
+
+        @testset "User can send invalid UTF-8 as a byte vector; Frame is sent" begin
+            logic = FakeClientLogic()
+            sender = TextFrameSender(logic)
+
+            text = "\u2000"
+            # The first byte of the above UTF-8 is invalid as a UTF-8 string.
+            text_as_binary = Vector{UInt8}(text)
+            payload = text_as_binary[1:1]
+
+            sendframe(sender, payload)
+
+            @test logic.text_frame[1].data == payload
         end
     end
 end

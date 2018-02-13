@@ -9,10 +9,14 @@ mutable struct TextFrameSender
 end
 
 function sendframe(sender::TextFrameSender, s::String; isfinal::Bool = false)
+    sendframe(sender, Vector{UInt8}(s); isfinal = isfinal)
+end
+
+function sendframe(sender::TextFrameSender, data::Vector{UInt8}; isfinal::Bool = false)
     if sender.isfinalsent
         throw(FinalFrameAlreadySentException())
     end
-    handle(sender.logic, SendTextFrame(s, isfinal, sender.opcode))
+    handle(sender.logic, SendTextFrame(data, isfinal, sender.opcode))
     sender.opcode = OPCODE_CONTINUATION
     if isfinal
         sender.isfinalsent = true

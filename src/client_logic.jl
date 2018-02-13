@@ -29,11 +29,14 @@ abstract type ClientLogicInput end
 
 "Send a text frame, sent to `ClientLogic`."
 immutable SendTextFrame <: ClientLogicInput
-	data::String
+	data::Vector{UInt8}
 	# True if this is the final frame in the text message.
 	isfinal::Bool
 	# What WebSocket opcode should be used.
 	opcode::Opcode
+
+	SendTextFrame(data::Vector{UInt8}, isfinal::Bool, opcode::Opcode) = new(data, isfinal, opcode)
+	SendTextFrame(data::String, isfinal::Bool, opcode::Opcode) = new(Vector{UInt8}(data), isfinal, opcode)
 end
 
 "Send a binary frame, sent to `ClientLogic`."
@@ -151,8 +154,7 @@ end
 
 "Send a single text frame."
 function handle(logic::ClientLogic, req::SendTextFrame)
-	payload = Vector{UInt8}(req.data)
-	send(logic, req.isfinal, req.opcode, payload)
+	send(logic, req.isfinal, req.opcode, req.data)
 end
 
 "Send a single binary frame."
