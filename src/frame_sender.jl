@@ -1,49 +1,27 @@
 struct FinalFrameAlreadySentException <: Exception end
 
-abstract type FrameSender end
-
-mutable struct TextFrameSender
+mutable struct FrameSender{T, Op}
     logic::AbstractClientLogic
     opcode::Opcode
     isfinalsent::Bool
 
-    TextFrameSender(logic::AbstractClientLogic) = new(logic, OPCODE_TEXT, false)
+    FrameSender{T, Op}(logic::AbstractClientLogic) where {T, Op} = new(logic, Op, false)
 end
 
-function sendframe(sender::TextFrameSender, s::String; isfinal::Bool = false)
-    sendframe(sender, Vector{UInt8}(s); isfinal = isfinal)
-end
-
-function sendframe(sender::TextFrameSender, data::Vector{UInt8}; isfinal::Bool = false)
+function sendframe(sender::FrameSender{T,Op}, data::Vector{UInt8}; isfinal::Bool = false) where {T, Op}
     if sender.isfinalsent
         throw(FinalFrameAlreadySentException())
     end
-    handle(sender.logic, SendTextFrame(data, isfinal, sender.opcode))
+    handle(sender.logic, T(data, isfinal, sender.opcode))
     sender.opcode = OPCODE_CONTINUATION
     if isfinal
         sender.isfinalsent = true
     end
 end
 
-#
-# Send multi-frame binary messages
-#
+const BinaryFrameSender = FrameSender{SendBinaryFrame, OPCODE_BINARY}
+const TextFrameSender = FrameSender{SendTextFrame, OPCODE_TEXT}
 
-mutable struct BinaryFrameSender
-    logic::AbstractClientLogic
-    opcode::Opcode
-    isfinalsent::Bool
-
-    BinaryFrameSender(logic::AbstractClientLogic) = new(logic, OPCODE_BINARY, false)
-end
-
-function sendframe(sender::BinaryFrameSender, data::Vector{UInt8}; isfinal::Bool = false)
-    if sender.isfinalsent
-        throw(FinalFrameAlreadySentException())
-    end
-    handle(sender.logic, SendBinaryFrame(data, isfinal, sender.opcode))
-    sender.opcode = OPCODE_CONTINUATION
-    if isfinal
-        sender.isfinalsent = true
-    end
+function sendframe(sender::TextFrameSender, data::String; isfinal::Bool = false)
+    sendframe(sender, Vector{UInt8}(data); isfinal=isfinal)
 end
