@@ -51,5 +51,6 @@ include("Proxy/Proxy.jl")
 include("client.jl")
 include("reconnect.jl")
 include("mock.jl")
+include("frame_sender.jl")
 
 end # module
