@@ -36,6 +36,18 @@ send_binary(c::WSClient, data::Vector{UInt8})
 
 # Close the WebSocket.
 stop(c::WSClient)
+
+# Send a multi-frame text message
+textsender = sendmultiframetext(client)
+sendframe(textsender, "Hello")
+sendframe(textsender, "world")
+sendframe(textsender, "Goodbye."; isfinal=true)
+
+# Send a multi-frame binary message
+binarysender = sendmultiframebinary(client)
+sendframe(binarysender, b"Hello")
+sendframe(binarysender, b"world")
+sendframe(binarysender, b"Goodbye."; isfinal=true)
 ```
 
 To connect to a WebSocket server, call
