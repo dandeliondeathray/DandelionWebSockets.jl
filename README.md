@@ -56,11 +56,6 @@ higher. Version 0.1.0 contains three serious bugs, which were fixed for 0.1.1.
 
 This package only supports Julia 0.6. Support for 0.7 and later releases is coming.
 
-## Needs work
-
-- Implement regular pings, to ensure the connection is up.
-- Ability to send multi-frame messages.
-
 # Contributors
 These brave people have contributed to this package:
 
