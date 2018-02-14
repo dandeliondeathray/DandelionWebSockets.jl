@@ -18,9 +18,15 @@ mutable struct WebSocketsConnection
     # `pinger` requests that the logic send ping frames to the server at regular intervals.
     pinger::AbstractPinger
 
+    # Requirement
+    # @5_3-2-2 Masking uses strong source of entropy
+    #
+    # This is now handled by seeding the MersenneTwister PRNG with a random UInt32 from the
+    # systems entropy.
+
     WebSocketsConnection() = new(Nullable{ClientLogicProxy}(),
                                  Nullable{ServerReader}(),
-                                 MersenneTwister(0),
+                                 MersenneTwister(rand(RandomDevice(), UInt32)),
                                  Ponger(3.0, misses=3),
                                  Pinger(5.0))
 end
