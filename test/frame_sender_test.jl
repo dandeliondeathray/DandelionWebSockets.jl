@@ -15,6 +15,22 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
 @testset "Multi-frame message    " begin
     # These are tests for sending multi-frame message.
+    #
+    # Requirement
+    # @5_4-2 Fragmented messages
+    # @5_4-5 Fragment order
+    # @5_4-8 Fragment size for non control messages
+    # @5_4-9 Fragmented and unfragmented messages.
+    # @6_1-4 Encapsulating data in multi-frame messages.
+    # @6_1-6 FIN bit must be set in the last frame.
+    # @6_1-8 Transmitting frames.
+    #
+    # These tests collectively test requirement @5_4-2.
+    #
+    # Fragments are sent in the order in which the user requests they are sent, by design.
+    # The receiving part of fragmentation order is also done by design in client_logic.jl.
+    #
+    # Fragment size is not constrained in any way. The payload is taken as is by the client.
     @testset "Text frames" begin
         @testset "First frame; Opcode is OPCODE_TEXT" begin
             # Arrange
