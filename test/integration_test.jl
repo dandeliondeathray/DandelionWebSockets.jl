@@ -1,6 +1,8 @@
 import DandelionWebSockets: on_text, on_binary,
                             state_connecting, state_open, state_closing, state_closed,
                             FrameFromServer
+using DandelionWebSockets: sendmultiframebinary, sendmultiframetext, sendframe
+using Base.Test
 
 accept_field = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 headers = Dict(
@@ -198,5 +200,44 @@ facts("Integration test") do
 
         # We expect one close frame and two message "Hello" and "world" to have been sent.
         @fact length(stream.writing) --> 3
+    end
+end
+
+@testset "Client integration     " begin
+    @testset "Send multi-frame messages" begin
+        stream = FakeFrameStream(Vector{Frame}(), Vector{Frame}(), true)
+
+        body = Vector{UInt8}()
+        handshake_result = DandelionWebSockets.HandshakeResult(
+            accept_field, # This is the accept value we expect, and matches that in the headers dict.
+            stream,
+            headers,
+            body)
+
+        do_handshake = (rng::AbstractRNG, uri::Requests.URI) -> handshake_result
+
+        client = WSClient(; do_handshake=do_handshake)
+        handler = TestHandler(client)
+        wsconnect(client, uri, handler)
+
+        # Write a message "Hello"
+        textsender = sendmultiframetext(client)
+        sendframe(textsender, "Hello")
+        sendframe(textsender, "world")
+        sendframe(textsender, "Goodbye."; isfinal=true)
+
+        binarysender = sendmultiframebinary(client)
+        sendframe(binarysender, b"Hello")
+        sendframe(binarysender, b"world")
+        sendframe(binarysender, b"Goodbye."; isfinal=true)
+
+        # Sleep for a few seconds to let all the messages be sent and received
+        sleep(2.0)
+
+        # Wait for the handler to receive close confirmation.
+        wait(handler)
+
+        # Check that all frames were sent.
+        @test length(stream.writing) == 6
     end
 end

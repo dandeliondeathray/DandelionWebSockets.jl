@@ -25,7 +25,7 @@ NOTE: You may send frames that are individually invalid UTF-8. However, the comp
 # Example
 
 ```
-sender = client.sendmultiframetext()
+sender = sendmultiframetext(client)
 sendframe(sender, "Hello")
 sendframe(sender, "world")
 sendframe(sender, "Goodbye"; isfinal=true)
@@ -34,7 +34,7 @@ sendframe(sender, "Goodbye"; isfinal=true)
 # Example
 
 ```
-sender = client.sendmultiframebinary()
+sender = sendmultiframebinary(client)
 sendframe(sender, b"Hello")
 sendframe(sender, b"world")
 sendframe(sender, b"Goodbye"; isfinal=true)

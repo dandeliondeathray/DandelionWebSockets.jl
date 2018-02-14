@@ -156,3 +156,6 @@ send_text(c::WSClient, s::String) = handle(get(get(c.connection).logic_proxy), S
 "Send a single binary frame."
 send_binary(c::WSClient, data::Vector{UInt8}) =
     handle(get(get(c.connection).logic_proxy), SendBinaryFrame(data, true, OPCODE_BINARY))
+
+sendmultiframetext(c::WSClient) = TextFrameSender(get(get(c.connection).logic_proxy))
+sendmultiframebinary(c::WSClient) = BinaryFrameSender(get(get(c.connection).logic_proxy))
