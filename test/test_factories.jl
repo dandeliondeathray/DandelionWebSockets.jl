@@ -4,7 +4,7 @@ function makeclientlogic(; state=STATE_OPEN,
                            mask=b"\x01\x02\x03\x04",
                            client_cleanup=() -> nothing)
     handler = WebSocketHandlerStub()
-    writer = FrameWriterStub()
+    writer = FrameIOStub()
     mask_generator = FakeRNG{UInt8}(mask)
     ponger = PongerStub()
 

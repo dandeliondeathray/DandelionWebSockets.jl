@@ -3,7 +3,7 @@ using DandelionWebSockets: STATE_OPEN, STATE_CONNECTING, STATE_CLOSING, STATE_CL
 using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFromServer
 using DandelionWebSockets: masking!
 import DandelionWebSockets: write, pong_received, ping_sent
-import Base: write
+import Base: write, close
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception
@@ -62,28 +62,30 @@ end
 # WriterStub
 #
 
-struct FrameWriterStub <: IO
+mutable struct FrameIOStub <: IO
     frames::Vector{Frame}
+    isopen::Bool
 
-    FrameWriterStub() = new(Vector{Frame}())
+    FrameIOStub() = new(Vector{Frame}(), true)
 end
 
-write(w::FrameWriterStub, frame::Frame) = push!(w.frames, frame)
+write(w::FrameIOStub, frame::Frame) = push!(w.frames, frame)
+close(w::FrameIOStub) = w.isopen = false
 
-function getframe(w::FrameWriterStub, i::Int)
+function getframe(w::FrameIOStub, i::Int)
     if length(w.frames) < i
         throw(InvalidPrecondition("required frame at index $i, but only has $(length(w.frames))"))
     end
     w.frames[i]
 end
 
-function getframeunmasked(w::FrameWriterStub, i::Int, mask::Vector{UInt8})
+function getframeunmasked(w::FrameIOStub, i::Int, mask::Vector{UInt8})
     frame = getframe(w, i)
     masking!(frame.payload, mask)
     frame
 end
 
-get_no_of_frames_written(w::FrameWriterStub) = length(w.frames)
+get_no_of_frames_written(w::FrameIOStub) = length(w.frames)
 
 #
 # Ponger stub

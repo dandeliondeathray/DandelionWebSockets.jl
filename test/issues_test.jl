@@ -4,7 +4,7 @@ using Base.Test
     @testset "Issue #12: Masking frames should be done on a copy of data" begin
         # Arrange
         handler = WebSocketHandlerStub()
-        writer = FrameWriterStub()
+        writer = FrameIOStub()
         mask_generator = FakeRNG{UInt8}(b"\x01\x02\x03\x04")
         ponger = PongerStub()
         client_cleanup = () -> nothing

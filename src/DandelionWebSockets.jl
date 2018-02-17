@@ -22,6 +22,8 @@ abstract type AbstractWSClient end
 abstract type AbstractClientProtocol end
 abstract type AbstractPinger end
 abstract type AbstractPonger end
+abstract type ClosingBehaviour end
+abstract type AbstractFrameWriter end
 
 # This defines the public interface that the user should implement. These are callbacks called when
 # events arrive from this WebSocket library.
@@ -47,6 +49,7 @@ state_open(t::WebSocketHandler) = nothing
 
 include("core.jl")
 include("network.jl")
+include("closing_behaviour.jl")
 include("frame_writer.jl")
 include("client_protocol.jl")
 include("ping.jl")

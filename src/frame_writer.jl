@@ -4,7 +4,7 @@ FrameWriter is used by the protocols to write frames to a socket.
 This is separate from the client protocol code, because the protocol for closing a connection is
 separate from the rest of the client protocol, and both need to send frames.
 """
-struct FrameWriter
+struct FrameWriter <: AbstractFrameWriter
     writer::IO
     rng::AbstractRNG
 end
@@ -12,7 +12,7 @@ end
 "Send a frame to the other endpoint, using the supplied payload and opcode."
 function send(framewriter::FrameWriter, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
 	# Each frame is masked with four random bytes.
-	mask    = rand(framewriter.rng, UInt8, 4)
+	mask = rand(framewriter.rng, UInt8, 4)
 
 	# Requirement
 	# @10_3-2
@@ -42,3 +42,16 @@ function send(framewriter::FrameWriter, isfinal::Bool, opcode::Opcode, payload::
 
 	write(framewriter.writer, frame)
 end
+
+function sendcloseframe(framewriter::FrameWriter, status::CloseStatus; reason::String = "")
+	payloadbuffer = IOBuffer()
+	if status != CLOSE_STATUS_NO_STATUS
+		write(payloadbuffer, hton(status.code))
+		if !isempty(reason)
+			write(payloadbuffer, reason)
+		end
+	end
+	send(framewriter, true, OPCODE_CLOSE, take!(payloadbuffer))
+end
+
+closesocket(w::FrameWriter) = close(w.writer)
