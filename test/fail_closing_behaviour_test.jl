@@ -7,8 +7,9 @@ import DandelionWebSockets: closesocket
 mutable struct FakeFrameWriter <: AbstractFrameWriter
     issocketclosed::Bool
     closestatuses::Vector{CloseStatus}
+    closereasons::Vector{String}
 
-    FakeFrameWriter() = new(false, [])
+    FakeFrameWriter() = new(false, [], [])
 end
 
 closesocket(w::FakeFrameWriter) = w.issocketclosed = true
@@ -17,6 +18,7 @@ send(w::FakeFrameWriter, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8}) 
 
 function sendcloseframe(w::FakeFrameWriter, status::CloseStatus; reason::String="")
     push!(w.closestatuses, status)
+    push!(w.closereasons, reason)
 end
 
 @testset "Fail the Connection    " begin
@@ -45,5 +47,15 @@ end
         closetheconnection(fail)
 
         @test framewriter.closestatuses == []
+    end
+
+    @testset "A reason is provided; The reason is present in the Close frame" begin
+        framewriter = FakeFrameWriter()
+        fail = FailTheConnectionBehaviour(framewriter, CLOSE_STATUS_PROTOCOL_ERROR;
+                                          reason="Some reason")
+
+        closetheconnection(fail)
+
+        @test framewriter.closereasons[1] == "Some reason"
     end
 end

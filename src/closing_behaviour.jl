@@ -24,14 +24,16 @@ struct FailTheConnectionBehaviour
     framewriter::AbstractFrameWriter
     status::CloseStatus
     issocketprobablyup::Bool
+    reason::String
 
     FailTheConnectionBehaviour(w::AbstractFrameWriter, status::CloseStatus;
-                               issocketprobablyup=true) = new(w, status, issocketprobablyup)
+                               issocketprobablyup=true,
+                               reason::String = "") = new(w, status, issocketprobablyup, reason)
 end
 
 function closetheconnection(fail::FailTheConnectionBehaviour)
     if fail.issocketprobablyup
-        sendcloseframe(fail.framewriter, fail.status)
+        sendcloseframe(fail.framewriter, fail.status; reason=fail.reason)
     end
     closesocket(fail.framewriter)
 end
