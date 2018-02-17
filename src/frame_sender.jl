@@ -41,11 +41,11 @@ sendframe(sender, b"Goodbye"; isfinal=true)
 ```
 """
 mutable struct FrameSender{T, Op}
-    logic::AbstractClientLogic
+    logic::AbstractClientProtocol
     opcode::Opcode
     isfinalsent::Bool
 
-    FrameSender{T, Op}(logic::AbstractClientLogic) where {T, Op} = new(logic, Op, false)
+    FrameSender{T, Op}(logic::AbstractClientProtocol) where {T, Op} = new(logic, Op, false)
 end
 
 """

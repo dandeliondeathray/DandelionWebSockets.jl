@@ -16,10 +16,10 @@ export WebSocketHandler,
        state_connecting,
        state_open,
        wsconnect
-export AbstractClientLogic
+export AbstractClientProtocol
 
 abstract type AbstractWSClient end
-abstract type AbstractClientLogic end
+abstract type AbstractClientProtocol end
 abstract type AbstractPinger end
 abstract type AbstractPonger end
 

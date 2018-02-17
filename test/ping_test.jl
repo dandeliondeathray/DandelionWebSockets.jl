@@ -1,12 +1,12 @@
 # Pinger ensures that pings are sent regularly. It is a thin wrapper around a timer and an
-# AbstractClientLogic object.
+# AbstractClientProtocol object.
 # Ponger ensures that pongs are received regularly. The logic tells Ponger whenever a pong response
 # is received, and Ponger in return tells the logic when a pong has not been received in the
 # expected timeframe.
 
 import DandelionWebSockets: ClientPingRequest, handle, PongMissed
 
-type FakeLogic <: AbstractClientLogic
+type FakeLogic <: AbstractClientProtocol
     ping_requests::Int
     pongs_missed::Int
 

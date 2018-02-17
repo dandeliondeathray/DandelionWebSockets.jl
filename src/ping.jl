@@ -10,7 +10,7 @@ mutable struct Pinger <: AbstractPinger
     end
 end
 
-function attach(pinger::Pinger, logic::AbstractClientLogic)
+function attach(pinger::Pinger, logic::AbstractClientProtocol)
     send_ping = x -> handle(logic, ClientPingRequest())
     pinger.timer = Nullable{Timer}(Timer(send_ping, pinger.interval, pinger.interval))
 end
@@ -36,7 +36,7 @@ function start_timer_(p::Ponger)
     p.timer = Nullable{Timer}(Timer(p.pong_missed, p.timeout, p.timeout))
 end
 
-attach(ponger::Ponger, logic::AbstractClientLogic) =
+attach(ponger::Ponger, logic::AbstractClientProtocol) =
     ponger.pong_missed = () -> handle(logic, PongMissed())
 
 function pong_received(ponger::Ponger)

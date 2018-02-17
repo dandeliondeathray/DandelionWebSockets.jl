@@ -1,9 +1,9 @@
 using Base.Test
 import DandelionWebSockets: handle
-using DandelionWebSockets: AbstractClientLogic, SendTextFrame, FinalFrameAlreadySentException
+using DandelionWebSockets: AbstractClientProtocol, SendTextFrame, FinalFrameAlreadySentException
 using DandelionWebSockets: TextFrameSender, sendframe, BinaryFrameSender
 
-struct FakeClientLogic <: AbstractClientLogic
+struct FakeClientLogic <: AbstractClientProtocol
     text_frame::Vector{SendTextFrame}
     binary_frame::Vector{SendBinaryFrame}
 

@@ -1,15 +1,15 @@
-using DandelionWebSockets: AbstractClientLogic, SendTextFrame, SendBinaryFrame
+using DandelionWebSockets: AbstractClientProtocol, SendTextFrame, SendBinaryFrame
 using DandelionWebSockets: ClientPingRequest, PongMissed, CloseRequest, SocketClosed
 using DandelionWebSockets: FrameFromServer
 import DandelionWebSockets: handle
 
 export ClientLogicProxy
 
-struct ClientLogicProxy <: AbstractClientLogic
+struct ClientLogicProxy <: AbstractClientProtocol
     channel::Channel{Any}
-    clientlogic::AbstractClientLogic
+    clientlogic::AbstractClientProtocol
 
-    function ClientLogicProxy(clientlogic::AbstractClientLogic)
+    function ClientLogicProxy(clientlogic::AbstractClientProtocol)
         proxy = new(Channel{Any}(Inf), clientlogic)
         @schedule run_clientlogicproxy(proxy)
         proxy

@@ -14,7 +14,7 @@ struct ServerReader <: AbstractServerReader
 end
 
 "Read frames from the network, until an exception is thrown in this task."
-function do_reader(s::IO, logic::AbstractClientLogic)
+function do_reader(s::IO, logic::AbstractClientProtocol)
     # Requirement
     # @6_2-1 Incoming data
     # @7_1_1-2 Discard trailing bytes
@@ -36,7 +36,7 @@ function do_reader(s::IO, logic::AbstractClientLogic)
     end
 end
 
-function start_reader(s::IO, logic::AbstractClientLogic)
+function start_reader(s::IO, logic::AbstractClientProtocol)
     t = @schedule do_reader(s, logic)
     ServerReader(s, t)
 end

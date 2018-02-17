@@ -10,7 +10,7 @@ struct ClientLogicNotification
     payload::Any
 end
 
-struct MockProxiedClientLogic <: AbstractClientLogic
+struct MockProxiedClientLogic <: AbstractClientProtocol
     call_notifications::Channel{ClientLogicNotification}
 
     MockProxiedClientLogic() = new(Channel{ClientLogicNotification}(0))

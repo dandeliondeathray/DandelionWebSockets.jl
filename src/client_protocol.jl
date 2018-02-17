@@ -84,7 +84,7 @@ const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
 "Type for the logic of a client WebSocket."
-mutable struct ClientLogic <: AbstractClientLogic
+mutable struct ClientLogic <: AbstractClientProtocol
 	# A WebSocket can be in a number of states. See the `STATE_*` constants.
 	state::SocketState
 	# The object to which callbacks should be made. This proxy will make the callbacks

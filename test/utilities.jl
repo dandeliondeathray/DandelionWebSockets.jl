@@ -132,7 +132,7 @@ end
 
 const MockLogicCall = Tuple{Symbol, Vector{Any}}
 
-mutable struct MockClientLogic <: AbstractClientLogic
+mutable struct MockClientLogic <: AbstractClientProtocol
     actuals::Vector{MockLogicCall}
     expected::Vector{MockLogicCall}
 
