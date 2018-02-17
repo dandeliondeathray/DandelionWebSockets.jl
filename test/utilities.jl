@@ -123,7 +123,7 @@ function Base.read(s::BlockingStream, ::Type{UInt16})
 end
 
 #
-# MockClientLogic mocks ClientLogic, and should have used the @mock macro, except that there are
+# MockClientProtocol mocks ClientProtocol, and should have used the @mock macro, except that there are
 # issues with FactCheck and doing asserts in other tasks. This custom mock ensures that all asserts
 # are done afterwards, in the same task that created it.
 #
@@ -132,22 +132,22 @@ end
 
 const MockLogicCall = Tuple{Symbol, Vector{Any}}
 
-mutable struct MockClientLogic <: AbstractClientProtocol
+mutable struct MockClientProtocol <: AbstractClientProtocol
     actuals::Vector{MockLogicCall}
     expected::Vector{MockLogicCall}
 
-    MockClientLogic(expected::Vector{MockLogicCall}) = new([], expected)
+    MockClientProtocol(expected::Vector{MockLogicCall}) = new([], expected)
 end
 
-function call(m::MockClientLogic, s::Symbol, args...)
+function call(m::MockClientProtocol, s::Symbol, args...)
     push!(m.actuals, (s, collect(args)))
 end
 
-function check(m::MockClientLogic)
+function check(m::MockClientProtocol)
     @fact m.actuals --> m.expected
 end
 
-handle(m::MockClientLogic, args...) = call(m, :handle, args...)
+handle(m::MockClientProtocol, args...) = call(m, :handle, args...)
 
 #
 # A fake stream for checking that we read and write the right frames.

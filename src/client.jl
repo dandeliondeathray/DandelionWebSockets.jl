@@ -7,8 +7,8 @@ using DandelionWebSockets.Proxy
 using DandelionWebSockets.Proxy: stopproxy
 
 mutable struct WebSocketsConnection
-    # `logic_proxy` forwards commands to the `ClientLogic` object, in its own coroutine.
-    logic_proxy::Nullable{ClientLogicProxy}
+    # `logic_proxy` forwards commands to the `ClientProtocol` object, in its own coroutine.
+    logic_proxy::Nullable{ClientProtocolProxy}
     # `reader` reads frames from the server.
     reader::Nullable{ServerReader}
     # `rng` is used for random generation of masks when sending frames.
@@ -24,7 +24,7 @@ mutable struct WebSocketsConnection
     # This is now handled by seeding the MersenneTwister PRNG with a random UInt32 from the
     # systems entropy.
 
-    WebSocketsConnection() = new(Nullable{ClientLogicProxy}(),
+    WebSocketsConnection() = new(Nullable{ClientProtocolProxy}(),
                                  Nullable{ServerReader}(),
                                  MersenneTwister(rand(RandomDevice(), UInt32)),
                                  Ponger(3.0, misses=3),
@@ -89,11 +89,11 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
         end
     end
 
-    # `ClientLogic` starts in the `STATE_OPEN` state, because it isn't responsible for making
-    # connections. The target object for `logic_proxy` is the `ClientLogic` object created here.
-    logic = ClientLogic(handler, writer, connection.rng, connection.ponger,
+    # `ClientProtocol` starts in the `STATE_OPEN` state, because it isn't responsible for making
+    # connections. The target object for `logic_proxy` is the `ClientProtocol` object created here.
+    logic = ClientProtocol(handler, writer, connection.rng, connection.ponger,
                         cleanup; state = STATE_OPEN)
-    connection.logic_proxy = Nullable{ClientLogicProxy}(ClientLogicProxy(logic))
+    connection.logic_proxy = Nullable{ClientProtocolProxy}(ClientProtocolProxy(logic))
 
     # `Ponger` requires a logic object it can alert when a pong request hasn't been received within
     # the expected time frame. This attaches that logic object to the ponger.

@@ -9,7 +9,7 @@ using Base.Test
         ponger = PongerStub()
         client_cleanup = () -> nothing
 
-        logic = ClientLogic(handler,
+        logic = ClientProtocol(handler,
                             writer,
                             mask_generator,
                             ponger,

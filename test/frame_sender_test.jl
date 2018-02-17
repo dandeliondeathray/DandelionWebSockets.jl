@@ -3,15 +3,15 @@ import DandelionWebSockets: handle
 using DandelionWebSockets: AbstractClientProtocol, SendTextFrame, FinalFrameAlreadySentException
 using DandelionWebSockets: TextFrameSender, sendframe, BinaryFrameSender
 
-struct FakeClientLogic <: AbstractClientProtocol
+struct FakeClientProtocol <: AbstractClientProtocol
     text_frame::Vector{SendTextFrame}
     binary_frame::Vector{SendBinaryFrame}
 
-    FakeClientLogic() = new([], [])
+    FakeClientProtocol() = new([], [])
 end
 
-handle(f::FakeClientLogic, s::SendTextFrame) = push!(f.text_frame, s)
-handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
+handle(f::FakeClientProtocol, s::SendTextFrame) = push!(f.text_frame, s)
+handle(f::FakeClientProtocol, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
 @testset "Multi-frame message    " begin
     # These are tests for sending multi-frame message.
@@ -34,7 +34,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
     @testset "Text frames" begin
         @testset "First frame; Opcode is OPCODE_TEXT" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -46,7 +46,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Second frame; Opcode is OPCODE_CONTINUATION" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -59,7 +59,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "First frame; frame isn't the final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -71,7 +71,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Second frame that isn't last; frame isn't final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -84,7 +84,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Last frame; frame is final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -98,7 +98,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Send frame after the final; Exception is thrown" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             # Act
@@ -109,7 +109,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
         end
 
         @testset "User can send invalid UTF-8 as a byte vector; Frame is sent" begin
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = TextFrameSender(logic)
 
             text = "\u2000"
@@ -126,7 +126,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
     @testset "Binary frames" begin
         @testset "First frame; Opcode is OPCODE_TEXT" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act
@@ -138,7 +138,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Second frame; Opcode is OPCODE_CONTINUATION" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act
@@ -151,7 +151,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "First frame; frame isn't the final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act
@@ -163,7 +163,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Second frame that isn't last; frame isn't final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act
@@ -176,7 +176,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Last frame; frame is final" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act
@@ -190,7 +190,7 @@ handle(f::FakeClientLogic, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
         @testset "Send frame after the final; Exception is thrown" begin
             # Arrange
-            logic = FakeClientLogic()
+            logic = FakeClientProtocol()
             sender = BinaryFrameSender(logic)
 
             # Act

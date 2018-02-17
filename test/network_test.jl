@@ -1,6 +1,6 @@
 import Base: read, write, readavailable
 import DandelionWebSockets:
-    start, start_reader, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientLogicTaskProxy
+    start, start_reader, stop, WriterTaskProxy, FrameFromServer, SocketClosed, ClientProtocolTaskProxy
 
 
 network_test_frame4 =
@@ -11,11 +11,11 @@ facts("Reader task") do
         # Start async reader task
         # Check that it's running.
         s = BlockingStream(IOBuffer())
-        logic = MockClientLogic([
+        logic = MockClientProtocol([
             (:handle, Any[SocketClosed()])
         ])
 
-        logic_proxy = ClientLogicTaskProxy(logic)
+        logic_proxy = ClientProtocolTaskProxy(logic)
         start(logic_proxy)
 
         @sync begin
@@ -41,12 +41,12 @@ facts("Reader task") do
         write(framebuf, test_frame1)
         iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
-        logic = MockClientLogic([
+        logic = MockClientProtocol([
             (:handle, Any[FrameFromServer(test_frame1)]),
             (:handle, Any[SocketClosed()])
         ])
 
-        logic_proxy = ClientLogicTaskProxy(logic)
+        logic_proxy = ClientProtocolTaskProxy(logic)
         start(logic_proxy)
 
         @sync begin
@@ -73,12 +73,12 @@ facts("Reader task") do
         iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
 
-        logic = MockClientLogic([
+        logic = MockClientProtocol([
             (:handle, Any[FrameFromServer(test_frame1)]),
             (:handle, Any[SocketClosed()])
         ])
 
-        logic_proxy = ClientLogicTaskProxy(logic)
+        logic_proxy = ClientProtocolTaskProxy(logic)
         start(logic_proxy)
 
         @sync begin
@@ -100,14 +100,14 @@ facts("Reader task") do
         iobuf = IOBuffer(take!(framebuf))
         s = BlockingStream(iobuf)
 
-        logic = MockClientLogic([
+        logic = MockClientProtocol([
             (:handle, Any[FrameFromServer(test_frame1)]),
             (:handle, Any[FrameFromServer(test_frame2)]),
             (:handle, Any[FrameFromServer(test_frame3)]),
             (:handle, Any[SocketClosed()])
         ])
 
-        logic_proxy = ClientLogicTaskProxy(logic)
+        logic_proxy = ClientProtocolTaskProxy(logic)
         start(logic_proxy)
 
         @sync begin

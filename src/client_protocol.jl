@@ -1,5 +1,5 @@
 # Client logic deals with handling control frames, user requesting to send frames, state.
-# The ClientLogic type is defined below entirely synchronously. It takes input via the `handle()`
+# The ClientProtocol type is defined below entirely synchronously. It takes input via the `handle()`
 # function, which is defined for the different input types below. It performs internal logic and
 # produces a call to its outbound interface.
 #
@@ -14,21 +14,21 @@
 # test the logic of the WebSocket synchronously, without any asynchronicity or concurrency
 # complicating things.
 
-export ClientLogic
+export ClientProtocol
 
 #
 # These types define the input interface for the client logic.
 #
 
-"Abstract type for all commands sent to `ClientLogic`.
+"Abstract type for all commands sent to `ClientProtocol`.
 
-These commands are sent as arguments to the different `handle` functions on `ClientLogic`. Each
+These commands are sent as arguments to the different `handle` functions on `ClientProtocol`. Each
 command represents an action on a WebSocket, such as sending a text frame, ping request, or closing
 the connection."
-abstract type ClientLogicInput end
+abstract type ClientProtocolInput end
 
-"Send a text frame, sent to `ClientLogic`."
-struct SendTextFrame <: ClientLogicInput
+"Send a text frame, sent to `ClientProtocol`."
+struct SendTextFrame <: ClientProtocolInput
 	data::Vector{UInt8}
 	# True if this is the final frame in the text message.
 	isfinal::Bool
@@ -39,8 +39,8 @@ struct SendTextFrame <: ClientLogicInput
 	SendTextFrame(data::String, isfinal::Bool, opcode::Opcode) = new(Vector{UInt8}(data), isfinal, opcode)
 end
 
-"Send a binary frame, sent to `ClientLogic`."
-struct SendBinaryFrame <: ClientLogicInput
+"Send a binary frame, sent to `ClientProtocol`."
+struct SendBinaryFrame <: ClientProtocolInput
 	data::Array{UInt8, 1}
 	# True if this is the final frame in the text message.
 	isfinal::Bool
@@ -49,24 +49,24 @@ struct SendBinaryFrame <: ClientLogicInput
 end
 
 "Send a ping request to the server."
-struct ClientPingRequest  <: ClientLogicInput end
+struct ClientPingRequest  <: ClientProtocolInput end
 
 "A frame was received from the server."
-struct FrameFromServer <: ClientLogicInput
+struct FrameFromServer <: ClientProtocolInput
 	frame::Frame
 end
 
 "A request to close the WebSocket."
-struct CloseRequest <: ClientLogicInput end
+struct CloseRequest <: ClientProtocolInput end
 
 "Used when the underlying network socket was closed."
-struct SocketClosed <: ClientLogicInput end
+struct SocketClosed <: ClientProtocolInput end
 
 "A pong reply was expected, but never received."
-struct PongMissed <: ClientLogicInput end
+struct PongMissed <: ClientProtocolInput end
 
 #
-# ClientLogic
+# ClientProtocol
 #
 
 "Enum value for the different states a WebSocket can be in."
@@ -77,14 +77,14 @@ end
 # We never send a `state_connecting` callback here, because that should be done when we make the
 # HTTP upgrade.
 const STATE_CONNECTING     = SocketState(:connecting)
-# We send a `state_open` callback when the ClientLogic is created, when making the connection.
+# We send a `state_open` callback when the ClientProtocol is created, when making the connection.
 const STATE_OPEN           = SocketState(:open)
 const STATE_CLOSING        = SocketState(:closing)
 const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
 "Type for the logic of a client WebSocket."
-mutable struct ClientLogic <: AbstractClientProtocol
+mutable struct ClientProtocol <: AbstractClientProtocol
 	# A WebSocket can be in a number of states. See the `STATE_*` constants.
 	state::SocketState
 	# The object to which callbacks should be made. This proxy will make the callbacks
@@ -103,43 +103,43 @@ mutable struct ClientLogic <: AbstractClientProtocol
 	client_cleanup::Function
 end
 
-ClientLogic(handler::WebSocketHandler,
+ClientProtocol(handler::WebSocketHandler,
 			writer::IO,
 	        rng::AbstractRNG,
 	        ponger::AbstractPonger,
 			client_cleanup::Function;
 			state::SocketState = STATE_OPEN) =
-	ClientLogic(state, handler, FrameWriter(writer, rng), ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
+	ClientProtocol(state, handler, FrameWriter(writer, rng), ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
 
 "Send a single text frame."
-function handle(logic::ClientLogic, req::SendTextFrame)
+function handle(logic::ClientProtocol, req::SendTextFrame)
 	if logic.state == STATE_OPEN
 		send(logic.framewriter, req.isfinal, req.opcode, req.data)
 	end
 end
 
 "Send a single binary frame."
-function handle(logic::ClientLogic, req::SendBinaryFrame)
+function handle(logic::ClientProtocol, req::SendBinaryFrame)
 	if logic.state == STATE_OPEN
 		send(logic.framewriter, req.isfinal, req.opcode, req.data)
 	end
 end
 
-function handle(logic::ClientLogic, req::ClientPingRequest)
+function handle(logic::ClientProtocol, req::ClientPingRequest)
 	if logic.state == STATE_OPEN
 		ping_sent(logic.ponger)
 		send(logic.framewriter, true, OPCODE_PING, b"")
 	end
 end
 
-function handle(logic::ClientLogic, ::PongMissed)
+function handle(logic::ClientProtocol, ::PongMissed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)
 	logic.client_cleanup()
 end
 
 "Handle a user request to close the WebSocket."
-function handle(logic::ClientLogic, req::CloseRequest)
+function handle(logic::ClientProtocol, req::CloseRequest)
 	logic.state = STATE_CLOSING
 
 	# Send a close frame to the server
@@ -149,14 +149,14 @@ function handle(logic::ClientLogic, req::CloseRequest)
 end
 
 "The underlying socket was closed. This is sent by the reader."
-function handle(logic::ClientLogic, ::SocketClosed)
+function handle(logic::ClientProtocol, ::SocketClosed)
 	logic.state = STATE_CLOSED
 	state_closed(logic.handler)
 	logic.client_cleanup()
 end
 
 "Handle a frame from the server."
-function handle(logic::ClientLogic, req::FrameFromServer)
+function handle(logic::ClientProtocol, req::FrameFromServer)
 	# Requirement
 	# @6_2-3 Receiving a data frame
 
@@ -179,7 +179,7 @@ end
 # Internal handle functions
 #
 
-function handle_close(logic::ClientLogic, frame::Frame)
+function handle_close(logic::ClientProtocol, frame::Frame)
 	# If the server initiates a closing handshake when we're in open, we should reply with a close
 	# frame. If the client initiated the closing handshake then we'll be in STATE_CLOSING when the
 	# reply comes, and we shouldn't send another close frame.
@@ -191,15 +191,15 @@ function handle_close(logic::ClientLogic, frame::Frame)
 	end
 end
 
-function handle_ping(logic::ClientLogic, payload::Vector{UInt8})
+function handle_ping(logic::ClientProtocol, payload::Vector{UInt8})
 	send(logic.framewriter, true, OPCODE_PONG, payload)
 end
 
-function handle_pong(logic::ClientLogic, ::Vector{UInt8})
+function handle_pong(logic::ClientProtocol, ::Vector{UInt8})
 	pong_received(logic.ponger)
 end
 
-function handle_text(logic::ClientLogic, frame::Frame)
+function handle_text(logic::ClientProtocol, frame::Frame)
 	if frame.fin
 		on_text(logic.handler, String(frame.payload))
 	else
@@ -207,7 +207,7 @@ function handle_text(logic::ClientLogic, frame::Frame)
 	end
 end
 
-function handle_binary(logic::ClientLogic, frame::Frame)
+function handle_binary(logic::ClientProtocol, frame::Frame)
 	if frame.fin
 		on_binary(logic.handler, frame.payload)
 	else
@@ -216,7 +216,7 @@ function handle_binary(logic::ClientLogic, frame::Frame)
 end
 
 # TODO: What if we get a binary/text frame before we get a final continuation frame?
-function handle_continuation(logic::ClientLogic, frame::Frame)
+function handle_continuation(logic::ClientProtocol, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
 		if logic.buffered_type == OPCODE_TEXT
@@ -228,12 +228,12 @@ function handle_continuation(logic::ClientLogic, frame::Frame)
 	end
 end
 
-function start_buffer(logic::ClientLogic, payload::Vector{UInt8}, opcode::Opcode)
+function start_buffer(logic::ClientProtocol, payload::Vector{UInt8}, opcode::Opcode)
 	logic.buffered_type = opcode
 	logic.buffer = copy(payload)
 end
 
-function buffer(logic::ClientLogic, payload::Vector{UInt8})
+function buffer(logic::ClientProtocol, payload::Vector{UInt8})
 	append!(logic.buffer, payload)
 end
 
