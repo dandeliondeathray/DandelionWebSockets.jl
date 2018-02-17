@@ -28,7 +28,7 @@ the connection."
 abstract type ClientLogicInput end
 
 "Send a text frame, sent to `ClientLogic`."
-immutable SendTextFrame <: ClientLogicInput
+struct SendTextFrame <: ClientLogicInput
 	data::Vector{UInt8}
 	# True if this is the final frame in the text message.
 	isfinal::Bool
@@ -40,7 +40,7 @@ immutable SendTextFrame <: ClientLogicInput
 end
 
 "Send a binary frame, sent to `ClientLogic`."
-immutable SendBinaryFrame <: ClientLogicInput
+struct SendBinaryFrame <: ClientLogicInput
 	data::Array{UInt8, 1}
 	# True if this is the final frame in the text message.
 	isfinal::Bool
@@ -49,28 +49,28 @@ immutable SendBinaryFrame <: ClientLogicInput
 end
 
 "Send a ping request to the server."
-immutable ClientPingRequest  <: ClientLogicInput end
+struct ClientPingRequest  <: ClientLogicInput end
 
 "A frame was received from the server."
-immutable FrameFromServer <: ClientLogicInput
+struct FrameFromServer <: ClientLogicInput
 	frame::Frame
 end
 
 "A request to close the WebSocket."
-immutable CloseRequest <: ClientLogicInput end
+struct CloseRequest <: ClientLogicInput end
 
 "Used when the underlying network socket was closed."
-immutable SocketClosed <: ClientLogicInput end
+struct SocketClosed <: ClientLogicInput end
 
 "A pong reply was expected, but never received."
-immutable PongMissed <: ClientLogicInput end
+struct PongMissed <: ClientLogicInput end
 
 #
 # ClientLogic
 #
 
 "Enum value for the different states a WebSocket can be in."
-immutable SocketState
+struct SocketState
 	v::Symbol
 end
 
@@ -84,7 +84,7 @@ const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
 "Type for the logic of a client WebSocket."
-type ClientLogic <: AbstractClientLogic
+mutable struct ClientLogic <: AbstractClientLogic
 	# A WebSocket can be in a number of states. See the `STATE_*` constants.
 	state::SocketState
 	# The object to which callbacks should be made. This proxy will make the callbacks
