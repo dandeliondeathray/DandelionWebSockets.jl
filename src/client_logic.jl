@@ -90,10 +90,8 @@ type ClientLogic <: AbstractClientLogic
 	# The object to which callbacks should be made. This proxy will make the callbacks
 	# asynchronously.
 	handler::WebSocketHandler
-	# A proxy for the stream where we write our frames.
-	writer::IO
-	# Random number generation, used for masking frames.
-	rng::AbstractRNG
+	# Writes frames to the socket, according to the framing details.
+	framewriter::FrameWriter
 	# Keeps track of when a pong is expected to be received from the server.
 	ponger::AbstractPonger
 	# Here we keep data collected when we get a message made up of multiple frames.
@@ -111,59 +109,26 @@ ClientLogic(handler::WebSocketHandler,
 	        ponger::AbstractPonger,
 			client_cleanup::Function;
 			state::SocketState = STATE_OPEN) =
-	ClientLogic(state, handler, writer, rng, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
-
-"Send a frame to the other endpoint, using the supplied payload and opcode."
-function send(logic::ClientLogic, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
-	# We can't send any frames in CLOSING or CLOSED.
-	if logic.state != STATE_OPEN
-		return
-	end
-
-	# Each frame is masked with four random bytes.
-	mask    = rand(logic.rng, UInt8, 4)
-
-	# Requirement
-	# @10_3-2
-	#
-	# We must make a copy of the payload here, for two reasons:
-	# 1. Section 10 of the specification states that we MUST not be modifiable by the user during
-	#    transmission.
-	# 2. Masking the data will modify it, and the users data should not be modified. This was fixed
-	#    in issue #12.
-	masked_payload = copy(payload)
-	masking!(masked_payload, mask)
-
-	len::UInt64  = length(masked_payload)
-	extended_len = 0
-
-	if 126 <= len <= 65535
-		extended_len = len
-		len = 126
-	elseif 65536 <= len
-		extended_len = len
-		len = 127
-	end
-
-	# Create a Frame and write it to the underlying socket, via the `writer` proxy.
-	frame = Frame(
-		isfinal, false, false, false, opcode, true, len, extended_len, mask, masked_payload)
-
-	write(logic.writer, frame)
-end
+	ClientLogic(state, handler, FrameWriter(writer, rng), ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
 
 "Send a single text frame."
 function handle(logic::ClientLogic, req::SendTextFrame)
-	send(logic, req.isfinal, req.opcode, req.data)
+	if logic.state == STATE_OPEN
+		send(logic.framewriter, req.isfinal, req.opcode, req.data)
+	end
 end
 
 "Send a single binary frame."
-handle(logic::ClientLogic, req::SendBinaryFrame)   = send(logic, req.isfinal, req.opcode, req.data)
+function handle(logic::ClientLogic, req::SendBinaryFrame)
+	if logic.state == STATE_OPEN
+		send(logic.framewriter, req.isfinal, req.opcode, req.data)
+	end
+end
 
 function handle(logic::ClientLogic, req::ClientPingRequest)
 	if logic.state == STATE_OPEN
 		ping_sent(logic.ponger)
-		send(logic, true, OPCODE_PING, b"")
+		send(logic.framewriter, true, OPCODE_PING, b"")
 	end
 end
 
@@ -178,10 +143,7 @@ function handle(logic::ClientLogic, req::CloseRequest)
 	logic.state = STATE_CLOSING
 
 	# Send a close frame to the server
-	mask = rand(logic.rng, UInt8, 4)
-	frame = Frame(true, false, false, false, OPCODE_CLOSE, true, 0, 0,
-		mask, b"")
-	write(logic.writer, frame)
+	send(logic.framewriter, true, OPCODE_CLOSE, b"")
 
 	state_closing(logic.handler)
 end
@@ -224,16 +186,13 @@ function handle_close(logic::ClientLogic, frame::Frame)
 	send_close_reply = logic.state == STATE_OPEN
 	logic.state = STATE_CLOSING_SOCKET
 	if send_close_reply
-		mask = rand(logic.rng, UInt8, 4)
-		frame = Frame(true, false, false, false, OPCODE_CLOSE, true, frame.len, frame.extended_len,
-			mask, frame.payload)
-		write(logic.writer, frame)
+		send(logic.framewriter, true, OPCODE_CLOSE, b"")
 		state_closing(logic.handler)
 	end
 end
 
 function handle_ping(logic::ClientLogic, payload::Vector{UInt8})
-	send(logic, true, OPCODE_PONG, payload)
+	send(logic.framewriter, true, OPCODE_PONG, payload)
 end
 
 function handle_pong(logic::ClientLogic, ::Vector{UInt8})

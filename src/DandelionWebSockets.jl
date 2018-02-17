@@ -44,6 +44,7 @@ state_open(t::WebSocketHandler) = nothing
 include("core.jl")
 include("glue_interface.jl")
 include("network.jl")
+include("frame_writer.jl")
 include("client_logic.jl")
 include("ping.jl")
 include("handshake.jl")
