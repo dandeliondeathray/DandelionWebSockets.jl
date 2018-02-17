@@ -16,8 +16,12 @@ export WebSocketHandler,
        state_connecting,
        state_open,
        wsconnect
+export AbstractClientLogic
 
 abstract type AbstractWSClient end
+abstract type AbstractClientLogic end
+abstract type AbstractPinger end
+abstract type AbstractPonger end
 
 # This defines the public interface that the user should implement. These are callbacks called when
 # events arrive from this WebSocket library.
@@ -42,7 +46,6 @@ state_connecting(t::WebSocketHandler) = nothing
 state_open(t::WebSocketHandler) = nothing
 
 include("core.jl")
-include("glue_interface.jl")
 include("network.jl")
 include("frame_writer.jl")
 include("client_logic.jl")
