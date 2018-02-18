@@ -92,3 +92,37 @@ function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, ::AbnormalNo
 end
 
 clientprotocolinput(::ClientInitiatedCloseBehaviour, ::ClientProtocolInput) = nothing
+
+"""
+The server can initiate a Close, in which case this behaviour ensures a proper close.
+"""
+mutable struct ServerInitiatedCloseBehaviour <: ClosingBehaviour
+    framewriter::AbstractFrameWriter
+    handler::WebSocketHandler
+    status::CloseStatus
+    state::SocketState
+
+    function ServerInitiatedCloseBehaviour(w::AbstractFrameWriter, h::WebSocketHandler, status::CloseStatus)
+        new(w, h, status, STATE_CLOSING)
+    end
+end
+
+protocolstate(b::ServerInitiatedCloseBehaviour) = b.state
+
+function closetheconnection(behaviour::ServerInitiatedCloseBehaviour)
+    state_closing(behaviour.handler)
+    sendcloseframe(behaviour.framewriter, behaviour.status; reason = "")
+end
+
+function clientprotocolinput(behaviour::ServerInitiatedCloseBehaviour, ::SocketClosed)
+    behaviour.state = STATE_CLOSED
+    state_closed(behaviour.handler)
+end
+
+clientprotocolinput(::ServerInitiatedCloseBehaviour, ::ClientProtocolInput) = nothing
+
+function clientprotocolinput(b::ServerInitiatedCloseBehaviour, ::AbnormalSocketNotClosedByServer)
+    b.state = STATE_CLOSED
+    state_closed(b.handler)
+    closesocket(b.framewriter)
+end

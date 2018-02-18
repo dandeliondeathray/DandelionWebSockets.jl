@@ -65,3 +65,6 @@ struct PongMissed <: ClientProtocolInput end
 
 "No Close frame response was received by the client after a reasonable time"
 struct AbnormalNoCloseResponseReceived <: ClientProtocolInput end
+
+"The socket did not close the socket in a reasonable timeframe."
+struct AbnormalSocketNotClosedByServer <: ClientProtocolInput end
