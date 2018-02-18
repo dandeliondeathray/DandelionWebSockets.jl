@@ -20,13 +20,6 @@ export ClientProtocol
 # These types define the input interface for the client logic.
 #
 
-"Abstract type for all commands sent to `ClientProtocol`.
-
-These commands are sent as arguments to the different `handle` functions on `ClientProtocol`. Each
-command represents an action on a WebSocket, such as sending a text frame, ping request, or closing
-the connection."
-abstract type ClientProtocolInput end
-
 "Send a text frame, sent to `ClientProtocol`."
 struct SendTextFrame <: ClientProtocolInput
 	data::Vector{UInt8}

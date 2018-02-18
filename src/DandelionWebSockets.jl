@@ -25,6 +25,13 @@ abstract type AbstractPonger end
 abstract type ClosingBehaviour end
 abstract type AbstractFrameWriter end
 
+"Abstract type for all commands sent to `ClientProtocol`.
+
+These commands are sent as arguments to the different `handle` functions on `ClientProtocol`. Each
+command represents an action on a WebSocket, such as sending a text frame, ping request, or closing
+the connection."
+abstract type ClientProtocolInput end
+
 # This defines the public interface that the user should implement. These are callbacks called when
 # events arrive from this WebSocket library.
 abstract type WebSocketHandler end

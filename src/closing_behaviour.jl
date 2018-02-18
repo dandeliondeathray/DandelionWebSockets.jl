@@ -22,13 +22,16 @@ const CLOSE_STATUS_TLS_HANDSHAKE_FAILURE      = CloseStatus(1015)
 
 struct FailTheConnectionBehaviour
     framewriter::AbstractFrameWriter
+    handler::WebSocketHandler
     status::CloseStatus
     issocketprobablyup::Bool
     reason::String
 
-    FailTheConnectionBehaviour(w::AbstractFrameWriter, status::CloseStatus;
+    FailTheConnectionBehaviour(w::AbstractFrameWriter,
+                               handler::WebSocketHandler,
+                               status::CloseStatus;
                                issocketprobablyup=true,
-                               reason::String = "") = new(w, status, issocketprobablyup, reason)
+                               reason::String = "") = new(w, handler, status, issocketprobablyup, reason)
 end
 
 function closetheconnection(fail::FailTheConnectionBehaviour)
@@ -36,4 +39,7 @@ function closetheconnection(fail::FailTheConnectionBehaviour)
         sendcloseframe(fail.framewriter, fail.status; reason=fail.reason)
     end
     closesocket(fail.framewriter)
+    state_closed(fail.handler)
 end
+
+clientprotocolinput(::FailTheConnectionBehaviour, ::ClientProtocolInput) = nothing
