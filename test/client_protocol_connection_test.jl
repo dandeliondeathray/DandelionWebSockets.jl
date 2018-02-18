@@ -14,6 +14,8 @@ end
             close_frame = closeframe_from_server()
             handle(logic, FrameFromServer(close_frame))
 
+            # TODO This is no longer true
+            # TODO Use protocolstate() instead
             @test logic.state == STATE_CLOSING_SOCKET
         end
 
@@ -46,6 +48,7 @@ end
 
             handle(logic, CloseRequest())
 
+            # TODO Use protocolstate() instead
             @test logic.state == STATE_CLOSING
         end
 
@@ -69,17 +72,21 @@ end
 
     @testset "the server replies to a client initiated closing handshake" begin
         @testset "state is CLOSING_SOCKET" begin
+            # TODO Rewrite to put in correct closing state
             logic, handler, writer = makeclientlogic(state=STATE_CLOSING)
 
             close_frame = closeframe_from_server()
             handle(logic, FrameFromServer(close_frame))
 
+            # TODO Use protocolstate() instead
+            # TODO State is CLOSING
             @test logic.state == STATE_CLOSING_SOCKET
         end
     end
 
     @testset "the socket is closed cleanly" begin
         @testset "the state is CLOSED" begin
+            # TODO Rewrite to put in correct closing state
             logic, handler, writer = makeclientlogic(state=STATE_CLOSING_SOCKET)
 
             handle(logic, SocketClosed())
@@ -88,6 +95,7 @@ end
         end
 
         @testset "the handler is notified of the state change" begin
+            # TODO Rewrite to put in correct closing state
             logic, handler, writer = makeclientlogic(state=STATE_CLOSING_SOCKET)
 
             handle(logic, SocketClosed())
@@ -98,7 +106,7 @@ end
         @testset "the client cleanup function is called" begin
             was_client_cleanup_called = false
             client_cleanup = () -> was_client_cleanup_called = true
-
+            # TODO Rewrite to put in correct closing state
             logic, handler, writer = makeclientlogic(state=STATE_CLOSING_SOCKET,
                                                      client_cleanup=client_cleanup)
 

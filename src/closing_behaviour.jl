@@ -81,6 +81,8 @@ end
 function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::FrameFromServer)
     if frame.frame.opcode == OPCODE_CLOSE
         if normal.state == STATE_CLOSING
+            # FIXME State isn't closed until the socket has been closed.
+            # This is a substate of CLOSING
             normal.state = STATE_CLOSED
             state_closed(normal.handler)
         end
