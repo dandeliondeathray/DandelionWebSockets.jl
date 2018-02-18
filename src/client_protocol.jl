@@ -41,12 +41,11 @@ mutable struct ClientProtocol <: AbstractClientProtocol
 end
 
 ClientProtocol(handler::WebSocketHandler,
-			writer::IO,
-	        rng::AbstractRNG,
+			framewriter::FrameWriter,
 	        ponger::AbstractPonger,
 			client_cleanup::Function;
 			state::SocketState = STATE_OPEN) =
-	ClientProtocol(state, handler, FrameWriter(writer, rng), ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
+	ClientProtocol(state, handler, framewriter, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
 
 "Send a single text frame."
 function handle(logic::ClientProtocol, req::SendTextFrame)

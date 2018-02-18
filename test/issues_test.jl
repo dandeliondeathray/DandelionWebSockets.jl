@@ -3,18 +3,7 @@ using Base.Test
 @testset "Issues                 " begin
     @testset "Issue #12: Masking frames should be done on a copy of data" begin
         # Arrange
-        handler = WebSocketHandlerStub()
-        writer = FrameIOStub()
-        mask_generator = FakeRNG{UInt8}(b"\x01\x02\x03\x04")
-        ponger = PongerStub()
-        client_cleanup = () -> nothing
-
-        logic = ClientProtocol(handler,
-                            writer,
-                            mask_generator,
-                            ponger,
-                            client_cleanup;
-                            state = STATE_OPEN)
+        logic, handler, writer = makeclientlogic()
 
         text = "Foo"
 

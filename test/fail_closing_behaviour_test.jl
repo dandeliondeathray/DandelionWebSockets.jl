@@ -6,14 +6,6 @@ using DandelionWebSockets: FrameFromServer, clientprotocolinput, ClientProtocolI
 using DandelionWebSockets: AbnormalNoCloseResponseReceived, ServerInitiatedCloseBehaviour
 import DandelionWebSockets: closesocket, AbnormalSocketNotClosedByServer
 
-# function closeframefromserver(status::CloseStatus; reason::String="")
-#     buffer = IOBuffer()
-#     write(buffer, status.code)
-#     write(buffer, Vector{UInt8}(reason))
-#     payload = take!(buffer)
-#     Frame(true, OPCODE_CLOSE, false, length(payload), 0, b"", payload)
-# end
-
 mutable struct FakeFrameWriter <: AbstractFrameWriter
     issocketclosed::Bool
     closestatuses::Vector{CloseStatus}
