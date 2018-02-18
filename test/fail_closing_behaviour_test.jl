@@ -3,6 +3,7 @@ using DandelionWebSockets: AbstractFrameWriter, CloseStatus
 using DandelionWebSockets: FailTheConnectionBehaviour, closetheconnection, ClientInitiatedCloseBehaviour
 using DandelionWebSockets: CLOSE_STATUS_PROTOCOL_ERROR, CLOSE_STATUS_NORMAL
 using DandelionWebSockets: FrameFromServer, clientprotocolinput, ClientProtocolInput, protocolstate
+using DandelionWebSockets: AbnormalNoCloseResponseReceived
 import DandelionWebSockets: closesocket
 
 mutable struct FakeFrameWriter <: AbstractFrameWriter
@@ -108,7 +109,7 @@ struct FakeClientProtocolInput <: ClientProtocolInput end
     end
 end
 
-@testset "Closing the Connection " begin
+@testset "Client iniated close   " begin
     @testset "Close status code is by default CLOSE_STATUS_NORMAL" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
@@ -169,5 +170,66 @@ end
         clientprotocolinput(normal, FrameFromServer(closeframe))
 
         @test protocolstate(normal) == STATE_CLOSED
+    end
+
+    @testset "A Close frame response is received, the handler is notified of state CLOSED" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+
+        @test handler.state == STATE_CLOSED
+    end
+
+    @testset "A second Close frame is received in state CLOSED; the handler is not notified" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+        # Reset the handler state to a known value, to ensure that it is not overwritten
+        handler.state = SocketState(:closednotcalledagain)
+
+        # Send a second Close frame
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+
+        @test handler.state == SocketState(:closednotcalledagain)
+    end
+
+    @testset "The socket is not closed by the client after a normal close" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+
+        @test framewriter.issocketclosed == false
+    end
+
+    @testset "The socket _is_ closed by the client after no close response was received" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, AbnormalNoCloseResponseReceived())
+
+        @test framewriter.issocketclosed == true
+    end
+
+    @testset "The behaviour may receive any client protocol input" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        clientprotocolinput(normal, FakeClientProtocolInput())
     end
 end

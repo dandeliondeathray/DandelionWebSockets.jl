@@ -62,3 +62,6 @@ struct SocketClosed <: ClientProtocolInput end
 
 "A pong reply was expected, but never received."
 struct PongMissed <: ClientProtocolInput end
+
+"No Close frame response was received by the client after a reasonable time"
+struct AbnormalNoCloseResponseReceived <: ClientProtocolInput end

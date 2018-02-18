@@ -71,13 +71,22 @@ mutable struct ClientInitiatedCloseBehaviour <: ClosingBehaviour
     end
 end
 
+protocolstate(normal::ClientInitiatedCloseBehaviour) = normal.state
+
 function closetheconnection(normal::ClientInitiatedCloseBehaviour)
     sendcloseframe(normal.framewriter, normal.status; reason = normal.reason)
     state_closing(normal.handler)
 end
 
 function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::FrameFromServer)
-    normal.state = STATE_CLOSED
+    if normal.state == STATE_CLOSING
+        normal.state = STATE_CLOSED
+        state_closed(normal.handler)
+    end
 end
 
-protocolstate(normal::ClientInitiatedCloseBehaviour) = normal.state
+function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, ::AbnormalNoCloseResponseReceived)
+    closesocket(normal.framewriter)
+end
+
+clientprotocolinput(::ClientInitiatedCloseBehaviour, ::ClientProtocolInput) = nothing
