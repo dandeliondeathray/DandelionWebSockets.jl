@@ -1,6 +1,6 @@
 using Base.Test
 using DandelionWebSockets: AbstractFrameWriter, CloseStatus
-using DandelionWebSockets: FailTheConnectionBehaviour, closetheconnection, CloseTheConnectionBehaviour
+using DandelionWebSockets: FailTheConnectionBehaviour, closetheconnection, ClientInitiatedCloseBehaviour
 using DandelionWebSockets: CLOSE_STATUS_PROTOCOL_ERROR, CLOSE_STATUS_NORMAL
 using DandelionWebSockets: FrameFromServer, clientprotocolinput, ClientProtocolInput, protocolstate
 import DandelionWebSockets: closesocket
@@ -112,7 +112,7 @@ end
     @testset "Close status code is by default CLOSE_STATUS_NORMAL" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler)
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
 
         closetheconnection(normal)
 
@@ -122,7 +122,7 @@ end
     @testset "An optional close status can be specified" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler; status=CLOSE_STATUS_GOING_AWAY)
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler; status=CLOSE_STATUS_GOING_AWAY)
 
         closetheconnection(normal)
 
@@ -132,7 +132,7 @@ end
     @testset "An optional reason can be specified" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler; reason="Some reason")
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler; reason="Some reason")
 
         closetheconnection(normal)
 
@@ -142,7 +142,7 @@ end
     @testset "After a Close frame has been sent, the user is notified that the state is CLOSING" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler)
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
 
         closetheconnection(normal)
 
@@ -152,7 +152,7 @@ end
     @testset "After a Close frame has been sent, the client state is CLOSING" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler)
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
 
         closetheconnection(normal)
 
@@ -162,7 +162,7 @@ end
     @testset "A Close frame response is received, the client state is CLOSED" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
-        normal = CloseTheConnectionBehaviour(framewriter, handler)
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
 
         closetheconnection(normal)
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")

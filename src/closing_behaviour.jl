@@ -57,27 +57,27 @@ protocolstate(::FailTheConnectionBehaviour) = STATE_CLOSED
 Closing the WebSocket connection is a procedure for closing the connection during the normal course
 the protocol lifetime.
 """
-mutable struct CloseTheConnectionBehaviour <: ClosingBehaviour
+mutable struct ClientInitiatedCloseBehaviour <: ClosingBehaviour
     framewriter::AbstractFrameWriter
     handler::WebSocketHandler
     status::CloseStatus
     reason::String
     state::SocketState
 
-    function CloseTheConnectionBehaviour(w::AbstractFrameWriter, handler::WebSocketHandler;
-                                status::CloseStatus = CLOSE_STATUS_NORMAL,
-                                reason::String = "")
+    function ClientInitiatedCloseBehaviour(w::AbstractFrameWriter, handler::WebSocketHandler;
+                                           status::CloseStatus = CLOSE_STATUS_NORMAL,
+                                           reason::String = "")
         new(w, handler, status, reason, STATE_CLOSING)
     end
 end
 
-function closetheconnection(normal::CloseTheConnectionBehaviour)
+function closetheconnection(normal::ClientInitiatedCloseBehaviour)
     sendcloseframe(normal.framewriter, normal.status; reason = normal.reason)
     state_closing(normal.handler)
 end
 
-function clientprotocolinput(normal::CloseTheConnectionBehaviour, frame::FrameFromServer)
+function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::FrameFromServer)
     normal.state = STATE_CLOSED
 end
 
-protocolstate(normal::CloseTheConnectionBehaviour) = normal.state
+protocolstate(normal::ClientInitiatedCloseBehaviour) = normal.state
