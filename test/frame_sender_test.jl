@@ -1,7 +1,7 @@
 using Base.Test
 import DandelionWebSockets: handle
 using DandelionWebSockets: AbstractClientProtocol, SendTextFrame, FinalFrameAlreadySentException
-using DandelionWebSockets: TextFrameSender, sendframe, BinaryFrameSender
+using DandelionWebSockets: TextFrameSender, sendframe, BinaryFrameSender, SendBinaryFrame
 
 struct FakeClientProtocol <: AbstractClientProtocol
     text_frame::Vector{SendTextFrame}

@@ -1,15 +1,18 @@
 using Base.Test
 using DandelionWebSockets.Proxy
-import DandelionWebSockets.Proxy: write
+import DandelionWebSockets.Proxy: write, close
 
 struct MockWriter <: IO
     channel::Channel{Frame}
+    closechannel::Channel{Bool}
 
-    MockWriter() = new(Channel{Frame}(0))
+    MockWriter() = new(Channel{Frame}(0), Channel{Bool}(0))
 end
 
 write(m::MockWriter, frame::Frame) = put!(m.channel, frame)
 takeframe!(m::MockWriter) = take!(m.channel)
+close(m::MockWriter) = put!(m.closechannel, true)
+isclosed!(m::MockWriter) = take!(m.closechannel)
 
 @testset "WriterProxy            " begin
     @testset "WriterProxy works in a separate task" begin
@@ -30,5 +33,14 @@ takeframe!(m::MockWriter) = take!(m.channel)
         stopproxy(proxywriter)
 
         @test isopen(proxywriter.channel) == false
+    end
+
+    @testset "Close the socket via WriterProxy" begin
+        mockwriter = MockWriter()
+        proxywriter = WriterProxy(mockwriter)
+
+        close(proxywriter)
+
+        @test isclosed!(mockwriter)
     end
 end

@@ -92,8 +92,7 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
     # `ClientProtocol` starts in the `STATE_OPEN` state, because it isn't responsible for making
     # connections. The target object for `logic_proxy` is the `ClientProtocol` object created here.
     framewriter = FrameWriter(writer, connection.rng)
-    logic = ClientProtocol(handler, framewriter, connection.ponger,
-                        cleanup; state = STATE_OPEN)
+    logic = ClientProtocol(handler, framewriter, connection.ponger, cleanup)
     connection.logic_proxy = Nullable{ClientProtocolProxy}(ClientProtocolProxy(logic))
 
     # `Ponger` requires a logic object it can alert when a pong request hasn't been received within

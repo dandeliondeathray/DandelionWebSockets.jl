@@ -11,7 +11,6 @@ end
 const STATE_CONNECTING     = SocketState(:connecting)
 const STATE_OPEN           = SocketState(:open)
 const STATE_CLOSING        = SocketState(:closing)
-const STATE_CLOSING_SOCKET = SocketState(:closing_socket)
 const STATE_CLOSED         = SocketState(:closed)
 
 #

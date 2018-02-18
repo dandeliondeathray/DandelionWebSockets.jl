@@ -22,8 +22,6 @@ export ClientProtocol
 
 "Type for the logic of a client WebSocket."
 mutable struct ClientProtocol <: AbstractClientProtocol
-	# A WebSocket can be in a number of states. See the `STATE_*` constants.
-	state::SocketState
 	# The object to which callbacks should be made. This proxy will make the callbacks
 	# asynchronously.
 	handler::WebSocketHandler
@@ -38,56 +36,75 @@ mutable struct ClientProtocol <: AbstractClientProtocol
 	buffered_type::Opcode
 	# This function cleans up the client when the connection is closed.
 	client_cleanup::Function
+	# Is the connection close behaviour if a close has been initiated
+	closebehaviour::Nullable{ClosingBehaviour}
 end
 
 ClientProtocol(handler::WebSocketHandler,
 			framewriter::FrameWriter,
 	        ponger::AbstractPonger,
-			client_cleanup::Function;
-			state::SocketState = STATE_OPEN) =
-	ClientProtocol(state, handler, framewriter, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup)
+			client_cleanup::Function) =
+	ClientProtocol(handler, framewriter, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup, Nullable{ClosingBehaviour}())
+
+"The state of the connection."
+function protocolstate(p::ClientProtocol)
+	if !isnull(p.closebehaviour)
+		protocolstate(get(p.closebehaviour))
+	else
+		STATE_OPEN
+	end
+end
 
 "Send a single text frame."
 function handle(logic::ClientProtocol, req::SendTextFrame)
-	if logic.state == STATE_OPEN
+	if protocolstate(logic) == STATE_OPEN
 		send(logic.framewriter, req.isfinal, req.opcode, req.data)
 	end
 end
 
 "Send a single binary frame."
 function handle(logic::ClientProtocol, req::SendBinaryFrame)
-	if logic.state == STATE_OPEN
+	if protocolstate(logic) == STATE_OPEN
 		send(logic.framewriter, req.isfinal, req.opcode, req.data)
 	end
 end
 
 function handle(logic::ClientProtocol, req::ClientPingRequest)
-	if logic.state == STATE_OPEN
+	if protocolstate(logic) == STATE_OPEN
 		ping_sent(logic.ponger)
 		send(logic.framewriter, true, OPCODE_PING, b"")
 	end
 end
 
-function handle(logic::ClientProtocol, ::PongMissed)
-	logic.state = STATE_CLOSED
-	state_closed(logic.handler)
-	logic.client_cleanup()
+function handle(p::ClientProtocol, ::PongMissed)
+	failtheconnection(p, CLOSE_STATUS_ABNORMAL_CLOSE; reason="Missed expected pongs")
+	p.client_cleanup()
 end
 
 "Handle a user request to close the WebSocket."
 function handle(logic::ClientProtocol, req::CloseRequest)
-	logic.state = STATE_CLOSING
+	if protocolstate(logic) != STATE_OPEN
+		closebehaviour = get(logic.closebehaviour)
+		clientprotocolinput(closebehaviour, req)
+		return
+	end
 
-	# Send a close frame to the server
-	send(logic.framewriter, true, OPCODE_CLOSE, b"")
-
-	state_closing(logic.handler)
+	closebehaviour = ClientInitiatedCloseBehaviour(logic.framewriter, logic.handler)
+	logic.closebehaviour = Nullable{ClosingBehaviour}(closebehaviour)
+	closetheconnection(closebehaviour)
 end
 
 "The underlying socket was closed. This is sent by the reader."
-function handle(logic::ClientProtocol, ::SocketClosed)
-	logic.state = STATE_CLOSED
-	state_closed(logic.handler)
+function handle(logic::ClientProtocol, socketclosed::SocketClosed)
+	if protocolstate(logic) != STATE_OPEN
+		closebehaviour = get(logic.closebehaviour)
+		clientprotocolinput(closebehaviour, socketclosed)
+		logic.client_cleanup()
+		return
+	end
+
+	failtheconnection(logic, CLOSE_STATUS_ABNORMAL_CLOSE; issocketprobablyup=false)
+
 	logic.client_cleanup()
 end
 
@@ -95,6 +112,12 @@ end
 function handle(logic::ClientProtocol, req::FrameFromServer)
 	# Requirement
 	# @6_2-3 Receiving a data frame
+
+	if protocolstate(logic) != STATE_OPEN
+		closebehaviour = get(logic.closebehaviour)
+		clientprotocolinput(closebehaviour, req)
+		return
+	end
 
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
@@ -112,19 +135,28 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 end
 
 #
+# Internal closing methods
+#
+
+function failtheconnection(p::ClientProtocol, status::CloseStatus;
+						   issocketprobablyup=true,
+						   reason::String = "")
+	fail = FailTheConnectionBehaviour(p.framewriter, p.handler, status;
+									  issocketprobablyup = issocketprobablyup,
+									  reason = reason)
+	p.closebehaviour = Nullable{ClosingBehaviour}(fail)
+	closetheconnection(fail)
+end
+
+#
 # Internal handle functions
 #
 
-function handle_close(logic::ClientProtocol, frame::Frame)
-	# If the server initiates a closing handshake when we're in open, we should reply with a close
-	# frame. If the client initiated the closing handshake then we'll be in STATE_CLOSING when the
-	# reply comes, and we shouldn't send another close frame.
-	send_close_reply = logic.state == STATE_OPEN
-	logic.state = STATE_CLOSING_SOCKET
-	if send_close_reply
-		send(logic.framewriter, true, OPCODE_CLOSE, b"")
-		state_closing(logic.handler)
-	end
+function handle_close(p::ClientProtocol, frame::Frame)
+	# TODO Read actual close status
+	closebehaviour = ServerInitiatedCloseBehaviour(p.framewriter, p.handler, CLOSE_STATUS_NORMAL)
+	p.closebehaviour = Nullable{ClosingBehaviour}(closebehaviour)
+	closetheconnection(closebehaviour)
 end
 
 function handle_ping(logic::ClientProtocol, payload::Vector{UInt8})
@@ -152,6 +184,7 @@ function handle_binary(logic::ClientProtocol, frame::Frame)
 end
 
 # TODO: What if we get a binary/text frame before we get a final continuation frame?
+# Answer: Fail the connection. It's in the specification.
 function handle_continuation(logic::ClientProtocol, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin

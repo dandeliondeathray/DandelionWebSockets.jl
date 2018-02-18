@@ -183,3 +183,4 @@ function Base.write(s::FakeFrameStream, frame::Frame)
     end
 end
 
+Base.close(s::FakeFrameStream) = nothing

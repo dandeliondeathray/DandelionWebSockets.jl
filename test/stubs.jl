@@ -19,14 +19,31 @@ mutable struct WebSocketHandlerStub <: WebSocketHandler
     state::SocketState
     texts::Vector{String}
     binaries::Vector{Vector{UInt8}}
+    statesequence::Vector{SocketState}
 
-    WebSocketHandlerStub() = new(STATE_CONNECTING, Vector{String}(), Vector{Vector{UInt8}}())
+    WebSocketHandlerStub() = new(STATE_CONNECTING, Vector{String}(), Vector{Vector{UInt8}}(), [])
 end
 
-state_closed(h::WebSocketHandlerStub) = h.state = STATE_CLOSED
-state_closing(h::WebSocketHandlerStub) = h.state = STATE_CLOSING
-state_connecting(h::WebSocketHandlerStub) = h.state = STATE_CONNECTING
-state_open(h::WebSocketHandlerStub) = h.state = STATE_OPEN
+function state_closed(h::WebSocketHandlerStub)
+    h.state = STATE_CLOSED
+    push!(h.statesequence, STATE_CLOSED)
+end
+
+function state_closing(h::WebSocketHandlerStub)
+    h.state = STATE_CLOSING
+    push!(h.statesequence, STATE_CLOSING)
+end
+
+function state_connecting(h::WebSocketHandlerStub)
+    h.state = STATE_CONNECTING
+    push!(h.statesequence, STATE_CONNECTING)
+end
+
+function state_open(h::WebSocketHandlerStub)
+    h.state = STATE_OPEN
+    push!(h.statesequence, STATE_OPEN)
+end
+
 on_text(h::WebSocketHandlerStub, text::String) = push!(h.texts, text)
 on_binary(h::WebSocketHandlerStub, binary::Vector{UInt8}) = push!(h.binaries, binary)
 
@@ -85,6 +102,7 @@ function getframeunmasked(w::FrameIOStub, i::Int, mask::Vector{UInt8})
     frame
 end
 
+clearframeswritten(w::FrameIOStub) = w.frames = []
 get_no_of_frames_written(w::FrameIOStub) = length(w.frames)
 
 #

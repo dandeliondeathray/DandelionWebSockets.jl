@@ -1,8 +1,7 @@
 using DandelionWebSockets
-using DandelionWebSockets: FrameWriter
+using DandelionWebSockets: FrameWriter, Frame, OPCODE_CLOSE
 
-function makeclientlogic(; state=STATE_OPEN,
-                           mask=b"\x01\x02\x03\x04",
+function makeclientlogic(; mask=b"\x01\x02\x03\x04",
                            client_cleanup=() -> nothing)
     handler = WebSocketHandlerStub()
     writer = FrameIOStub()
@@ -13,7 +12,10 @@ function makeclientlogic(; state=STATE_OPEN,
     logic = ClientProtocol(handler,
                         framewriter,
                         ponger,
-                        client_cleanup;
-                        state = state)
+                        client_cleanup)
     logic, handler, writer, ponger
+end
+
+function closeframe_from_server(; payload::Vector{UInt8} = b"")
+    Frame(true, OPCODE_CLOSE, false, length(payload), 0, Vector{UInt8}(), payload)
 end

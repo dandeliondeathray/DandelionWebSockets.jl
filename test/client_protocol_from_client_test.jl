@@ -1,5 +1,6 @@
 using Base.Test
-using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
+using DandelionWebSockets: SendBinaryFrame, ClientPingRequest, CloseRequest, SocketClosed
+using DandelionWebSockets: protocolstate
 
 @testset "Client to server       " begin
     @testset "Send single-frame text message; message is sent" begin
@@ -212,19 +213,9 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         # @6_1-1   Sending data only on OPEN connections
         # @6_1-2   Connection closes when sending data
 
-        logic, handler, writer = makeclientlogic(state=STATE_CLOSING)
-
-        handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
-
-        @test get_no_of_frames_written(writer) == 0
-    end
-
-    @testset "connection is in CONNECTING, trying to send a message; no message is sent" begin
-        # Requirement
-        # @6_1-1 Sending data only on OPEN connections
-        # @6_1-2   Connection closes when sending data
-
-        logic, handler, writer = makeclientlogic(state=STATE_CONNECTING)
+        logic, handler, writer = makeclientlogic()
+        handle(logic, CloseRequest())
+        clearframeswritten(writer)
 
         handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
 
@@ -237,7 +228,11 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
         # @6_1-1   Sending data only on OPEN connections
         # @6_1-2   Connection closes when sending data
 
-        logic, handler, writer = makeclientlogic(state=STATE_CLOSED)
+        logic, handler, writer = makeclientlogic()
+        handle(logic, CloseRequest())
+        handle(logic, FrameFromServer(closeframe_from_server()))
+        handle(logic, SocketClosed())
+        clearframeswritten(writer)
 
         handle(logic, SendTextFrame("Hello", true, OPCODE_TEXT))
 
@@ -265,20 +260,13 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
     end
 
     @testset "pings are not sent in non-open states" begin
-        @testset "state is CONNECTING; no ping is sent" begin
-            logic, handler, writer, ponger = makeclientlogic(state=STATE_CONNECTING)
-
-            handle(logic, ClientPingRequest())
-
-            @test ponger.no_of_pings_sent == 0
-            @test get_no_of_frames_written(writer) == 0
-        end
-
         @testset "state is CLOSING; no ping is sent" begin
             # Requirement
             # @5_5_2-2 Pong response
 
-            logic, handler, writer, ponger = makeclientlogic(state=STATE_CLOSING)
+            logic, handler, writer, ponger = makeclientlogic()
+            handle(logic, CloseRequest())
+            clearframeswritten(writer)
 
             handle(logic, ClientPingRequest())
 
@@ -290,7 +278,11 @@ using DandelionWebSockets: SendBinaryFrame, ClientPingRequest
             # Requirement
             # @5_5_2-2 Pong response
 
-            logic, handler, writer, ponger = makeclientlogic(state=STATE_CLOSED)
+            logic, handler, writer, ponger = makeclientlogic()
+            handle(logic, CloseRequest())
+            handle(logic, FrameFromServer(closeframe_from_server()))
+            handle(logic, SocketClosed())
+            clearframeswritten(writer)
 
             handle(logic, ClientPingRequest())
 
