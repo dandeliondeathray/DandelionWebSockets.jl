@@ -53,6 +53,8 @@ clientprotocolinput(::FailTheConnectionBehaviour, ::ClientProtocolInput) = nothi
 
 protocolstate(::FailTheConnectionBehaviour) = STATE_CLOSED
 
+isclosedcleanly(::FailTheConnectionBehaviour) = false
+
 """
 Closing the WebSocket connection is a procedure for closing the connection during the normal course
 the protocol lifetime.
@@ -63,11 +65,12 @@ mutable struct ClientInitiatedCloseBehaviour <: ClosingBehaviour
     status::CloseStatus
     reason::String
     state::SocketState
+    isclosereceived::Bool
 
     function ClientInitiatedCloseBehaviour(w::AbstractFrameWriter, handler::WebSocketHandler;
                                            status::CloseStatus = CLOSE_STATUS_NORMAL,
                                            reason::String = "")
-        new(w, handler, status, reason, STATE_CLOSING)
+        new(w, handler, status, reason, STATE_CLOSING, false)
     end
 end
 
@@ -81,11 +84,15 @@ end
 function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::FrameFromServer)
     if frame.frame.opcode == OPCODE_CLOSE
         if normal.state == STATE_CLOSING
-            # FIXME State isn't closed until the socket has been closed.
-            # This is a substate of CLOSING
-            normal.state = STATE_CLOSED
-            state_closed(normal.handler)
+            normal.isclosereceived = true
         end
+    end
+end
+
+function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, ::SocketClosed)
+    if normal.state == STATE_CLOSING
+        normal.state = STATE_CLOSED
+        state_closed(normal.handler)
     end
 end
 
@@ -95,6 +102,8 @@ end
 
 clientprotocolinput(::ClientInitiatedCloseBehaviour, ::ClientProtocolInput) = nothing
 
+isclosedcleanly(normal::ClientInitiatedCloseBehaviour) = normal.state == STATE_CLOSED && normal.isclosereceived
+
 """
 The server can initiate a Close, in which case this behaviour ensures a proper close.
 """
@@ -103,9 +112,10 @@ mutable struct ServerInitiatedCloseBehaviour <: ClosingBehaviour
     handler::WebSocketHandler
     status::CloseStatus
     state::SocketState
+    issocketclosedbyserver::Bool
 
     function ServerInitiatedCloseBehaviour(w::AbstractFrameWriter, h::WebSocketHandler, status::CloseStatus)
-        new(w, h, status, STATE_CLOSING)
+        new(w, h, status, STATE_CLOSING, false)
     end
 end
 
@@ -118,6 +128,7 @@ end
 
 function clientprotocolinput(behaviour::ServerInitiatedCloseBehaviour, ::SocketClosed)
     behaviour.state = STATE_CLOSED
+    behaviour.issocketclosedbyserver = true
     state_closed(behaviour.handler)
 end
 
@@ -128,3 +139,5 @@ function clientprotocolinput(b::ServerInitiatedCloseBehaviour, ::AbnormalSocketN
     state_closed(b.handler)
     closesocket(b.framewriter)
 end
+
+isclosedcleanly(b::ServerInitiatedCloseBehaviour) = b.state == STATE_CLOSED && b.issocketclosedbyserver

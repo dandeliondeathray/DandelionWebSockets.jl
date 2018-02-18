@@ -4,7 +4,7 @@ using DandelionWebSockets: FailTheConnectionBehaviour, closetheconnection, Clien
 using DandelionWebSockets: CLOSE_STATUS_PROTOCOL_ERROR, CLOSE_STATUS_NORMAL
 using DandelionWebSockets: FrameFromServer, clientprotocolinput, ClientProtocolInput, protocolstate
 using DandelionWebSockets: AbnormalNoCloseResponseReceived, ServerInitiatedCloseBehaviour
-import DandelionWebSockets: closesocket, AbnormalSocketNotClosedByServer
+import DandelionWebSockets: closesocket, AbnormalSocketNotClosedByServer, isclosedcleanly
 
 mutable struct FakeFrameWriter <: AbstractFrameWriter
     issocketclosed::Bool
@@ -107,6 +107,16 @@ struct FakeClientProtocolInput <: ClientProtocolInput end
 
         @test protocolstate(fail) == STATE_CLOSED
     end
+
+    @testset "A failed connection is never closed cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        fail = FailTheConnectionBehaviour(framewriter, handler, CLOSE_STATUS_PROTOCOL_ERROR)
+
+        closetheconnection(fail)
+
+        @test isclosedcleanly(fail) == false
+    end
 end
 
 @testset "Client initiated close " begin
@@ -160,7 +170,7 @@ end
         @test protocolstate(normal) == STATE_CLOSING
     end
 
-    @testset "A Close frame response is received, the client state is CLOSED" begin
+    @testset "A Close frame response is received, the client state is still CLOSING" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
         normal = ClientInitiatedCloseBehaviour(framewriter, handler)
@@ -169,10 +179,10 @@ end
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
         clientprotocolinput(normal, FrameFromServer(closeframe))
 
-        @test protocolstate(normal) == STATE_CLOSED
+        @test protocolstate(normal) == STATE_CLOSING
     end
 
-    @testset "A Close frame response is received, the handler is notified of state CLOSED" begin
+    @testset "A Close frame response is received, and socket is closed; the handler is notified of state CLOSED" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
         normal = ClientInitiatedCloseBehaviour(framewriter, handler)
@@ -180,6 +190,7 @@ end
         closetheconnection(normal)
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
         clientprotocolinput(normal, FrameFromServer(closeframe))
+        clientprotocolinput(normal, SocketClosed())
 
         @test handler.state == STATE_CLOSED
     end
@@ -192,6 +203,7 @@ end
         closetheconnection(normal)
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
         clientprotocolinput(normal, FrameFromServer(closeframe))
+        clientprotocolinput(normal, SocketClosed())
         # Reset the handler state to a known value, to ensure that it is not overwritten
         handler.state = SocketState(:closednotcalledagain)
 
@@ -209,6 +221,7 @@ end
         closetheconnection(normal)
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
         clientprotocolinput(normal, FrameFromServer(closeframe))
+        clientprotocolinput(normal, SocketClosed())
 
         @test framewriter.issocketclosed == false
     end
@@ -220,6 +233,7 @@ end
 
         closetheconnection(normal)
         closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, SocketClosed())
         clientprotocolinput(normal, AbnormalNoCloseResponseReceived())
 
         @test framewriter.issocketclosed == true
@@ -244,6 +258,42 @@ end
 
         @test protocolstate(normal) == STATE_CLOSING
         @test handler.state == STATE_CLOSING
+    end
+
+    @testset "Close sent and received, and socket is closed; Close was done cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+        clientprotocolinput(normal, SocketClosed())
+
+        @test isclosedcleanly(normal)
+    end
+
+    @testset "Close sent but not received, and socket is closed; Close was _NOT_ done cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        clientprotocolinput(normal, SocketClosed())
+
+        @test isclosedcleanly(normal) == false
+    end
+
+    @testset "Close sent and received, socket is not yet closed; Close was _NOT_ done cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        closeframe = Frame(true, OPCODE_CLOSE, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(closeframe))
+
+        @test isclosedcleanly(normal) == false
     end
 end
 
@@ -369,5 +419,37 @@ end
         clientprotocolinput(behaviour, AbnormalSocketNotClosedByServer())
 
         @test handler.state == STATE_CLOSED
+    end
+
+    @testset "The socket wasn't closed properly by the server; Close is not clean" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        behaviour = ServerInitiatedCloseBehaviour(framewriter, handler, CLOSE_STATUS_NORMAL)
+
+        closetheconnection(behaviour)
+        clientprotocolinput(behaviour, AbnormalSocketNotClosedByServer())
+
+        @test isclosedcleanly(behaviour) == false
+    end
+
+    @testset "Close sent and socket is closed; Close is done cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        behaviour = ServerInitiatedCloseBehaviour(framewriter, handler, CLOSE_STATUS_NORMAL)
+
+        closetheconnection(behaviour)
+        clientprotocolinput(behaviour, SocketClosed())
+
+        @test isclosedcleanly(behaviour)
+    end
+
+    @testset "Close sent but socket not closed yet; Close is _NOT_ done cleanly" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        behaviour = ServerInitiatedCloseBehaviour(framewriter, handler, CLOSE_STATUS_NORMAL)
+
+        closetheconnection(behaviour)
+
+        @test isclosedcleanly(behaviour) == false
     end
 end
