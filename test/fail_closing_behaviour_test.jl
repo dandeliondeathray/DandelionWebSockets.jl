@@ -109,7 +109,7 @@ struct FakeClientProtocolInput <: ClientProtocolInput end
     end
 end
 
-@testset "Client iniated close   " begin
+@testset "Client initiated close " begin
     @testset "Close status code is by default CLOSE_STATUS_NORMAL" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()
@@ -231,5 +231,18 @@ end
         normal = ClientInitiatedCloseBehaviour(framewriter, handler)
 
         clientprotocolinput(normal, FakeClientProtocolInput())
+    end
+
+    @testset "A non-Close frame is receiving during state CLOSING; state is not closed" begin
+        framewriter = FakeFrameWriter()
+        handler = WebSocketHandlerStub()
+        normal = ClientInitiatedCloseBehaviour(framewriter, handler)
+
+        closetheconnection(normal)
+        textframe = Frame(true, OPCODE_TEXT, false, 0, 0, b"", b"")
+        clientprotocolinput(normal, FrameFromServer(textframe))
+
+        @test protocolstate(normal) == STATE_CLOSING
+        @test handler.state == STATE_CLOSING
     end
 end

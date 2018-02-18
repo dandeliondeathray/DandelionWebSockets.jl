@@ -79,9 +79,11 @@ function closetheconnection(normal::ClientInitiatedCloseBehaviour)
 end
 
 function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::FrameFromServer)
-    if normal.state == STATE_CLOSING
-        normal.state = STATE_CLOSED
-        state_closed(normal.handler)
+    if frame.frame.opcode == OPCODE_CLOSE
+        if normal.state == STATE_CLOSING
+            normal.state = STATE_CLOSED
+            state_closed(normal.handler)
+        end
     end
 end
 
