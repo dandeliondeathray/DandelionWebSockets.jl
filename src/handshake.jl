@@ -68,6 +68,7 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
     # Requirement
     # @4_1_OpeningHandshake_1 Opening handshake is a valid HTTP request
     # @4_1_OpeningHandshake_4 Opening handshake Host header field
+    # @4_1_OpeningHandshake_7-2 Opening handshake Sec-WebSocket-Key header field is randomly chosen
     #
     # Covered by design, as we use Requests.jl, which can be assumed to make valid HTTP requests.
 
