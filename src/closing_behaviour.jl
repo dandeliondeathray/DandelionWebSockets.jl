@@ -20,6 +20,28 @@ const CLOSE_STATUS_EXPECTED_EXTENSION         = CloseStatus(1010)
 const CLOSE_STATUS_FATAL_UNEXPECTED_CONDITION = CloseStatus(1011)
 const CLOSE_STATUS_TLS_HANDSHAKE_FAILURE      = CloseStatus(1015)
 
+# Requirement
+# @5_5_1-4 No frames after Close frame
+# @5_5_1-8 Endpoint closed
+# @5_5_1-10 Client closes the connection
+# @7_1_1-1 Closing the underlying connection
+# @7_1_1-3 Close the connection non-cleanly when necessary
+# @7_1_1-5 The client may close the TCP connection in abnormal circumstances
+# @7_1_1-7 Client should wait for the server to close the TCP connection
+# @7_1_2-2 Closing the connection
+# @7_1_3-1 Closing handshake is started
+# @7_1_4-1 Underlying connection is closed
+# @7_1_4-2 Clean close
+# @7_1_7-1 Clients fail the WebSocket connection
+# @7_1_7-6 Omit the Close frame during fail
+# @7_1_7-7 Processing data after WebSocket connection fail
+# @7_2_1-1 Client initiated close on fail
+# @7_4 Reason for closure
+# @7_4_1-1 Pre-defined status codes
+#
+# By design, the connection behaviours do not send text or binary frames, even when requested by the
+# user.
+
 """
 Failing the WebSocket connection is an action taken at certain points in the protocol specification,
 in response to error conditions.

@@ -138,8 +138,3 @@ Feature: Section 7.1: Close the WebSocket connection
   Scenario: Processing data after WebSocket connection fail
      When the endpoint is to fail the WebSocket connection
      Then it must not continue to attempt to process data, including sending a Close frame response
-
-  @7_1_7-8 @client @should
-  Scenario: Clients should not close the connection during fail
-     When a client is to fail the WebSocket connection
-     Then the connection should not close the TCP connection

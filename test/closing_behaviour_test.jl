@@ -318,6 +318,10 @@ end
         @test protocolstate(behaviour) == STATE_CLOSING
     end
 
+    # Requirement
+    # @5_5_1-5 Respond to Close frame
+    # @5_5_1-6 Response time for Close frame
+
     @testset "The client responds with a Close frame with the same status as the received Close" begin
         framewriter = FakeFrameWriter()
         handler = WebSocketHandlerStub()

@@ -44,7 +44,7 @@ Feature: Section 5.5: Control frames
      When the endpoint sends a Close frame in response
      Then it should do so as soon as practical
 
-  @5_5_1-7 @client @server @may
+  @5_5_1-7 @client @server @may @inapplicable
   Scenario: Delay Close frame
      When an endpoint is currently sending a message
      Then it may delay sending a Close frame in response
@@ -69,7 +69,7 @@ Feature: Section 5.5: Control frames
      When a client has sent and received a Close frame
      Then it may close the connection at any time if it is reasonable
 
-  @5_5_2-1 @client @server @may
+  @5_5_2-1 @client @server @may @inapplicable
   Scenario: Ping frame application data
      When a Ping frame is created
      Then it may include Application data

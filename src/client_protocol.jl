@@ -55,6 +55,14 @@ function protocolstate(p::ClientProtocol)
 	end
 end
 
+# Requirement
+# @5_5_1-4 No frames after Close frame
+# @7_2_1-3 Abnormal client initiated closure
+#
+# By design, we only send text, binary, and ping frames when state is open. When a ClosingBehaviour
+# is in effect, then the state is not open. Therefore, we do not send any close frames during a
+# connection close.
+
 "Send a single text frame."
 function handle(logic::ClientProtocol, req::SendTextFrame)
 	if protocolstate(logic) == STATE_OPEN
@@ -102,6 +110,9 @@ function handle(logic::ClientProtocol, socketclosed::SocketClosed)
 		logic.client_cleanup()
 		return
 	end
+
+	# Requirement
+	# @7_2_1-2 Underlying connection is lost
 
 	failtheconnection(logic, CLOSE_STATUS_ABNORMAL_CLOSE; issocketprobablyup=false)
 

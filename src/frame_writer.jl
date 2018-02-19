@@ -43,6 +43,13 @@ function send(framewriter::FrameWriter, isfinal::Bool, opcode::Opcode, payload::
 	write(framewriter.writer, frame)
 end
 
+# Requirement
+# @5_5-2 Control frame fragmentation
+# @5_5_1-1 Close frame may contain a body
+# @5_5_1-2 Close frame body status code
+#
+# By design, we don't create any control frames that are fragmented.
+
 function sendcloseframe(framewriter::FrameWriter, status::CloseStatus; reason::String = "")
 	payloadbuffer = IOBuffer()
 	if status != CLOSE_STATUS_NO_STATUS
@@ -53,5 +60,7 @@ function sendcloseframe(framewriter::FrameWriter, status::CloseStatus; reason::S
 	end
 	send(framewriter, true, OPCODE_CLOSE, take!(payloadbuffer))
 end
+
+# TODO Add a similar function for pong frames
 
 closesocket(w::FrameWriter) = close(w.writer)
