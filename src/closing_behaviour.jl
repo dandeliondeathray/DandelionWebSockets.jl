@@ -33,6 +33,7 @@ const CLOSE_STATUS_TLS_HANDSHAKE_FAILURE      = CloseStatus(1015)
 # @7_1_4-1 Underlying connection is closed
 # @7_1_4-2 Clean close
 # @7_1_7-1 Clients fail the WebSocket connection
+# @7_1_7-5 Connection established before fail
 # @7_1_7-6 Omit the Close frame during fail
 # @7_1_7-7 Processing data after WebSocket connection fail
 # @7_2_1-1 Client initiated close on fail

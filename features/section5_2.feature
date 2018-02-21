@@ -27,7 +27,7 @@ Feature: Section 5.2: Framing details
      | 0x9    | ping         |
      | 0xA    | pong         |
 
-  @5_2-4 @client @server
+  @5_2-4 @client @server @inapplicable
   Scenario Outline: Reserved frames
      When the opcode is in the range <range>
      Then it is a reserved <type> frame
