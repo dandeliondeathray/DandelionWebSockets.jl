@@ -180,6 +180,11 @@ end
 
 function handle_text(logic::ClientProtocol, frame::Frame)
 	if frame.fin
+		text = String(frame.payload)
+		if !isvalid(text)
+			failtheconnection(logic, CLOSE_STATUS_INCONSISTENT_DATA; reason="Invalid UTF-8")
+			return
+		end
 		on_text(logic.handler, String(frame.payload))
 	else
 		start_buffer(logic, frame.payload, OPCODE_TEXT)
@@ -200,7 +205,12 @@ function handle_continuation(logic::ClientProtocol, frame::Frame)
 	buffer(logic, frame.payload)
 	if frame.fin
 		if logic.buffered_type == OPCODE_TEXT
-			on_text(logic.handler, String(logic.buffer))
+			text = String(logic.buffer)
+			if !isvalid(text)
+				failtheconnection(logic, CLOSE_STATUS_INCONSISTENT_DATA; reason="Multiframe message with invalid UTF-8")
+				return
+			end
+			on_text(logic.handler, text)
 		elseif logic.buffered_type == OPCODE_BINARY
 			on_binary(logic.handler, logic.buffer)
 			logic.buffer = Vector{UInt8}()

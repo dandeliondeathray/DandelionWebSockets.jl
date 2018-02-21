@@ -166,4 +166,67 @@ end
 
         @test ponger.no_of_pongs == 1
     end
+
+    @testset "Invalid UTF-8" begin
+        @testset "A single-frame message with invalid UTF-8 is received; Connection is failed" begin
+            # Requirement
+            # @8_1
+
+            logic, handler, writer = makeclientlogic()
+
+            invalidutf8 = b"\xe2"
+            invalidframe = Frame(true, OPCODE_TEXT, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+
+            handle(logic, FrameFromServer(invalidframe))
+
+            frame = getframe(writer, 1)
+            @test frame.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+
+        @testset "A single-frame message with invalid UTF-8 is received; Handler does not receive text" begin
+            # Requirement
+            # @8_1
+
+            logic, handler, writer = makeclientlogic()
+
+            invalidutf8 = b"\xe2"
+            invalidframe = Frame(true, OPCODE_TEXT, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+
+            handle(logic, FrameFromServer(invalidframe))
+
+            @test length(handler.texts) == 0
+        end
+
+        @testset "A multi-frame message with invalid UTF-8 is received; Connection is failed" begin
+            # Requirement
+            # @5_6-2 Message has a complete UTF-8 sequence
+
+            logic, handler, writer = makeclientlogic()
+
+            invalidutf8 = b"\xe2"
+            frame1 = Frame(false, OPCODE_TEXT, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+            frame2 = Frame(true, OPCODE_CONTINUATION, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+
+            handle(logic, FrameFromServer(frame1))
+            handle(logic, FrameFromServer(frame2))
+
+            frame = getframe(writer, 1)
+            @test frame.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+
+        @testset "A single-frame message with invalid UTF-8 is received; Handler does not receive text" begin
+            logic, handler, writer = makeclientlogic()
+
+            invalidutf8 = b"\xe2"
+            frame1 = Frame(false, OPCODE_TEXT, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+            frame2 = Frame(true, OPCODE_CONTINUATION, false, length(invalidutf8), 0, Vector{UInt8}(), invalidutf8)
+
+            handle(logic, FrameFromServer(frame1))
+            handle(logic, FrameFromServer(frame2))
+
+            @test length(handler.texts) == 0
+        end
+    end
 end
