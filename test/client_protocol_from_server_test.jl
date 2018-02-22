@@ -1,5 +1,5 @@
 using Base.Test
-using DandelionWebSockets: OPCODE_PONG, masking!
+using DandelionWebSockets: OPCODE_PONG, masking!, CLOSE_STATUS_PROTOCOL_ERROR
 
 function textframe_from_server(text::String; final_frame=true)
     Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
@@ -226,6 +226,59 @@ end
             handle(logic, FrameFromServer(frame1))
             handle(logic, FrameFromServer(frame2))
 
+            @test length(handler.texts) == 0
+        end
+    end
+
+    @testset "Client receives a masked frame from the server" begin
+        # Requirement
+        # @5_1-5 Client closes connection on masked frame
+        # @5_1-6 Client closes connection on masked frame, status code
+
+        @testset "Client receives a masked frame from the server; Client fails the connection" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            frame = Frame(true, OPCODE_TEXT, true, length(payload), 0, b"\x01\x02\x03\x04", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            sentframe = getframe(writer, 1)
+            @test sentframe.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a masked frame from the server; Close status is PROTOCOL ERROR" begin
+            # Arrange
+            mask = b"\x01\x02\x03\x04"
+            logic, handler, writer = makeclientlogic(mask=mask)
+
+            payload = b"Hello"
+            frame = Frame(true, OPCODE_TEXT, true, length(payload), 0, b"\x01\x02\x03\x04", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            sentframe = getframeunmasked(writer, 1, mask)
+            payload = IOBuffer(sentframe.payload)
+            @test read(payload, UInt16) == hton(CLOSE_STATUS_PROTOCOL_ERROR.code)
+        end
+
+        @testset "Client receives a masked frame from the server; Message is not sent to the handler" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            frame = Frame(true, OPCODE_TEXT, true, length(payload), 0, b"\x01\x02\x03\x04", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
             @test length(handler.texts) == 0
         end
     end

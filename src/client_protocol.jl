@@ -130,6 +130,12 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 		return
 	end
 
+	# The client must close the connection if it receives a masked frame from the server.
+	if req.frame.ismasked
+		failtheconnection(logic, CLOSE_STATUS_PROTOCOL_ERROR; reason="Server sent a masked frame")
+		return
+	end
+
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_PING
