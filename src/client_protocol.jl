@@ -136,6 +136,14 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 		return
 	end
 
+	# If a reserved bit is set, and no extensions are negotiated, then the client must fail the
+	# connection.
+	# Note: We do not support extensions yet, so by design no extension has been negotiated.
+	if req.frame.rsv1 || req.frame.rsv2 || req.frame.rsv3
+		failtheconnection(logic, CLOSE_STATUS_PROTOCOL_ERROR; reason="A reserved bit was set")
+		return
+	end
+
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_PING

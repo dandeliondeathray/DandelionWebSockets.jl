@@ -282,4 +282,82 @@ end
             @test length(handler.texts) == 0
         end
     end
+
+    @testset "Client receives a frame with a reserved bit set" begin
+        # Requirement
+        # @5_2-2 Reserved bits RSV1, RSV2, RSV3, no extension
+        @testset "RSV1 bit is set in a frame; Client fails the connection" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            rsv1 = true
+            rsv2 = false
+            rsv3 = false
+            frame = Frame(true, rsv1, rsv2, rsv3, OPCODE_TEXT, false, length(payload), 0, b"", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            sentframe = getframe(writer, 1)
+            @test sentframe.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+
+        @testset "RSV1 bit is set in a frame; Message is not sent to handler" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            rsv1 = true
+            rsv2 = false
+            rsv3 = false
+            frame = Frame(true, rsv1, rsv2, rsv3, OPCODE_TEXT, false, length(payload), 0, b"", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            @test length(handler.texts) == 0
+        end
+
+        @testset "RSV2 bit is set in a frame; Client fails the connection" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            rsv1 = false
+            rsv2 = true
+            rsv3 = false
+            frame = Frame(true, rsv1, rsv2, rsv3, OPCODE_TEXT, false, length(payload), 0, b"", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            sentframe = getframe(writer, 1)
+            @test sentframe.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+
+        @testset "RSV3 bit is set in a frame; Client fails the connection" begin
+            # Arrange
+            logic, handler, writer = makeclientlogic()
+
+            payload = b"Hello"
+            rsv1 = false
+            rsv2 = false
+            rsv3 = true
+            frame = Frame(true, rsv1, rsv2, rsv3, OPCODE_TEXT, false, length(payload), 0, b"", payload)
+
+            # Act
+            handle(logic, FrameFromServer(frame))
+
+            # Assert
+            sentframe = getframe(writer, 1)
+            @test sentframe.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+    end
 end
