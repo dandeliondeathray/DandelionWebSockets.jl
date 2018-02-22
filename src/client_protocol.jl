@@ -119,6 +119,8 @@ function handle(logic::ClientProtocol, socketclosed::SocketClosed)
 	logic.client_cleanup()
 end
 
+iscontrolframe(frame::Frame) = frame.opcode in [OPCODE_CLOSE, OPCODE_PING, OPCODE_PONG]
+
 "Handle a frame from the server."
 function handle(logic::ClientProtocol, req::FrameFromServer)
 	# Requirement
@@ -141,6 +143,12 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 	# Note: We do not support extensions yet, so by design no extension has been negotiated.
 	if req.frame.rsv1 || req.frame.rsv2 || req.frame.rsv3
 		failtheconnection(logic, CLOSE_STATUS_PROTOCOL_ERROR; reason="A reserved bit was set")
+		return
+	end
+
+	# If a fragmented control frame is received, then the client must fail the connection.
+	if iscontrolframe(req.frame) && !req.frame.fin
+		failtheconnection(logic, CLOSE_STATUS_PROTOCOL_ERROR; reason="A fragmented control frame was received")
 		return
 	end
 

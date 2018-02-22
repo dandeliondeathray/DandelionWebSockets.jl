@@ -1,5 +1,5 @@
 using Base.Test
-using DandelionWebSockets: OPCODE_PONG, masking!, CLOSE_STATUS_PROTOCOL_ERROR
+using DandelionWebSockets: OPCODE_PONG, masking!, CLOSE_STATUS_PROTOCOL_ERROR, protocolstate
 
 function textframe_from_server(text::String; final_frame=true)
     Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
@@ -17,12 +17,12 @@ function continuation_binaryframe_from_server(data::Vector{UInt8}; final_frame=t
     Frame(final_frame, OPCODE_CONTINUATION, false, length(data), 0, Vector{UInt8}(), data)
 end
 
-function pingframe_from_server(; payload=Vector{UInt8}())
-    Frame(true, OPCODE_PING, false, 0, 0, Vector{UInt8}(), payload)
+function pingframe_from_server(; payload=Vector{UInt8}(), final_frame=true)
+    Frame(final_frame, OPCODE_PING, false, 0, 0, Vector{UInt8}(), payload)
 end
 
-function pongframe_from_server(; payload=Vector{UInt8}())
-    Frame(true, OPCODE_PONG, false, 0, 0, Vector{UInt8}(), payload)
+function pongframe_from_server(; payload=Vector{UInt8}(), final_frame=true)
+    Frame(final_frame, OPCODE_PONG, false, 0, 0, Vector{UInt8}(), payload)
 end
 
 @testset "Server to client       " begin
@@ -357,6 +357,44 @@ end
             # Assert
             sentframe = getframe(writer, 1)
             @test sentframe.opcode == OPCODE_CLOSE
+            @test writer.isopen == false
+        end
+    end
+
+    @testset "Client receives a fragmented control frame" begin
+        # Requirement
+        # @5_4-4 Control frames are not fragmented
+
+        @testset "Client receives a fragmented CLOSE frame; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            # Create a fragmented close frame
+            frame = closeframe_from_server(; final_frame=false)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a fragmented PING frame; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            # Create a fragmented ping frame
+            frame = pingframe_from_server(; final_frame=false)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a fragmented PONG frame; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            # Create a fragmented pong frame
+            frame = pongframe_from_server(; final_frame=false)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
             @test writer.isopen == false
         end
     end

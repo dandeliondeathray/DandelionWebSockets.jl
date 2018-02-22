@@ -16,6 +16,6 @@ function makeclientlogic(; mask=b"\x01\x02\x03\x04",
     logic, handler, writer, ponger
 end
 
-function closeframe_from_server(; payload::Vector{UInt8} = b"")
-    Frame(true, OPCODE_CLOSE, false, length(payload), 0, Vector{UInt8}(), payload)
+function closeframe_from_server(; payload::Vector{UInt8} = b"", final_frame=true)
+    Frame(final_frame, OPCODE_CLOSE, false, length(payload), 0, Vector{UInt8}(), payload)
 end
