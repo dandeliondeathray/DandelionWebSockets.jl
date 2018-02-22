@@ -398,4 +398,53 @@ end
             @test writer.isopen == false
         end
     end
+
+    @testset "Client receives a control frame with too large payload" begin
+        # Requirement
+        # @5_5-1 Control frame length
+
+        @testset "Client receives a CLOSE frame with payload 126 bytes; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            payload = zeros(UInt8, 126)
+            frame = closeframe_from_server(; payload=payload)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a CLOSE frame with payload 127 bytes; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            payload = zeros(UInt8, 127)
+            frame = closeframe_from_server(; payload=payload)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a PING frame with too large payload; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            payload = zeros(UInt8, 127)
+            frame = pingframe_from_server(; payload=payload)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+
+        @testset "Client receives a PONG frame with too large payload; Client fails the connection" begin
+            logic, handler, writer = makeclientlogic()
+
+            payload = zeros(UInt8, 127)
+            frame = pongframe_from_server(; payload=payload)
+            handle(logic, FrameFromServer(frame))
+
+            @test protocolstate(logic) == STATE_CLOSED
+            @test writer.isopen == false
+        end
+    end
 end

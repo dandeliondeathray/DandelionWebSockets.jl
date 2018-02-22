@@ -152,6 +152,13 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 		return
 	end
 
+	# If a control frame with payload size > 125 bytes is received, then the client must fail the
+	# connection.
+	if iscontrolframe(req.frame) && length(req.frame.payload) > 125
+		failtheconnection(logic, CLOSE_STATUS_PROTOCOL_ERROR; reason="Control frame payload too large")
+		return
+	end
+
 	if req.frame.opcode == OPCODE_CLOSE
 		handle_close(logic, req.frame)
 	elseif req.frame.opcode == OPCODE_PING
