@@ -20,6 +20,25 @@ const CLOSE_STATUS_EXPECTED_EXTENSION         = CloseStatus(1010)
 const CLOSE_STATUS_FATAL_UNEXPECTED_CONDITION = CloseStatus(1011)
 const CLOSE_STATUS_TLS_HANDSHAKE_FAILURE      = CloseStatus(1015)
 
+struct CloseStatusAndReason
+    status::CloseStatus
+    reason::String
+end
+
+function readstatusandreason(frame::Frame)
+    if length(frame.payload) >= 2
+        buffer = IOBuffer(frame.payload)
+        code = ntoh(read(buffer, UInt16))
+        reason = ""
+        if length(frame.payload) > 2
+            reason = String(frame.payload[3:end])
+        end
+        CloseStatusAndReason(CloseStatus(code), reason)
+    else
+        CloseStatusAndReason(CLOSE_STATUS_NO_STATUS, "")
+    end
+end
+
 # Requirement
 # @5_5_1-4 No frames after Close frame
 # @5_5_1-8 Endpoint closed
@@ -78,6 +97,8 @@ protocolstate(::FailTheConnectionBehaviour) = STATE_CLOSED
 
 isclosedcleanly(::FailTheConnectionBehaviour) = false
 
+closestatusandreason(::FailTheConnectionBehaviour) = CloseStatusAndReason(CLOSE_STATUS_ABNORMAL_CLOSE, "")
+
 """
 Closing the WebSocket connection is a procedure for closing the connection during the normal course
 the protocol lifetime.
@@ -89,11 +110,12 @@ mutable struct ClientInitiatedCloseBehaviour <: ClosingBehaviour
     reason::String
     state::SocketState
     isclosereceived::Bool
+    serverstatusandreason::Nullable{CloseStatusAndReason}
 
     function ClientInitiatedCloseBehaviour(w::AbstractFrameWriter, handler::WebSocketHandler;
                                            status::CloseStatus = CLOSE_STATUS_NORMAL,
                                            reason::String = "")
-        new(w, handler, status, reason, STATE_CLOSING, false)
+        new(w, handler, status, reason, STATE_CLOSING, false, Nullable{CloseStatusAndReason}())
     end
 end
 
@@ -108,6 +130,9 @@ function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::Frame
     if frame.frame.opcode == OPCODE_CLOSE
         if normal.state == STATE_CLOSING
             normal.isclosereceived = true
+            if isnull(normal.serverstatusandreason)
+                normal.serverstatusandreason = Nullable{CloseStatusAndReason}(readstatusandreason(frame.frame))
+            end
         end
     end
 end
@@ -127,18 +152,28 @@ clientprotocolinput(::ClientInitiatedCloseBehaviour, ::ClientProtocolInput) = no
 
 isclosedcleanly(normal::ClientInitiatedCloseBehaviour) = normal.state == STATE_CLOSED && normal.isclosereceived
 
+function closestatusandreason(normal::ClientInitiatedCloseBehaviour)
+    if isnull(normal.serverstatusandreason)
+        CloseStatusAndReason(CLOSE_STATUS_ABNORMAL_CLOSE, "")
+    else
+        get(normal.serverstatusandreason)
+    end
+end
+
 """
 The server can initiate a Close, in which case this behaviour ensures a proper close.
 """
 mutable struct ServerInitiatedCloseBehaviour <: ClosingBehaviour
     framewriter::AbstractFrameWriter
     handler::WebSocketHandler
-    status::CloseStatus
+    serverstatus::CloseStatus
+    serverreason::String
     state::SocketState
     issocketclosedbyserver::Bool
 
-    function ServerInitiatedCloseBehaviour(w::AbstractFrameWriter, h::WebSocketHandler, status::CloseStatus)
-        new(w, h, status, STATE_CLOSING, false)
+    function ServerInitiatedCloseBehaviour(w::AbstractFrameWriter, h::WebSocketHandler, servercloseframe::Frame)
+        statusandreason = readstatusandreason(servercloseframe)
+        new(w, h, statusandreason.status, statusandreason.reason, STATE_CLOSING, false)
     end
 end
 
@@ -146,7 +181,7 @@ protocolstate(b::ServerInitiatedCloseBehaviour) = b.state
 
 function closetheconnection(behaviour::ServerInitiatedCloseBehaviour)
     state_closing(behaviour.handler)
-    sendcloseframe(behaviour.framewriter, behaviour.status; reason = "")
+    sendcloseframe(behaviour.framewriter, behaviour.serverstatus; reason = "")
 end
 
 function clientprotocolinput(behaviour::ServerInitiatedCloseBehaviour, ::SocketClosed)
@@ -164,3 +199,5 @@ function clientprotocolinput(b::ServerInitiatedCloseBehaviour, ::AbnormalSocketN
 end
 
 isclosedcleanly(b::ServerInitiatedCloseBehaviour) = b.state == STATE_CLOSED && b.issocketclosedbyserver
+
+closestatusandreason(b::ServerInitiatedCloseBehaviour) = CloseStatusAndReason(b.serverstatus, b.serverreason)

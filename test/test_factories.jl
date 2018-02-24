@@ -1,5 +1,5 @@
 using DandelionWebSockets
-using DandelionWebSockets: FrameWriter, Frame, OPCODE_CLOSE
+using DandelionWebSockets: FrameWriter, Frame, OPCODE_CLOSE, CloseStatus
 
 function makeclientlogic(; mask=b"\x01\x02\x03\x04",
                            client_cleanup=() -> nothing)
@@ -18,4 +18,20 @@ end
 
 function closeframe_from_server(; payload::Vector{UInt8} = b"", final_frame=true)
     Frame(final_frame, OPCODE_CLOSE, false, length(payload), 0, Vector{UInt8}(), payload)
+end
+
+function closeframepayload(status::CloseStatus; reason = "")
+    payload = IOBuffer()
+
+    write(payload, hton(status.code))
+    if reason != ""
+        write(payload, Vector{UInt8}(reason))
+    end
+
+    take!(payload)
+end
+
+function servercloseframe(status::CloseStatus; reason = "")
+    payload = closeframepayload(status; reason=reason)
+    return closeframe_from_server(; payload=payload)
 end

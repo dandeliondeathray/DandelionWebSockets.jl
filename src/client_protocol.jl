@@ -194,7 +194,7 @@ end
 
 function handle_close(p::ClientProtocol, frame::Frame)
 	# TODO Read actual close status
-	closebehaviour = ServerInitiatedCloseBehaviour(p.framewriter, p.handler, CLOSE_STATUS_NORMAL)
+	closebehaviour = ServerInitiatedCloseBehaviour(p.framewriter, p.handler, frame)
 	p.closebehaviour = Nullable{ClosingBehaviour}(closebehaviour)
 	closetheconnection(closebehaviour)
 end
