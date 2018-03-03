@@ -5,8 +5,9 @@ mutable struct FakeTLSStream <: IO
     buf::IOBuffer
     write_buf::IOBuffer
     isopen::Bool
+    iseof::Bool
 
-    FakeTLSStream() = new(IOBuffer(), IOBuffer(), true)
+    FakeTLSStream() = new(IOBuffer(), IOBuffer(), true, false)
 end
 
 test_write(s::FakeTLSStream, frame::Frame) = write(s.buf, frame)
@@ -22,6 +23,7 @@ Base.write(s::FakeTLSStream, t::UInt64) = write(s.write_buf, t)
 
 Base.read{T}(::FakeTLSStream, ::T) = throw(ErrorException())
 Base.readavailable(s::FakeTLSStream) = take!(s.buf)
+Base.eof(s::FakeTLSStream) = s.iseof
 
 Base.close(s::FakeTLSStream) = s.isopen = false
 
@@ -72,5 +74,13 @@ Base.close(s::FakeTLSStream) = s.isopen = false
         close(stream)
 
         @test fake_tls.isopen == false
+    end
+
+    @testset "EOF indicated by eof() method; read throws EOFError" begin
+        fake_tls = FakeTLSStream()
+        stream = DandelionWebSockets.TLSBufferedIO(fake_tls)
+        fake_tls.iseof = true
+
+        @test_throws EOFError read(stream, Frame)
     end
 end

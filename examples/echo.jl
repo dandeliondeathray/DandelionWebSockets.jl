@@ -63,16 +63,15 @@ client = WSClient()
 
 handler = EchoHandler(client, stop_chan)
 
-schema = "ws"
-if length(ARGS) == 1
-    schema = ARGS[1]
-    if !(schema in ["ws", "wss"])
-        println("Unsupported schema: $schema")
-        exit(1)
-    end
+if length(ARGS) == 0
+    uri = URI("ws://echo.websocket.org")
+elseif length(ARGS) == 1
+    uri = URI(ARGS[1])
+else
+    println("Expect zero or one arguments!")
+    exit(1)
 end
 
-uri = URI("$(schema)://echo.websocket.org")
 println("Connecting to $uri... ")
 
 wsconnect(client, uri, handler)
