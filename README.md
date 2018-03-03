@@ -62,6 +62,11 @@ https://github.com/JuliaLang/julia/issues/17388 for more details.
 
 Thank you to @alessandrousseglioviretta for bringing up this issue.
 
+## Note on SSL
+This package requires version 0.5.2 or earlier of MbedTLS, the SSL package used by requests. This is
+because of change in behaviour since version 0.5.3 in MbedTLS, which causes reads and writes to
+block.
+
 ## Releases and Julia
 This package is now registered with Julias package manager. Please only use version 0.1.1 and
 higher. Version 0.1.0 contains three serious bugs, which were fixed for 0.1.1.
