@@ -23,12 +23,16 @@ struct WriterProxy <: IO
 end
 
 function run_writerproxy(w::WriterProxy)
-    for writerequest in w.channel
-        if writerequest == CloseSocket()
-            close(w.writer)
-            break
+    try
+        for writerequest in w.channel
+            if writerequest == CloseSocket()
+                break
+            end
+            write(w.writer, writerequest.frame)
         end
-        write(w.writer, writerequest.frame)
+    catch ex
+    finally
+        close(w.writer)
     end
 end
 
