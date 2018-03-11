@@ -51,7 +51,10 @@ show(io::IO, c::WSClient) =
 
 Note: As of right now the handshake is not validated, because the response headers aren't set here.
 "
-function connection_result_(client::WSClient, result::HandshakeResult, handler::WebSocketHandler)
+function connection_result_(client::WSClient,
+                            result::HandshakeResult,
+                            handler::WebSocketHandler,
+                            fix_small_message_latency::Bool)
     # Requirement
     # @4_1_P5 Waiting for a handshake response
     #
@@ -66,6 +69,10 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
         println("Could not validate HTTP Upgrade")
         state_closed(handler)
         return false
+    end
+
+    if fix_small_message_latency
+        ccall(:uv_tcp_nodelay, Cint, (Ptr{Void}, Cint), result.stream, 1)
     end
 
     connection = get(client.connection)
@@ -109,7 +116,10 @@ function connection_result_(client::WSClient, result::HandshakeResult, handler::
 end
 
 "The HTTP Upgrade failed, for whatever reason."
-function connection_result_(client::WSClient, result::HandshakeFailure, handler::WebSocketHandler)
+function connection_result_(client::WSClient,
+                            result::HandshakeFailure,
+                            handler::WebSocketHandler,
+                            fix_small_message_latency::Bool)
     # Requirement
     # @4_1_EstablishConnection_4   Could not open the connection
     # @4_1_EstablishConnection_5-2 TLS Connection fails
@@ -119,8 +129,23 @@ function connection_result_(client::WSClient, result::HandshakeFailure, handler:
     false
 end
 
-"Connect the client to a WebSocket server at `uri`, and use `handler` for the callbacks."
-function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
+"""
+Connect the client to a WebSocket server at `uri`, and use `handler` for the callbacks.
+
+# Arguments
+- `fix_small_message_latency::Bool = false`: Set the TCP_NODELAY flag to improve small message latency.
+
+# Fix small message latency
+The TCP protocol can buffer small messages (1448 bytes and smaller). The reason is that this reduces
+the overhead when sending large amounts of small packets. However, it also means that latency can be
+much higher for small messages. This buffering can be disabled by setting a flag TCP_NODELAY.
+
+If your application will send and receive primarily small messages (1448 bytes or smaller), and it
+is sensitive to latency, then set `fix_small_message_latency` to true. This sets the TCP_NODELAY
+flag, and latency may be improved.
+"""
+function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler;
+                   fix_small_message_latency=false)
     handler_proxy = WebSocketsHandlerProxy(handler)
 
     # Requirement
@@ -142,7 +167,7 @@ function wsconnect(client::WSClient, uri::URI, handler::WebSocketHandler)
     # protocol.
     handshake_result = client.do_handshake(get(client.connection).rng, new_uri)
 
-    connection_result_(client, handshake_result, handler_proxy)
+    connection_result_(client, handshake_result, handler_proxy, fix_small_message_latency)
 end
 
 # Requirement
