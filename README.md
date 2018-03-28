@@ -30,7 +30,7 @@ state_closed(handler::MyHandler)     = ...
 
 The following functions are available on `WSClient`, to send frames to the server.
 
-```
+```julia
 send_text(c::WSClient, s::String)
 send_binary(c::WSClient, data::Vector{UInt8})
 
