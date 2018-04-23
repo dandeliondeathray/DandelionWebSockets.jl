@@ -110,12 +110,12 @@ mutable struct ClientInitiatedCloseBehaviour <: ClosingBehaviour
     reason::String
     state::SocketState
     isclosereceived::Bool
-    serverstatusandreason::Nullable{CloseStatusAndReason}
+    serverstatusandreason::Union{CloseStatusAndReason, Nothing}
 
     function ClientInitiatedCloseBehaviour(w::AbstractFrameWriter, handler::WebSocketHandler;
                                            status::CloseStatus = CLOSE_STATUS_NORMAL,
                                            reason::String = "")
-        new(w, handler, status, reason, STATE_CLOSING, false, Nullable{CloseStatusAndReason}())
+        new(w, handler, status, reason, STATE_CLOSING, false, nothing)
     end
 end
 
@@ -131,7 +131,7 @@ function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::Frame
         if normal.state == STATE_CLOSING
             normal.isclosereceived = true
             if isnull(normal.serverstatusandreason)
-                normal.serverstatusandreason = Nullable{CloseStatusAndReason}(readstatusandreason(frame.frame))
+                normal.serverstatusandreason = readstatusandreason(frame.frame)
             end
         end
     end

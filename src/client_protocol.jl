@@ -37,19 +37,19 @@ mutable struct ClientProtocol <: AbstractClientProtocol
 	# This function cleans up the client when the connection is closed.
 	client_cleanup::Function
 	# Is the connection close behaviour if a close has been initiated
-	closebehaviour::Nullable{ClosingBehaviour}
+	closebehaviour::Union{ClosingBehaviour, Nothing}
 end
 
 ClientProtocol(handler::WebSocketHandler,
 			framewriter::FrameWriter,
 	        ponger::AbstractPonger,
 			client_cleanup::Function) =
-	ClientProtocol(handler, framewriter, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup, Nullable{ClosingBehaviour}())
+	ClientProtocol(handler, framewriter, ponger, Vector{UInt8}(), OPCODE_TEXT, client_cleanup, nothing)
 
 "The state of the connection."
 function protocolstate(p::ClientProtocol)
-	if !isnull(p.closebehaviour)
-		protocolstate(get(p.closebehaviour))
+	if p.closebehaviour != nothing
+		protocolstate(p.closebehaviour)
 	else
 		STATE_OPEN
 	end
@@ -92,21 +92,18 @@ end
 "Handle a user request to close the WebSocket."
 function handle(logic::ClientProtocol, req::CloseRequest)
 	if protocolstate(logic) != STATE_OPEN
-		closebehaviour = get(logic.closebehaviour)
-		clientprotocolinput(closebehaviour, req)
+		clientprotocolinput(logic.closebehaviour, req)
 		return
 	end
 
-	closebehaviour = ClientInitiatedCloseBehaviour(logic.framewriter, logic.handler)
-	logic.closebehaviour = Nullable{ClosingBehaviour}(closebehaviour)
-	closetheconnection(closebehaviour)
+	logic.closebehaviour = ClientInitiatedCloseBehaviour(logic.framewriter, logic.handler)
+	closetheconnection(logic.closebehaviour)
 end
 
 "The underlying socket was closed. This is sent by the reader."
 function handle(logic::ClientProtocol, socketclosed::SocketClosed)
 	if protocolstate(logic) != STATE_OPEN
-		closebehaviour = get(logic.closebehaviour)
-		clientprotocolinput(closebehaviour, socketclosed)
+		clientprotocolinput(logic.closebehaviour, socketclosed)
 		logic.client_cleanup()
 		return
 	end
@@ -127,8 +124,7 @@ function handle(logic::ClientProtocol, req::FrameFromServer)
 	# @6_2-3 Receiving a data frame
 
 	if protocolstate(logic) != STATE_OPEN
-		closebehaviour = get(logic.closebehaviour)
-		clientprotocolinput(closebehaviour, req)
+		clientprotocolinput(logic.closebehaviour, req)
 		return
 	end
 
@@ -181,11 +177,10 @@ end
 function failtheconnection(p::ClientProtocol, status::CloseStatus;
 						   issocketprobablyup=true,
 						   reason::String = "")
-	fail = FailTheConnectionBehaviour(p.framewriter, p.handler, status;
-									  issocketprobablyup = issocketprobablyup,
-									  reason = reason)
-	p.closebehaviour = Nullable{ClosingBehaviour}(fail)
-	closetheconnection(fail)
+	p.closebehaviour = FailTheConnectionBehaviour(p.framewriter, p.handler, status;
+												  issocketprobablyup = issocketprobablyup,
+												  reason = reason)
+	closetheconnection(p.closebehaviour)
 end
 
 #
@@ -194,9 +189,8 @@ end
 
 function handle_close(p::ClientProtocol, frame::Frame)
 	# TODO Read actual close status
-	closebehaviour = ServerInitiatedCloseBehaviour(p.framewriter, p.handler, frame)
-	p.closebehaviour = Nullable{ClosingBehaviour}(closebehaviour)
-	closetheconnection(closebehaviour)
+	p.closebehaviour = ServerInitiatedCloseBehaviour(p.framewriter, p.handler, frame)
+	closetheconnection(p.closebehaviour)
 end
 
 function handle_ping(logic::ClientProtocol, payload::Vector{UInt8})
