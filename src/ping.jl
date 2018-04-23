@@ -2,23 +2,23 @@ export Pinger, stop,
        Ponger, pong_received, attach, ping_sent
 
 mutable struct Pinger <: AbstractPinger
-    timer::Nullable{Timer}
+    timer::Union{Timer, Nothing}
     interval::Float64
 
     function Pinger(interval::Float64)
-        new(Nullable{Timer}(), interval)
+        new(nothing, interval)
     end
 end
 
 function attach(pinger::Pinger, logic::AbstractClientProtocol)
     send_ping = x -> handle(logic, ClientPingRequest())
-    pinger.timer = Nullable{Timer}(Timer(send_ping, pinger.interval, pinger.interval))
+    pinger.timer = Timer(send_ping, pinger.interval, pinger.interval)
 end
 
 function stop(p::Pinger)
-    if !isnull(p.timer)
-        close(get(p.timer))
-        p.timer = Nullable{Timer}()
+    if p.timer != nothing
+        close(p.timer)
+        p.timer = nothing
     end
 end
 
@@ -30,10 +30,6 @@ mutable struct Ponger <: AbstractPonger
     current_misses::Int
 
     Ponger(timeout::Float64; misses::Int=1) = new(timeout, x -> nothing, 0, misses, 0)
-end
-
-function start_timer_(p::Ponger)
-    p.timer = Nullable{Timer}(Timer(p.pong_missed, p.timeout, p.timeout))
 end
 
 attach(ponger::Ponger, logic::AbstractClientProtocol) =
