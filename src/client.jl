@@ -1,5 +1,3 @@
-import Base: show
-
 import Requests: URI
 
 using BufferedStreams
@@ -44,8 +42,6 @@ mutable struct WSClient <: AbstractWSClient
 
     WSClient(; do_handshake=DandelionWebSockets.do_handshake) = new(Nullable{WebSocketsConnection}(), do_handshake)
 end
-show(io::IO, c::WSClient) =
-    show(io, "WSClient($(c.handler_proxy), $(c.logic_proxy))")
 
 "Validates a HTTP Upgrade response, and starts all tasks.
 
