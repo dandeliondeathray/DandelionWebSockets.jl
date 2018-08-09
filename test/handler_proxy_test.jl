@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets
 using DandelionWebSockets.Proxy: WebSocketsHandlerProxy, stopproxy
 import DandelionWebSockets: on_text, on_binary

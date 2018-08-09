@@ -17,7 +17,7 @@ struct WriterProxy <: IO
 
     function WriterProxy(writer::IO)
         proxy = new(Channel{WriteRequest}(Inf), writer)
-        @schedule run_writerproxy(proxy)
+        @async run_writerproxy(proxy)
         proxy
     end
 end

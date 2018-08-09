@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: SendTextFrame, SendBinaryFrame
 using DandelionWebSockets: ClientPingRequest, PongMissed, CloseRequest, SocketClosed
 using DandelionWebSockets: FrameFromServer

@@ -2,7 +2,7 @@ import DandelionWebSockets: on_text, on_binary,
                             state_connecting, state_open, state_closing, state_closed,
                             FrameFromServer
 using DandelionWebSockets: sendmultiframebinary, sendmultiframetext, sendframe
-using Base.Test
+using Test
 
 accept_field = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 headers = Dict(

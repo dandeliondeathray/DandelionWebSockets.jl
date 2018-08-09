@@ -1,18 +1,18 @@
-using Base.Test
+using Test
 using DandelionWebSockets.Proxy
 import DandelionWebSockets.Proxy: write, close
 
 struct MockWriter <: IO
     channel::Channel{Frame}
     closechannel::Channel{Bool}
-    exception::Nullable{Exception}
+    exception::Union{Exception, Nothing}
 
-    MockWriter() = new(Channel{Frame}(0), Channel{Bool}(0), Nullable{Exception}())
-    MockWriter(ex::Exception) = new(Channel{Frame}(0), Channel{Bool}(0), Nullable{Exception}(ex))
+    MockWriter() = new(Channel{Frame}(0), Channel{Bool}(0), nothing)
+    MockWriter(ex::Exception) = new(Channel{Frame}(0), Channel{Bool}(0), ex)
 end
 
 function write(m::MockWriter, frame::Frame)
-    if isnull(m.exception)
+    if m.exception == nothing
         put!(m.channel, frame)
     else
         throw(get(m.exception))

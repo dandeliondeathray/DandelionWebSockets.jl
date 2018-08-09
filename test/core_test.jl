@@ -34,7 +34,7 @@
 #      *  0x82 0x7F 0x0000000000010000 [65536 bytes of binary data]
 #
 
-using Base.Test
+using Test
 using BufferedStreams
 
 struct FrameTestCase

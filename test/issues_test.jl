@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 
 @testset "Issues                 " begin
     @testset "Issue #12: Masking frames should be done on a copy of data" begin

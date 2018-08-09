@@ -37,7 +37,7 @@ function do_reader(s::IO, logic::AbstractClientProtocol)
 end
 
 function start_reader(s::IO, logic::AbstractClientProtocol)
-    t = @schedule do_reader(s, logic)
+    t = @async do_reader(s, logic)
     ServerReader(s, t)
 end
 

@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: OPCODE_BINARY
 
 mutable struct FakeTLSStream <: IO

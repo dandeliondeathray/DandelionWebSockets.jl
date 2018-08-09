@@ -9,7 +9,7 @@ import Base.==
 #
 
 nomask = Array{UInt8,1}()
-mask = b"\x37\xfa\x21\x3d"
+testmask = b"\x37\xfa\x21\x3d"
 
 # A single frame with payload "Hello"
 test_frame1 = Frame(true,  OPCODE_TEXT,         false, 5, 0, nomask, b"Hello")
@@ -19,13 +19,13 @@ test_frame2 = Frame(false, OPCODE_TEXT,         false, 3, 0, nomask, b"Hel")
 test_frame3 = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
 
 # A single text frame, masked, with body "Hello"
-test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
-test_bin_frame4 = Frame(true,  OPCODE_BINARY, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
+test_frame4 = Frame(true,  OPCODE_TEXT, true, 5, 0, testmask, b"\x7f\x9f\x4d\x51\x58")
+test_bin_frame4 = Frame(true,  OPCODE_BINARY, true, 5, 0, testmask, b"\x7f\x9f\x4d\x51\x58")
 
 mask2 = b"\x17\x42\x03\x7f"
 
 # Two masked fragments, one initial and one final. They are masked by two different masks.
-test_frame5 = Frame(false, OPCODE_TEXT, true, 3, 0, mask, b"\x7f\x9f\x4d")
+test_frame5 = Frame(false, OPCODE_TEXT, true, 3, 0, testmask, b"\x7f\x9f\x4d")
 test_frame6 = Frame(true, OPCODE_CONTINUATION, true, 2, 0,  mask2, b"\x7b\x2d")
 
 # Two binary fragments, one initial and one final.
@@ -34,31 +34,31 @@ frame_bin_final = Frame(true,  OPCODE_CONTINUATION, false, 2, 0, nomask, b"lo")
 frame_bin_1     = Frame(true,  OPCODE_BINARY,       false, 5, 0, nomask, b"Hello")
 
 server_close_frame = Frame(true, OPCODE_CLOSE, false, 0, 0, nomask, b"")
-client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, mask, b"")
+client_close_reply = Frame(true, OPCODE_CLOSE, true, 0, 0, testmask, b"")
 server_ping_frame = Frame(true, OPCODE_PING, false, 0, 0, nomask, b"")
-client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, mask, b"")
+client_pong_frame = Frame(true, OPCODE_PONG, true, 0, 0, testmask, b"")
 server_pong_frame = Frame(true, OPCODE_PONG, false, 0, 0, nomask, b"")
-client_ping_frame = Frame(true, OPCODE_PING, true, 0, 0, mask, b"")
+client_ping_frame = Frame(true, OPCODE_PING, true, 0, 0, testmask, b"")
 server_ping_frame_w_pay = Frame(true, OPCODE_PING, false, 5, 0, nomask, b"Hello")
-client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, mask, b"\x7f\x9f\x4d\x51\x58")
+client_pong_frame_w_pay = Frame(true, OPCODE_PONG, true, 5, 0, testmask, b"\x7f\x9f\x4d\x51\x58")
 
-zero256 = Array{UInt8}([UInt8(0) for x in range(1, 256)])
-zero65k = Array{UInt8}([UInt8(0) for x in range(1, 65536 + 1024)])
-zero256_masked = Array{UInt8}([zero256[i] ⊻ mask[(i-1)%4 + 1] for i in 1:length(zero256)])
-zero65k_masked = Array{UInt8}([zero65k[i] ⊻ mask[(i-1)%4 + 1] for i in 1:length(zero65k)])
+zero256 = Array{UInt8}([UInt8(0) for x in range(1, length=256)])
+zero65k = Array{UInt8}([UInt8(0) for x in range(1, length=65536 + 1024)])
+zero256_masked = Array{UInt8}([zero256[i] ⊻ testmask[(i-1)%4 + 1] for i in 1:length(zero256)])
+zero65k_masked = Array{UInt8}([zero65k[i] ⊻ testmask[(i-1)%4 + 1] for i in 1:length(zero65k)])
 
 # Binary message, payload is 256 bytes, single masked
-test_bin_frame_256 = Frame(true, OPCODE_BINARY, true, 126, 256, mask, zero256_masked)
+test_bin_frame_256 = Frame(true, OPCODE_BINARY, true, 126, 256, testmask, zero256_masked)
 
 # Binary message, payload is 64KiB, masked
-test_bin_frame_65k = Frame(true, OPCODE_BINARY, true, 127, 65536 + 1024, mask, zero65k_masked)
+test_bin_frame_65k = Frame(true, OPCODE_BINARY, true, 127, 65536 + 1024, testmask, zero65k_masked)
 
 
 #
 # To accurately test a fake TCPSocket I need a blocking stream.
 # The implementation below is meant to be simple, not performant or good.
 #
-type BlockingStream <: IO
+struct BlockingStream <: IO
     buf::IOBuffer
 end
 
@@ -135,7 +135,7 @@ handle(m::MockClientProtocol, args...) = call(m, :handle, args...)
 # A fake stream for checking that we read and write the right frames.
 #
 
-immutable FakeFrameStream <: IO
+struct FakeFrameStream <: IO
     reading::Vector{Frame}
     writing::Vector{Frame}
     close_on_empty::Bool

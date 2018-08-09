@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
 using Requests: URI
 

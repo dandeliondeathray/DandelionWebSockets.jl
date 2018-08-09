@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: SendBinaryFrame, ClientPingRequest, CloseRequest, SocketClosed
 using DandelionWebSockets: protocolstate
 

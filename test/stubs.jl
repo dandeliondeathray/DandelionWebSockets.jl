@@ -4,6 +4,8 @@ using DandelionWebSockets: SocketState, AbstractPonger, SendTextFrame, FrameFrom
 using DandelionWebSockets: masking!
 import DandelionWebSockets: write, pong_received, ping_sent
 import Base: write, close
+using Random
+import Random: rand
 
 "InvalidPrecondition signals that a precondition to running the test was not met."
 struct InvalidPrecondition <: Exception
@@ -130,9 +132,9 @@ mutable struct FakeRNG{T} <: AbstractRNG
    FakeRNG{T}(v::AbstractArray{T, 1}) where {T} = new{T}(copy(v))
 end
 
-FakeRNG{T}(::Type{T}) = FakeRNG{T}(AbstractArray{T, 1}())
+FakeRNG(::Type{T}) where T = FakeRNG{T}(AbstractArray{T, 1}())
 
-function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
+function rand(rng::FakeRNG, ::Type{T}, n::Int) where T
     if isempty(rng.values)
         throw(InvalidPrecondition("FakeRNG requires more random data"))
     end

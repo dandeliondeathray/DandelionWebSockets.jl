@@ -65,10 +65,10 @@ function connection_result_(client::WSClient,
     end
 
     if fix_small_message_latency
-        ccall(:uv_tcp_nodelay, Cint, (Ptr{Void}, Cint), result.stream, 1)
+        ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), result.stream, 1)
     end
 
-    connection = get(client.connection)
+    connection = client.connection
 
     # For `writer` the target object is the IO stream for the WebSocket connection.
     writer = WriterProxy(result.stream)
@@ -84,8 +84,8 @@ function connection_result_(client::WSClient,
         stopproxy(handler)
         stopproxy(connection.logic_proxy)
         stop(connection.pinger)
-        if !isnull(connection.reader)
-            stop(get(connection.reader))
+        if connection.reader != nothing
+            stop(connection.reader)
         end
     end
 

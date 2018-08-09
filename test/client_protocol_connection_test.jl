@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: CloseRequest, SocketClosed, protocolstate
 using DandelionWebSockets: PongMissed, STATE_CLOSING
 

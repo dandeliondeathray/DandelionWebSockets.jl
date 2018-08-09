@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: AbstractFrameWriter, CloseStatus
 using DandelionWebSockets: FailTheConnectionBehaviour, closetheconnection, ClientInitiatedCloseBehaviour
 using DandelionWebSockets: CLOSE_STATUS_PROTOCOL_ERROR, CLOSE_STATUS_NORMAL

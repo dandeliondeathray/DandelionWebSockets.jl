@@ -65,7 +65,7 @@ macro mock(mock_type::Symbol, abstract_type::Symbol)
     esc(
         quote
             # Define the mock type. It should contain a list of the calls it expects.
-            type $mock_type <: $abstract_type
+            struct $mock_type <: $abstract_type
                 calls::Vector{MockCall}
 
                 $mock_type() = new([])

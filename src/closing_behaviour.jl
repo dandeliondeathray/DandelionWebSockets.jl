@@ -130,7 +130,7 @@ function clientprotocolinput(normal::ClientInitiatedCloseBehaviour, frame::Frame
     if frame.frame.opcode == OPCODE_CLOSE
         if normal.state == STATE_CLOSING
             normal.isclosereceived = true
-            if isnull(normal.serverstatusandreason)
+            if normal.serverstatusandreason == nothing
                 normal.serverstatusandreason = readstatusandreason(frame.frame)
             end
         end
@@ -153,7 +153,7 @@ clientprotocolinput(::ClientInitiatedCloseBehaviour, ::ClientProtocolInput) = no
 isclosedcleanly(normal::ClientInitiatedCloseBehaviour) = normal.state == STATE_CLOSED && normal.isclosereceived
 
 function closestatusandreason(normal::ClientInitiatedCloseBehaviour)
-    if isnull(normal.serverstatusandreason)
+    if normal.serverstatusandreason == nothing
         CloseStatusAndReason(CLOSE_STATUS_ABNORMAL_CLOSE, "")
     else
         get(normal.serverstatusandreason)

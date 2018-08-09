@@ -11,7 +11,7 @@ struct ClientProtocolProxy <: AbstractClientProtocol
 
     function ClientProtocolProxy(clientlogic::AbstractClientProtocol)
         proxy = new(Channel{Any}(Inf), clientlogic)
-        @schedule run_clientlogicproxy(proxy)
+        @async run_clientlogicproxy(proxy)
         proxy
     end
 end

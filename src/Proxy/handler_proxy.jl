@@ -18,7 +18,7 @@ struct WebSocketsHandlerProxy <: WebSocketHandler
 
     function WebSocketsHandlerProxy(handler::WebSocketHandler)
         proxy = new(Channel{Any}(Inf), handler)
-        @schedule handler_task(proxy)
+        @async handler_task(proxy)
         proxy
     end
 end

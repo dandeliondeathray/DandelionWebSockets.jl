@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using DandelionWebSockets: OPCODE_PONG, masking!, CLOSE_STATUS_PROTOCOL_ERROR, protocolstate
 
 function textframe_from_server(text::String; final_frame=true)

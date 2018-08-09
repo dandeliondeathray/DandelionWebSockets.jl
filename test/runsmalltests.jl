@@ -5,7 +5,7 @@ using DandelionWebSockets: handle
 import DandelionWebSockets: write
 import DandelionWebSockets: on_text, on_binary
 import DandelionWebSockets: state_connecting, state_open, state_closing, state_closed
-using Base.Test
+using Test
 
 include("stubs.jl")
 include("test_factories.jl")

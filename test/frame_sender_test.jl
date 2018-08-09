@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 import DandelionWebSockets: handle
 using DandelionWebSockets: AbstractClientProtocol, SendTextFrame, FinalFrameAlreadySentException
 using DandelionWebSockets: TextFrameSender, sendframe, BinaryFrameSender, SendBinaryFrame
