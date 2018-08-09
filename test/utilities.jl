@@ -5,24 +5,6 @@ import DandelionWebSockets: on_text, on_binary,
 import Base.==
 
 #
-# A fake RNG allows us to deterministically test functions that would otherwise behave
-# pseudo-randomly.
-#
-
-mutable struct FakeRNG{T} <: AbstractRNG
-    values::Array{T, 1}
-
-    FakeRNG{T}(v::Array{T, 1}) where {T} = new{T}(copy(v))
-end
-
-FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
-
-function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
-    #@fact rng.values --> x -> !isempty(x)
-    splice!(rng.values, 1:n)
-end
-
-#
 # A lot of tests use WebSocket frames, naturally, so these are common frames that all tests can use.
 #
 
@@ -144,8 +126,7 @@ function call(m::MockClientProtocol, s::Symbol, args...)
 end
 
 function check(m::MockClientProtocol)
-    #
-    @fact m.actuals --> m.expected
+    #@fact m.actuals --> m.expected
 end
 
 handle(m::MockClientProtocol, args...) = call(m, :handle, args...)

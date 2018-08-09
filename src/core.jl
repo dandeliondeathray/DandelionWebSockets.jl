@@ -60,12 +60,12 @@ struct Frame
     ismasked::Bool
     len::UInt8 # Is actually 7 bits.
     extended_len::UInt64
-    mask::Array{UInt8}
-    payload::Array{UInt8}
+    mask::AbstractArray{UInt8, 1}
+    payload::AbstractArray{UInt8, 1}
 end
 
 Frame(fin::Bool, opcode::Opcode, ismasked::Bool, len::Int,
-      extended_len::Int, mask::Vector{UInt8}, payload::Vector{UInt8}) =
+      extended_len::Int, mask::AbstractArray{UInt8, 1}, payload::AbstractArray{UInt8, 1}) =
   Frame(fin, false, false, false, opcode, ismasked, len, extended_len, mask, payload)
 
 ==(a::Frame, b::Frame) = a.fin == b.fin && a.rsv1 == b.rsv1 && a.rsv2 == b.rsv2 &&

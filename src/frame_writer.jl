@@ -12,7 +12,7 @@ struct FrameWriter <: AbstractFrameWriter
 end
 
 "Send a frame to the other endpoint, using the supplied payload and opcode."
-function send(framewriter::FrameWriter, isfinal::Bool, opcode::Opcode, payload::Vector{UInt8})
+function send(framewriter::FrameWriter, isfinal::Bool, opcode::Opcode, payload::AbstractVector{UInt8})
 	# Each frame is masked with four random bytes.
 	mask = rand(framewriter.rng, UInt8, 4)
 

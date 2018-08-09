@@ -45,7 +45,7 @@ function state_open(h::WebSocketHandlerStub)
 end
 
 on_text(h::WebSocketHandlerStub, text::String) = push!(h.texts, text)
-on_binary(h::WebSocketHandlerStub, binary::Vector{UInt8}) = push!(h.binaries, binary)
+on_binary(h::WebSocketHandlerStub, binary::AbstractVector{UInt8}) = push!(h.binaries, binary)
 
 
 function getsingletext(h::WebSocketHandlerStub)
@@ -96,7 +96,7 @@ function getframe(w::FrameIOStub, i::Int)
     w.frames[i]
 end
 
-function getframeunmasked(w::FrameIOStub, i::Int, mask::Vector{UInt8})
+function getframeunmasked(w::FrameIOStub, i::Int, mask::AbstractVector{UInt8})
     frame = getframe(w, i)
     masking!(frame.payload, mask)
     frame
@@ -125,12 +125,12 @@ pong_received(p::PongerStub) = p.no_of_pongs += 1
 #
 
 mutable struct FakeRNG{T} <: AbstractRNG
-    values::Array{T, 1}
+   values::AbstractArray{T, 1}
 
-    FakeRNG{T}(v::Array{T, 1}) where {T} = new{T}(copy(v))
+   FakeRNG{T}(v::AbstractArray{T, 1}) where {T} = new{T}(copy(v))
 end
 
-FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
+FakeRNG{T}(::Type{T}) = FakeRNG{T}(AbstractArray{T, 1}())
 
 function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
     if isempty(rng.values)

@@ -193,7 +193,7 @@ function handle_close(p::ClientProtocol, frame::Frame)
 	closetheconnection(p.closebehaviour)
 end
 
-function handle_ping(logic::ClientProtocol, payload::Vector{UInt8})
+function handle_ping(logic::ClientProtocol, payload::AbstractVector{UInt8})
 	send(logic.framewriter, true, OPCODE_PONG, payload)
 end
 
@@ -241,12 +241,12 @@ function handle_continuation(logic::ClientProtocol, frame::Frame)
 	end
 end
 
-function start_buffer(logic::ClientProtocol, payload::Vector{UInt8}, opcode::Opcode)
+function start_buffer(logic::ClientProtocol, payload::AbstractVector{UInt8}, opcode::Opcode)
 	logic.buffered_type = opcode
 	logic.buffer = copy(payload)
 end
 
-function buffer(logic::ClientProtocol, payload::Vector{UInt8})
+function buffer(logic::ClientProtocol, payload::AbstractVector{UInt8})
 	append!(logic.buffer, payload)
 end
 
@@ -254,7 +254,7 @@ end
 # Utilities
 #
 
-function masking!(input::Vector{UInt8}, mask::Vector{UInt8})
+function masking!(input::AbstractVector{UInt8}, mask::AbstractVector{UInt8})
 	m = 1
 	for i in 1:length(input)
 		input[i] = input[i] ⊻ mask[(m - 1) % 4 + 1]

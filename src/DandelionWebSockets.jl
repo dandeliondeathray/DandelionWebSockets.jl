@@ -33,7 +33,7 @@ abstract type WebSocketHandler end
 on_text(t::WebSocketHandler, ::String) = nothing
 
 "Handle a binary frame."
-on_binary(t::WebSocketHandler, ::Vector{UInt8}) = nothing
+on_binary(t::WebSocketHandler, ::AbstractVector{UInt8}) = nothing
 
 "The WebSocket was closed."
 state_closed(t::WebSocketHandler) = nothing
