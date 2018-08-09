@@ -18,7 +18,7 @@ end
 FakeRNG{T}(::Type{T}) = FakeRNG{T}(Array{T, 1}())
 
 function Base.rand{T}(rng::FakeRNG, ::Type{T}, n::Int)
-    @fact rng.values --> x -> !isempty(x)
+    #@fact rng.values --> x -> !isempty(x)
     splice!(rng.values, 1:n)
 end
 
@@ -144,6 +144,7 @@ function call(m::MockClientProtocol, s::Symbol, args...)
 end
 
 function check(m::MockClientProtocol)
+    #
     @fact m.actuals --> m.expected
 end
 

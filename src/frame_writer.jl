@@ -1,3 +1,5 @@
+using Random
+
 """
 FrameWriter is used by the protocols to write frames to a socket.
 

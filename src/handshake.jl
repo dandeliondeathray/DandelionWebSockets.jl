@@ -1,5 +1,5 @@
 import SHA
-import Requests
+import HTTP
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
 struct HandshakeResult
@@ -64,19 +64,19 @@ function make_headers(key::String)
 end
 
 "Make a HTTP connection and upgrade it to a WebSocket connection."
-function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.do_stream_request)
+function do_handshake(rng::AbstractRNG, uri::String; do_request=HTTP.request)
     # Requirement
     # @4_1_OpeningHandshake_1 Opening handshake is a valid HTTP request
     # @4_1_OpeningHandshake_4 Opening handshake Host header field
     # @4_1_OpeningHandshake_7-2 Opening handshake Sec-WebSocket-Key header field is randomly chosen
     #
-    # Covered by design, as we use Requests.jl, which can be assumed to make valid HTTP requests.
+    # Covered by design, as we use HTTP.jl, which can be assumed to make valid HTTP requests.
 
 
     key = make_websocket_key(rng)
     expected_accept = calculate_accept(key)
     headers = make_headers(key)
-    result = do_request(uri, "GET"; headers=headers)
+    result = do_request("GET", uri, headers)
 
     stream = result.socket
     if uri.scheme == "https"
@@ -89,7 +89,6 @@ function do_handshake(rng::AbstractRNG, uri::Requests.URI; do_request=Requests.d
 end
 
 "Convert `ws://` or `wss://` URIs to 'http://` or `https://`."
-function convert_ws_uri(uri::Requests.URI)
-    u = replace(string(uri), r"^ws", "http")
-    Requests.URI(u)
+function convert_ws_uri(uri::String)
+    replace(uri, r"^ws", "http")
 end

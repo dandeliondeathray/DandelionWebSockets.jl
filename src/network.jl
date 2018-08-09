@@ -45,6 +45,8 @@ end
 function stop(t::ServerReader)
     try
         Base.throwto(t.task, StopTaskException())
+    catch
+        # Ignore any stop errors, at least for the time being.
     end
 end
 
