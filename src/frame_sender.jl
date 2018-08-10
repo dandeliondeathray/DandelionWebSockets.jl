@@ -54,7 +54,7 @@ Send a frame with a payload to the other endpoint. `isfinal` must be set to true
 After the call with `isfinal = true`, then this method MAY NOT be called again. If it is, then a
 `FinalFrameAlreadySentException` will be thrown.
 """
-function sendframe(sender::FrameSender{T,Op}, data::Vector{UInt8}; isfinal::Bool = false) where {T, Op}
+function sendframe(sender::FrameSender{T,Op}, data::AbstractVector{UInt8}; isfinal::Bool = false) where {T, Op}
     if sender.isfinalsent
         throw(FinalFrameAlreadySentException())
     end

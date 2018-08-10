@@ -21,7 +21,7 @@ Base.write(s::FakeTLSStream, t::UInt8) = write(s.write_buf, t)
 Base.write(s::FakeTLSStream, t::UInt16) = write(s.write_buf, t)
 Base.write(s::FakeTLSStream, t::UInt64) = write(s.write_buf, t)
 
-Base.read{T}(::FakeTLSStream, ::T) = throw(ErrorException())
+Base.read(::FakeTLSStream, ::T) where T = throw(ErrorException())
 Base.readavailable(s::FakeTLSStream) = take!(s.buf)
 Base.eof(s::FakeTLSStream) = s.iseof
 

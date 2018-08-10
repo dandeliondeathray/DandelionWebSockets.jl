@@ -156,7 +156,7 @@ function closestatusandreason(normal::ClientInitiatedCloseBehaviour)
     if normal.serverstatusandreason == nothing
         CloseStatusAndReason(CLOSE_STATUS_ABNORMAL_CLOSE, "")
     else
-        get(normal.serverstatusandreason)
+        normal.serverstatusandreason
     end
 end
 

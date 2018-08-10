@@ -1,5 +1,6 @@
 import SHA
 import HTTP
+using Base64
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
 struct HandshakeResult
@@ -30,8 +31,8 @@ validates that the expected computed value is found in the response headers.
 function validate(handshake::HandshakeResult)
     normal_keys = collect(keys(handshake.headers))
     lower_keys = map(lowercase, normal_keys)
-    accept_name_index = findfirst(lower_keys, "sec-websocket-accept")
-    if accept_name_index == 0
+    accept_name_index = findfirst(isequal("sec-websocket-accept"), lower_keys)
+    if accept_name_index == nothing
         return false
     end
 
@@ -90,5 +91,5 @@ end
 
 "Convert `ws://` or `wss://` URIs to 'http://` or `https://`."
 function convert_ws_uri(uri::String)
-    replace(uri, r"^ws", "http")
+    replace(uri, r"^ws" => "http")
 end

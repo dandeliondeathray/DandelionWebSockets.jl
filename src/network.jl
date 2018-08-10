@@ -1,4 +1,4 @@
-import Base: read, write, close
+import Base: read, write, close, eof
 
 # TODO: Documentation
 
@@ -109,3 +109,4 @@ write(s::TLSBufferedIO, t::UInt16) = write(s.tls_stream, t)
 write(s::TLSBufferedIO, t::UInt64) = write(s.tls_stream, t)
 
 close(s::TLSBufferedIO) = close(s.tls_stream)
+eof(s::TLSBufferedIO) = eof(s.tls_stream)
