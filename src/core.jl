@@ -95,11 +95,11 @@ function Base.read(s::IO, ::Type{Frame})
 
   mask = Array{UInt8,1}()
   if ismasked
-    mask = read(s, UInt8, 4)
+    mask = read(s, 4)
   end
 
   payload_length = extended_len != 0 ? extended_len : len
-  payload = read(s, UInt8, payload_length)
+  payload = read(s, payload_length)
 
   Frame(fin, rsv1, rsv2, rsv3, Opcode(op), ismasked, len, extended_len, mask, payload)
 end

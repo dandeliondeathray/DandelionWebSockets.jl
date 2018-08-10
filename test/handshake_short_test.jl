@@ -1,6 +1,5 @@
 using Test
 using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
-using Requests: URI
 
 @testset "Handshake              " begin
     @testset "validate a handshake" begin
@@ -107,11 +106,11 @@ using Requests: URI
         # Requirement
         # @4_1_EstablishConnection_5-1
         #
-        # This covers the above requirement with the additional information that we use Requests.jl
+        # This covers the above requirement with the additional information that we use HTTP.jl
         # for making the connection, and that is what _actually_ covers the requirement.
-        @test convert_ws_uri(URI("ws://some/uri")) == URI("http://some/uri")
-        @test convert_ws_uri(URI("wss://some/uri")) == URI("https://some/uri")
-        @test convert_ws_uri(URI("http://some/uri")) == URI("http://some/uri")
+        @test convert_ws_uri("ws://some/uri") == "http://some/uri"
+        @test convert_ws_uri("wss://some/uri") == "https://some/uri"
+        @test convert_ws_uri("http://some/uri") == "http://some/uri"
     end
 
     @testset "Case insensitive headers in validation" begin

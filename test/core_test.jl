@@ -35,7 +35,6 @@
 #
 
 using Test
-using BufferedStreams
 
 struct FrameTestCase
     description::AbstractString
@@ -94,12 +93,6 @@ end
                 s = IOBuffer()
                 write(s, testcase.frame)
                 @test take!(s) == testcase.serialized_frame
-            end
-
-            @testset "Read frame from BufferedInputStream" begin
-                s = IOBuffer(testcase.serialized_frame)
-                buffered = BufferedInputStream(s)
-                @test read(buffered, Frame) == testcase.frame
             end
         end
     end

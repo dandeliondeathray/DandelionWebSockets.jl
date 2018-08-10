@@ -203,12 +203,12 @@ end
 
 function handle_text(logic::ClientProtocol, frame::Frame)
 	if frame.fin
-		text = String(frame.payload)
+		text = String(copy(frame.payload))
 		if !isvalid(text)
 			failtheconnection(logic, CLOSE_STATUS_INCONSISTENT_DATA; reason="Invalid UTF-8")
 			return
 		end
-		on_text(logic.handler, String(frame.payload))
+		on_text(logic.handler, text)
 	else
 		start_buffer(logic, frame.payload, OPCODE_TEXT)
 	end
