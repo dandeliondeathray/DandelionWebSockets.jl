@@ -103,8 +103,7 @@ function connection_result_(client::WSClient,
     attach(connection.pinger, connection.logic_proxy)
 
     # The target for `reader` is the same stream we're writing to.
-    connection.reader = Nullable{ServerReader}(
-        start_reader(result.stream, connection.logic_proxy))
+    connection.reader = start_reader(result.stream, connection.logic_proxy)
     true
 end
 

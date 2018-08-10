@@ -2,8 +2,6 @@
 # Send some text and binary frames to ws://echo.websocket.org,
 # which echoes them back.
 
-using Requests: URI
-
 using DandelionWebSockets
 
 # Explicitly import the callback functions that we're going to add more methods for.
@@ -19,7 +17,7 @@ end
 
 # These are called when you get text/binary frames, respectively.
 on_text(::EchoHandler, s::String)  = println("Received text: $s")
-on_binary(::EchoHandler, data::Vector{UInt8}) = println("Received data: $(String(data))")
+on_binary(::EchoHandler, data::AbstractVector{UInt8}) = println("Received data: $(String(data))")
 
 # These are called when the WebSocket state changes.
 
@@ -64,9 +62,9 @@ client = WSClient()
 handler = EchoHandler(client, stop_chan)
 
 if length(ARGS) == 0
-    uri = URI("ws://echo.websocket.org")
+    uri = "ws://echo.websocket.org"
 elseif length(ARGS) == 1
-    uri = URI(ARGS[1])
+    uri = ARGS[1]
 else
     println("Expect zero or one arguments!")
     exit(1)
