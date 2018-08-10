@@ -25,7 +25,7 @@ end
 takenotification!(h::MockWebSocketsHandler) = take!(h.notification)
 
 on_text(h::MockWebSocketsHandler, text::String) = put!(h.notification, WebSocketsHandlerNotification("on_text", text))
-on_binary(h::MockWebSocketsHandler, data::Vector{UInt8}) = put!(h.notification, WebSocketsHandlerNotification("on_binary", data))
+on_binary(h::MockWebSocketsHandler, data::AbstractVector{UInt8}) = put!(h.notification, WebSocketsHandlerNotification("on_binary", data))
 state_connecting(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_connecting", ""))
 state_open(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_open", ""))
 state_closing(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_closing", ""))
