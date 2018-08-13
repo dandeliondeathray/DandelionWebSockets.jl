@@ -33,7 +33,7 @@ struct SendTextFrame <: ClientProtocolInput
 	opcode::Opcode
 
 	SendTextFrame(data::Vector{UInt8}, isfinal::Bool, opcode::Opcode) = new(data, isfinal, opcode)
-	SendTextFrame(data::String, isfinal::Bool, opcode::Opcode) = new(Vector{UInt8}(data), isfinal, opcode)
+	SendTextFrame(data::String, isfinal::Bool, opcode::Opcode) = new(unsafe_wrap(Vector{UInt8}, data), isfinal, opcode)
 end
 
 "Send a binary frame, sent to `ClientProtocol`."

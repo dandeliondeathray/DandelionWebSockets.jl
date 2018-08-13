@@ -70,5 +70,5 @@ const TextFrameSender = FrameSender{SendTextFrame, OPCODE_TEXT}
 
 "Specialization of sendframe for TextFrameSender, for sending Strings as data."
 function sendframe(sender::TextFrameSender, data::String; isfinal::Bool = false)
-    sendframe(sender, Vector{UInt8}(data); isfinal=isfinal)
+    sendframe(sender, unsafe_wrap(Vector{UInt8}, data); isfinal=isfinal)
 end

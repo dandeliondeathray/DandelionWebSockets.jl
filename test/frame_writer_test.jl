@@ -43,7 +43,7 @@ import DandelionWebSockets: sendcloseframe
         # Skip the 16 bit status code and read the reason
         payload = IOBuffer(frame.payload)
         skip(payload, 2)
-        @test read(payload, length(reason)) == Vector{UInt8}(reason)
+        @test read(payload, length(reason)) == unsafe_wrap(Vector{UInt8}, (reason))
     end
 
     @testset "Write close frame with no status, but reason; No reason is included" begin

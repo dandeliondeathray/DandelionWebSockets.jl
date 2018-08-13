@@ -25,7 +25,7 @@ function closeframepayload(status::CloseStatus; reason = "")
 
     write(payload, hton(status.code))
     if reason != ""
-        write(payload, Vector{UInt8}(reason))
+        write(payload, unsafe_wrap(Vector{UInt8}, reason))
     end
 
     take!(payload)

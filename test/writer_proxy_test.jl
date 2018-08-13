@@ -28,7 +28,7 @@ isclosed!(m::MockWriter) = take!(m.closechannel)
         mockwriter = MockWriter()
         proxywriter = WriterProxy(mockwriter)
 
-        frame = Frame(true, 0, 0, 0, OPCODE_TEXT, true, 1, 0, Vector{UInt8}(b"\x01\x02\x03\x04"), b"1")
+        frame = Frame(true, 0, 0, 0, OPCODE_TEXT, true, 1, 0, b"\x01\x02\x03\x04", b"1")
         write(proxywriter, frame)
 
         written_frame = takeframe!(mockwriter)
@@ -57,7 +57,7 @@ isclosed!(m::MockWriter) = take!(m.closechannel)
         writer = MockWriter(EOFError())
         proxywriter = WriterProxy(writer)
 
-        frame = Frame(true, 0, 0, 0, OPCODE_TEXT, true, 1, 0, Vector{UInt8}(b"\x01\x02\x03\x04"), b"1")
+        frame = Frame(true, 0, 0, 0, OPCODE_TEXT, true, 1, 0, b"\x01\x02\x03\x04", b"1")
         write(proxywriter, frame)
 
         @test isclosed!(writer)

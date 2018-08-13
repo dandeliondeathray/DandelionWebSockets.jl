@@ -114,7 +114,7 @@ handle(f::FakeClientProtocol, b::SendBinaryFrame) = push!(f.binary_frame, b)
 
             text = "\u2000"
             # The first byte of the above UTF-8 is invalid as a UTF-8 string.
-            text_as_binary = Vector{UInt8}(text)
+            text_as_binary = unsafe_wrap(Vector{UInt8}, text)
             payload = text_as_binary[1:1]
 
             sendframe(sender, payload)

@@ -12,7 +12,7 @@
 
         text = "\u2200"
         # Split the above text into two parts that are both invalid UTF-8:
-        payload = Vector{UInt8}(text)
+        payload = unsafe_wrap(Vector{UInt8}, text)
         payload1 = payload[1:1]
         payload2 = payload[2:end]
 

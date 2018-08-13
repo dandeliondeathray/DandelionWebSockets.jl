@@ -2,7 +2,7 @@ using Test
 using DandelionWebSockets: OPCODE_PONG, masking!, CLOSE_STATUS_PROTOCOL_ERROR, protocolstate
 
 function textframe_from_server(text::String; final_frame=true)
-    Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
+    Frame(final_frame, OPCODE_TEXT, false, length(text), 0, Vector{UInt8}(), unsafe_wrap(Vector{UInt8}, text))
 end
 
 function binaryframe_from_server(data::AbstractVector{UInt8}; final_frame=true)
@@ -10,7 +10,7 @@ function binaryframe_from_server(data::AbstractVector{UInt8}; final_frame=true)
 end
 
 function continuation_textframe_from_server(text::String; final_frame=true)
-    Frame(final_frame, OPCODE_CONTINUATION, false, length(text), 0, Vector{UInt8}(), Vector{UInt8}(text))
+    Frame(final_frame, OPCODE_CONTINUATION, false, length(text), 0, Vector{UInt8}(), unsafe_wrap(Vector{UInt8}, text))
 end
 
 function continuation_binaryframe_from_server(data::AbstractVector{UInt8}; final_frame=true)
