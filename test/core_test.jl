@@ -44,7 +44,7 @@ end
 
 
 @testset "Frame serialization    " begin
-    nomask = b""
+    local nomask = b""
     mask = b"\x37\xfa\x21\x3d"
 
     frame_test_cases = [

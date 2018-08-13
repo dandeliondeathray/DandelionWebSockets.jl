@@ -190,7 +190,7 @@ using DandelionWebSockets: protocolstate
 
     @testset "send a message in two fragments; two fragments are written" begin
         mask1 = b"\x01\x02\x03\x04"
-        mask2 = b"\x05\x06\x07\x08"
+        local mask2 = b"\x05\x06\x07\x08"
         logic, handler, writer = makeclientlogic(mask=[mask1; mask2])
 
         handle(logic, SendTextFrame("Hel", false, OPCODE_TEXT))
