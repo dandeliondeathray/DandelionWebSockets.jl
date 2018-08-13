@@ -29,7 +29,7 @@ function state_open(handler::EchoHandler)
     println("State: OPEN")
 
     # Send some text frames, and a binary frame.
-    @schedule begin
+    @async begin
         texts = ["Hello", "world", "!"]
 
         for text in texts

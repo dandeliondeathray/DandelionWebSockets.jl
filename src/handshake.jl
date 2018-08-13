@@ -1,5 +1,5 @@
 import SHA
-import HTTP
+using HTTP
 using Base64
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
@@ -64,8 +64,12 @@ function make_headers(key::String)
         "Sec-WebSocket-Version" => "13")
 end
 
+mutable struct HandshakeStreamResult
+    stream::Union{IO,Nothing}
+end
+
 "Make a HTTP connection and upgrade it to a WebSocket connection."
-function do_handshake(rng::AbstractRNG, uri::String; do_request=HTTP.request)
+function do_handshake(rng::AbstractRNG, uri::String; do_request=HTTP.open)
     # Requirement
     # @4_1_OpeningHandshake_1 Opening handshake is a valid HTTP request
     # @4_1_OpeningHandshake_4 Opening handshake Host header field
@@ -73,20 +77,24 @@ function do_handshake(rng::AbstractRNG, uri::String; do_request=HTTP.request)
     #
     # Covered by design, as we use HTTP.jl, which can be assumed to make valid HTTP requests.
 
-
+    handshakestreamresult = HandshakeStreamResult(nothing)
     key = make_websocket_key(rng)
     expected_accept = calculate_accept(key)
     headers = make_headers(key)
-    result = do_request("GET", uri, headers)
-
-    stream = result.socket
-    if uri.scheme == "https"
-        stream = TLSBufferedIO(stream)
+    result = do_request("GET", uri, headers; reuse_limit=0, keep_open=true) do http
+        HTTP.startread(http)
+        handshakestreamresult.stream = HTTP.ConnectionPool.getrawstream(http)
     end
+
+    if startswith(uri, "https://")
+        handshakestreamresult.stream = TLSBufferedIO(handshakestreamresult.stream)
+    end
+
+    responseheaders = Dict{String, String}([String(a) => String(b) for (a, b) in result.headers])
 
     # TODO: Any body unintentionally read during the HTTP parsing is not returned, which means that
     #       if any such bytes were read, then we will not be able to correctly read the first frame.
-    HandshakeResult(expected_accept, stream, result.response.headers, b"")
+    HandshakeResult(expected_accept, handshakestreamresult.stream, responseheaders, b"")
 end
 
 "Convert `ws://` or `wss://` URIs to 'http://` or `https://`."
