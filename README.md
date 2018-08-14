@@ -71,7 +71,11 @@ block.
 This package is now registered with Julias package manager. Please only use version 0.1.1 and
 higher. Version 0.1.0 contains three serious bugs, which were fixed for 0.1.1.
 
-This package only supports Julia 0.6. Support for 0.7 and later releases is coming.
+## Julia 0.7/1.0
+Migration to Julia 1.0 is nearly complete. A new release will be available soon.
+
+Before the migration is complete, there is a PR to an upstream package that must be accepted, or I
+must configure the dependencies to use a patched version instead of the latest release.
 
 # Contributors
 These brave people have contributed to this package:
