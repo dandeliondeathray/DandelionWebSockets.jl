@@ -12,7 +12,7 @@ end
 
 function attach(pinger::Pinger, logic::AbstractClientProtocol)
     send_ping = x -> handle(logic, ClientPingRequest())
-    pinger.timer = Timer(send_ping, pinger.interval, pinger.interval)
+    pinger.timer = Timer(send_ping, pinger.interval, interval=pinger.interval)
 end
 
 function stop(p::Pinger)
