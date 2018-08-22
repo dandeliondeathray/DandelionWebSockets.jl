@@ -10,3 +10,6 @@ getrequestheaders(h::HTTPHandshakeLogic) = [
     "Upgrade" => "websocket",
     "Connection" => "Upgrade",
     "Sec-WebSocket-Key" => base64encode(rand(h.rng, UInt8, 16))]
+
+validateresponse(::HTTPHandshakeLogic, statuscode::Int, ::AbstractArray{Pair{String, String}}) = statuscode
+issuccessful(statuscode::Int) = statuscode == 101
