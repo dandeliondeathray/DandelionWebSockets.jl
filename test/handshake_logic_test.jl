@@ -71,7 +71,8 @@ defaulthandshakelogic() = HTTPHandshakeLogic(FakeRNG{UInt8}(b"\x01\x02\x03\x04\x
         @testset "Response status code is 101; Validation is successful" begin
             h = defaulthandshakelogic()
 
-            result = validateresponse(h, 101, Pair{String, String}[])
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "websocket"]
+            result = validateresponse(h, 101, responseheaders)
 
             @test issuccessful(result)
         end
@@ -79,7 +80,71 @@ defaulthandshakelogic() = HTTPHandshakeLogic(FakeRNG{UInt8}(b"\x01\x02\x03\x04\x
         @testset "Response status code is 200; Validation is not successful" begin
             h = defaulthandshakelogic()
 
-            result = validateresponse(h, 200, Pair{String, String}[])
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "websocket"]
+            result = validateresponse(h, 200, responseheaders)
+
+            @test !issuccessful(result)
+        end
+
+        @testset "Response status code is 500; Validation is not successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "websocket"]
+            result = validateresponse(h, 500, responseheaders)
+
+            @test !issuccessful(result)
+        end
+
+        @testset "Upgrade header has value 'websocket' and Connection is 'Upgrade'; Validation is successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "websocket"]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test issuccessful(result)
+        end
+
+        @testset "Upgrade header is missing; Validation is not successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Connection" => "Upgrade"]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test !issuccessful(result)
+        end
+
+        @testset "Upgrade header has value 'WEBSOCKET'; Validation is successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "WEBSOCKET"]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test issuccessful(result)
+        end
+
+        @testset "Upgrade header has a value that is not 'websocket'; Validation is unsuccessful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Connection" => "Upgrade", "Upgrade" => "Something else"]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test !issuccessful(result)
+        end
+
+        @testset "Connection header is missing; Validation is not successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Upgrade" => "websocket"]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test !issuccessful(result)
+        end
+
+        @testset "Connection header has a value different than 'Upgrade'; Validation is not successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = ["Upgrade" => "websocket", "Connection" => "Something else"]
+            result = validateresponse(h, 101, responseheaders)
 
             @test !issuccessful(result)
         end
