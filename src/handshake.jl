@@ -106,12 +106,24 @@ end
 #
 # New implementation of the handshake.
 #
-abstract type HTTPAdapter end
-dohandshake(::HTTPAdapter, headers::HeaderList) = error("Implement this in your subtype")
-
-struct HTTPHandshake
-    rng::Random.AbstractRNG
-    http::HTTPAdapter
+struct HTTPUpgradeResponse
+    io::IO
+    statuscode::Int
+    headers::HeaderList
 end
 
-performhandshake(h::HTTPHandshake) = dohandshake(h.http, ["" => ""])
+abstract type HTTPAdapter end
+dohandshake(::HTTPAdapter, headers::HeaderList) :: HTTPUpgradeResponse = error("Implement this in your subtype")
+
+struct HTTPHandshake
+    handshakelogic::HTTPHandshakeLogic
+    http::HTTPAdapter
+
+    HTTPHandshake(rng::Random.AbstractRNG, http::HTTPAdapter) = new(HTTPHandshakeLogic(rng), http)
+end
+
+
+function performhandshake(h::HTTPHandshake) :: HandshakeValidationResult
+    upgraderesponse = dohandshake(h.http, getrequestheaders(h.handshakelogic))
+    validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
+end
