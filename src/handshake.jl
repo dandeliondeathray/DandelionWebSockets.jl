@@ -132,7 +132,9 @@ struct BadHandshake <: AbstractHandshakeResult end
 issuccessful(::GoodHandshake) = true
 issuccessful(::BadHandshake) = false
 
-struct HTTPHandshake
+abstract type WebSocketHandshake end
+
+struct HTTPHandshake <: WebSocketHandshake
     handshakelogic::HTTPHandshakeLogic
     http::HTTPAdapter
 
