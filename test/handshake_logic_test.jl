@@ -200,5 +200,17 @@ end
 
             @test issuccessful(result)
         end
+
+        @testset "Headers use correct but lower case headers; Validation is successful" begin
+            h = defaulthandshakelogic()
+
+            responseheaders = [
+                "connection" => "Upgrade",
+                "upgrade" => "websocket",
+                "sec-websocket-accept" => "C/0nmHhBztSRGR1CwL6Tf4ZjwpY=" ]
+            result = validateresponse(h, 101, responseheaders)
+
+            @test issuccessful(result)
+        end
     end
 end

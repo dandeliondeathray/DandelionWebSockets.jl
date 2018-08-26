@@ -25,7 +25,7 @@ getrequestheaders(h::HTTPHandshakeLogic) = [
 
 function _expectheader(headers::AbstractArray{Pair{String, String}}, name::String, value::String) :: Bool
     for (k, v) in headers
-        if k == name && lowercase(value) == lowercase(v)
+        if lowercase(k) == lowercase(name) && lowercase(value) == lowercase(v)
             return true
         end
     end
