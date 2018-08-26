@@ -110,10 +110,27 @@ struct HTTPUpgradeResponse
     io::IO
     statuscode::Int
     headers::HeaderList
+    excess::AbstractVector{UInt8}
 end
 
 abstract type HTTPAdapter end
 dohandshake(::HTTPAdapter, headers::HeaderList) :: HTTPUpgradeResponse = error("Implement this in your subtype")
+
+abstract type AbstractHandshakeResult end
+
+struct GoodHandshake <: AbstractHandshakeResult
+    # The socket to use for all WebSocket communication.
+    io::IO
+
+    # Any excess bytes read from the socket during the handshake, that should actually be part of
+    # the WebSocket communication.
+    excess::AbstractVector{UInt8}
+end
+
+struct BadHandshake <: AbstractHandshakeResult end
+
+issuccessful(::GoodHandshake) = true
+issuccessful(::BadHandshake) = false
 
 struct HTTPHandshake
     handshakelogic::HTTPHandshakeLogic
@@ -122,8 +139,12 @@ struct HTTPHandshake
     HTTPHandshake(rng::Random.AbstractRNG, http::HTTPAdapter) = new(HTTPHandshakeLogic(rng), http)
 end
 
-
-function performhandshake(h::HTTPHandshake) :: HandshakeValidationResult
+function performhandshake(h::HTTPHandshake) :: AbstractHandshakeResult
     upgraderesponse = dohandshake(h.http, getrequestheaders(h.handshakelogic))
-    validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
+    validation = validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
+    if issuccessful(validation)
+        GoodHandshake(upgraderesponse.io, upgraderesponse.excess)
+    else
+        BadHandshake()
+    end
 end

@@ -9,10 +9,13 @@ mutable struct MockHTTP <: DandelionWebSockets.HTTPAdapter
     accept::String
     status::Int
     io::IO
+    excess::AbstractVector{UInt8}
 
     MockHTTP(;
              accept::String = "C/0nmHhBztSRGR1CwL6Tf4ZjwpY=",
-             status::Int = 101) = new([], accept, status, IOBuffer())
+             status::Int = 101,
+             excess::AbstractVector{UInt8} = b"",
+             io::IO = IOBuffer()) = new([], accept, status, io, excess)
 end
 
 function dohandshake(m::MockHTTP, headers::HeaderList) :: HTTPUpgradeResponse
@@ -20,7 +23,8 @@ function dohandshake(m::MockHTTP, headers::HeaderList) :: HTTPUpgradeResponse
     HTTPUpgradeResponse(m.io, m.status, [
         "Sec-WebSocket-Accept" => m.accept,
         "Connection" => "Upgrade",
-        "Upgrade" => "websocket"])
+        "Upgrade" => "websocket"],
+        m.excess)
 end
 
 @testset "Handshake              " begin
@@ -213,6 +217,34 @@ end
 
             # Assert
             @test !issuccessful(handshakeresult)
+        end
+
+        @testset "The upgraded socket has bytes available; Those bytes can be read in the handshake result" begin
+            # Arrange
+            # These fake random values generates the default accept value for MockHTTP, so this is
+            # a valid handshake.
+            rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+            mockhttp = MockHTTP(io = IOBuffer(b"\x01\x02\x03"))
+            h = HTTPHandshake(rng, mockhttp)
+
+            # Act
+            handshakeresult = performhandshake(h)
+
+            # Assert
+            @test readavailable(handshakeresult.io) == b"\x01\x02\x03"
+        end
+
+        @testset "Do a valid handshake with excess bytes read; The excess bytes are returned in the handshake result" begin
+            # Arrange
+            rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+            mockhttp = MockHTTP(; excess = b"\xca\xfe\xba\xbe")
+            h = HTTPHandshake(rng, mockhttp)
+
+            # Act
+            handshakeresult = performhandshake(h)
+
+            # Assert
+            @test handshakeresult.excess == b"\xca\xfe\xba\xbe"
         end
     end
 end
