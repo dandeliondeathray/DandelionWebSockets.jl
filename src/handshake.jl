@@ -114,7 +114,7 @@ struct HTTPUpgradeResponse
 end
 
 abstract type HTTPAdapter end
-dohandshake(::HTTPAdapter, headers::HeaderList) :: HTTPUpgradeResponse = error("Implement this in your subtype")
+dohandshake(::HTTPAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse = error("Implement this in your subtype")
 
 abstract type AbstractHandshakeResult end
 
@@ -141,8 +141,8 @@ struct HTTPHandshake <: WebSocketHandshake
     HTTPHandshake(rng::Random.AbstractRNG, http::HTTPAdapter) = new(HTTPHandshakeLogic(rng), http)
 end
 
-function performhandshake(h::HTTPHandshake) :: AbstractHandshakeResult
-    upgraderesponse = dohandshake(h.http, getrequestheaders(h.handshakelogic))
+function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeResult
+    upgraderesponse = dohandshake(h.http, uri, getrequestheaders(h.handshakelogic))
     validation = validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
     if issuccessful(validation)
         GoodHandshake(upgraderesponse.io, upgraderesponse.excess)

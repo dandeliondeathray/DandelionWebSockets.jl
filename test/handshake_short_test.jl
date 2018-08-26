@@ -6,6 +6,7 @@ import DandelionWebSockets: dohandshake
 
 mutable struct MockHTTP <: DandelionWebSockets.HTTPAdapter
     sentheaders::AbstractVector{HeaderList}
+    senturis::AbstractVector{String}
     accept::String
     status::Int
     io::IO
@@ -15,11 +16,12 @@ mutable struct MockHTTP <: DandelionWebSockets.HTTPAdapter
              accept::String = "C/0nmHhBztSRGR1CwL6Tf4ZjwpY=",
              status::Int = 101,
              excess::AbstractVector{UInt8} = b"",
-             io::IO = IOBuffer()) = new([], accept, status, io, excess)
+             io::IO = IOBuffer()) = new([], [], accept, status, io, excess)
 end
 
-function dohandshake(m::MockHTTP, headers::HeaderList) :: HTTPUpgradeResponse
+function dohandshake(m::MockHTTP, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
     push!(m.sentheaders, headers)
+    push!(m.senturis, uri)
     HTTPUpgradeResponse(m.io, m.status, [
         "Sec-WebSocket-Accept" => m.accept,
         "Connection" => "Upgrade",
@@ -167,10 +169,23 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            performhandshake(h)
+            performhandshake(h, "ws://some/uri")
 
             # Assert
             @test length(mockhttp.sentheaders) == 1
+        end
+
+        @testset "Do a handshake; The URI is the same as provided to performhandshake" begin
+            # Arrange
+            rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+            mockhttp = MockHTTP()
+            h = HTTPHandshake(rng, mockhttp)
+
+            # Act
+            performhandshake(h, "ws://some/uri")
+
+            # Assert
+            @test mockhttp.senturis[1] == "ws://some/uri"
         end
 
         @testset "Do a handshake; Standard WebSocket headers are present in the HTTP request" begin
@@ -180,7 +195,7 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            performhandshake(h)
+            performhandshake(h, "ws://some/uri")
 
             # Assert
             headers = Dict{String, String}(mockhttp.sentheaders[1])
@@ -199,7 +214,7 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            handshakeresult = performhandshake(h)
+            handshakeresult = performhandshake(h, "ws://some/uri")
 
             # Assert
             @test issuccessful(handshakeresult)
@@ -213,7 +228,7 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            handshakeresult = performhandshake(h)
+            handshakeresult = performhandshake(h, "ws://some/uri")
 
             # Assert
             @test !issuccessful(handshakeresult)
@@ -228,7 +243,7 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            handshakeresult = performhandshake(h)
+            handshakeresult = performhandshake(h, "ws://some/uri")
 
             # Assert
             @test readavailable(handshakeresult.io) == b"\x01\x02\x03"
@@ -241,7 +256,7 @@ end
             h = HTTPHandshake(rng, mockhttp)
 
             # Act
-            handshakeresult = performhandshake(h)
+            handshakeresult = performhandshake(h, "ws://some/uri")
 
             # Assert
             @test handshakeresult.excess == b"\xca\xfe\xba\xbe"
