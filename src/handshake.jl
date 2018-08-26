@@ -1,6 +1,7 @@
 import SHA
 using HTTP
 using Base64
+using Random
 
 "Keeps the result of a HTTP Upgrade attempt, when converting a HTTP connection to a WebSocket."
 struct HandshakeResult
@@ -101,3 +102,16 @@ end
 function convert_ws_uri(uri::String)
     replace(uri, r"^ws" => "http")
 end
+
+#
+# New implementation of the handshake.
+#
+abstract type HTTPAdapter end
+dohandshake(::HTTPAdapter, headers::HeaderList) = error("Implement this in your subtype")
+
+struct HTTPHandshake
+    rng::Random.AbstractRNG
+    http::HTTPAdapter
+end
+
+performhandshake(h::HTTPHandshake) = dohandshake(h.http, ["" => ""])

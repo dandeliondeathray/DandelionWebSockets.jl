@@ -2,6 +2,8 @@ using Random
 using Base64
 using SHA
 
+const HeaderList = AbstractArray{Pair{String, String}}
+
 abstract type HTTPHandshakeValidationResult end
 struct BadHTTPHandshake <: HTTPHandshakeValidationResult end
 struct GoodHTTPHandshake <: HTTPHandshakeValidationResult end
@@ -23,7 +25,7 @@ getrequestheaders(h::HTTPHandshakeLogic) = [
     "Connection" => "Upgrade",
     "Sec-WebSocket-Key" => h.key]
 
-function _expectheader(headers::AbstractArray{Pair{String, String}}, name::String, value::String) :: Bool
+function _expectheader(headers::HeaderList, name::String, value::String) :: Bool
     for (k, v) in headers
         if lowercase(k) == lowercase(name) && lowercase(value) == lowercase(v)
             return true
@@ -32,7 +34,7 @@ function _expectheader(headers::AbstractArray{Pair{String, String}}, name::Strin
     return false
 end
 
-function validateresponse(h::HTTPHandshakeLogic, statuscode::Int, headers::AbstractArray{Pair{String, String}})
+function validateresponse(h::HTTPHandshakeLogic, statuscode::Int, headers::HeaderList)
     if statuscode != 101
         return BadHTTPHandshake()
     end

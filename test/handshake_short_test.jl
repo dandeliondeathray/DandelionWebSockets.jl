@@ -1,5 +1,15 @@
 using Test
-using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
+using DandelionWebSockets:
+    HandshakeResult, validate, convert_ws_uri, HeaderList, HTTPHandshake, performhandshake
+import DandelionWebSockets: dohandshake
+
+mutable struct MockHTTP <: DandelionWebSockets.HTTPAdapter
+    sentheaders::AbstractVector{HeaderList}
+
+    MockHTTP() = new([])
+end
+
+dohandshake(m::MockHTTP, headers::HeaderList) = push!(m.sentheaders, headers)
 
 @testset "Handshake              " begin
     @testset "validate a handshake" begin
@@ -130,6 +140,21 @@ using DandelionWebSockets: HandshakeResult, validate, convert_ws_uri
 
         @testset "mixed case" begin
             @test validate(handshake_result_with_accept("SEC-websocket-ACCEPT")) == true
+        end
+    end
+
+    @testset "New handshake" begin
+        @testset "Do a handshake; An HTTP request is sent" begin
+            # Arrange
+            rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+            mockhttp = MockHTTP()
+            h = HTTPHandshake(rng, mockhttp)
+
+            # Act
+            performhandshake(h)
+
+            # Assert
+            @test length(mockhttp.sentheaders) == 1
         end
     end
 end
