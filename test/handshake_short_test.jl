@@ -11,17 +11,22 @@ mutable struct MockHTTP <: DandelionWebSockets.HTTPAdapter
     status::Int
     io::IO
     excess::AbstractVector{UInt8}
+    ex::Union{Exception, Nothing}
 
     MockHTTP(;
              accept::String = "C/0nmHhBztSRGR1CwL6Tf4ZjwpY=",
              status::Int = 101,
              excess::AbstractVector{UInt8} = b"",
-             io::IO = IOBuffer()) = new([], [], accept, status, io, excess)
+             io::IO = IOBuffer(),
+             ex::Union{Exception,Nothing} = nothing) = new([], [], accept, status, io, excess, ex)
 end
 
 function dohandshake(m::MockHTTP, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
     push!(m.sentheaders, headers)
     push!(m.senturis, uri)
+    if m.ex != nothing
+        throw(m.ex)
+    end
     HTTPUpgradeResponse(m.io, m.status, [
         "Sec-WebSocket-Accept" => m.accept,
         "Connection" => "Upgrade",
@@ -260,6 +265,19 @@ end
 
             # Assert
             @test handshakeresult.excess == b"\xca\xfe\xba\xbe"
+        end
+
+        @testset "The HTTPAdapter throws an exception; The handshake is not successful" begin
+            # Arrange
+            rng = FakeRNG{UInt8}(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10")
+            mockhttp = MockHTTP(ex=EOFError())
+            h = HTTPHandshake(rng, mockhttp)
+
+            # Act
+            handshakeresult = performhandshake(h, "ws://some/uri")
+
+            # Assert
+            @test !issuccessful(handshakeresult)
         end
     end
 end

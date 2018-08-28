@@ -184,11 +184,15 @@ Do a handshake with the server at `uri`, with parameters supplied by `h`. Valida
 and return a good or bad result, depending on the validation.
 """
 function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeResult
-    upgraderesponse = dohandshake(h.http, uri, getrequestheaders(h.handshakelogic))
-    validation = validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
-    if issuccessful(validation)
-        GoodHandshake(upgraderesponse.io, upgraderesponse.excess)
-    else
+    try
+        upgraderesponse = dohandshake(h.http, uri, getrequestheaders(h.handshakelogic))
+        validation = validateresponse(h.handshakelogic, upgraderesponse.statuscode, upgraderesponse.headers)
+        if issuccessful(validation)
+            GoodHandshake(upgraderesponse.io, upgraderesponse.excess)
+        else
+            BadHandshake()
+        end
+    catch ex
         BadHandshake()
     end
 end
