@@ -35,9 +35,10 @@ mutable struct WSClient <: AbstractWSClient
     # WebSocketsConnection maintains the state for a single connection.
     connection::Union{WebSocketsConnection, Nothing}
     # `do_handshake` is a function that performs a HTTP Upgrade to a WebSocket connection.
-    do_handshake::Function
+    handshake::WebSocketHandshake
 
-    WSClient(; do_handshake=DandelionWebSockets.do_handshake) = new(nothing, do_handshake)
+    WSClient(; handshake::WebSocketHandshake = HTTPHandshake(RandomDevice(), HTTPjlAdapter())) = 
+        new(nothing, handshake)
 end
 
 "Validates a HTTP Upgrade response, and starts all tasks.
@@ -45,7 +46,7 @@ end
 Note: As of right now the handshake is not validated, because the response headers aren't set here.
 "
 function connection_result_(client::WSClient,
-                            result::HandshakeResult,
+                            result::GoodHandshake,
                             handler::WebSocketHandler,
                             fix_small_message_latency::Bool)
     # Requirement
@@ -53,25 +54,14 @@ function connection_result_(client::WSClient,
     #
     # Covered by design, as we only get the network socket if and only if the handshake is done.
 
-    # Requirement
-    # @4_1_P6 Handshake response is invalid
-    #
-    # Validation of a HTTP Upgrade to a WebSocket is done by checking the response headers for a key
-    # which should contain a computed value.
-    if !validate(result)
-        println("Could not validate HTTP Upgrade")
-        state_closed(handler)
-        return false
-    end
-
     if fix_small_message_latency
-        ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), result.stream, 1)
+        ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), result.io, 1)
     end
 
     connection = client.connection
 
     # For `writer` the target object is the IO stream for the WebSocket connection.
-    writer = WriterProxy(result.stream)
+    writer = WriterProxy(result.io)
 
     # Requirement
     # @4_1_8 Handshake response is valid
@@ -103,13 +93,13 @@ function connection_result_(client::WSClient,
     attach(connection.pinger, connection.logic_proxy)
 
     # The target for `reader` is the same stream we're writing to.
-    connection.reader = start_reader(result.stream, connection.logic_proxy)
+    connection.reader = start_reader(result.io, connection.logic_proxy)
     true
 end
 
 "The HTTP Upgrade failed, for whatever reason."
 function connection_result_(client::WSClient,
-                            result::HandshakeFailure,
+                            result::BadHandshake,
                             handler::WebSocketHandler,
                             fix_small_message_latency::Bool)
     # Requirement
@@ -146,10 +136,6 @@ function wsconnect(client::WSClient, uri::String, handler::WebSocketHandler;
     # The first state is always Connecting.
     state_connecting(handler_proxy)
 
-    # This converts from `ws://` or `wss://` to `http://` or `https://`, because that's what
-    # Requests.jl expects.
-    new_uri = convert_ws_uri(uri)
-
     client.connection = WebSocketsConnection()
 
     # Requirement
@@ -157,8 +143,7 @@ function wsconnect(client::WSClient, uri::String, handler::WebSocketHandler;
 
     # This makes a HTTP request to the URI and attempts to upgrade the connection to the WebSocket
     # protocol.
-    handshake_result = client.do_handshake(client.connection.rng, new_uri)
-
+    handshake_result = performhandshake(client.handshake, uri)
     connection_result_(client, handshake_result, handler_proxy, fix_small_message_latency)
 end
 
