@@ -196,3 +196,19 @@ function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeRes
         BadHandshake()
     end
 end
+
+#
+# Integration with HTTP.jl
+#
+# This implements the handshake HTTP request using the HTTP.jl package.
+#
+
+# Side note: The name `HTTPjlAdapter` isn't great, but not worse than `HTTPHTTPAdapter`.
+struct HTTPjlAdapter <: HTTPAdapter end
+
+function dohandshake(::HTTPjlAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
+    socket, response, excess = HTTP.openraw("GET", uri, headers)
+    responseheaders = [String(a) => String(b) for (a, b) in response.headers]
+
+    HTTPUpgradeResponse(socket, response.status, response.headers, excess)
+end
