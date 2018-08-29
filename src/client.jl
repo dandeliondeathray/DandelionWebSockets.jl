@@ -49,10 +49,12 @@ can be implemented with a more specific type if the flag makes no sense for anot
 """
 tcpnodelay(io::IO) = ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), io, 1)
 
-"Validates a HTTP Upgrade response, and starts all tasks.
+"""
+    connection_result(::WSClient, ::GoodHandshake, ::WebSocketHandler, fix_small_message_latency::Bool)
 
-Note: As of right now the handshake is not validated, because the response headers aren't set here.
-"
+For a valid handshake, start all background tasks for this connection. This includes tasks for
+reading and writing from the socket, as well as a task for user callback.
+"""
 function connection_result_(client::WSClient,
                             result::GoodHandshake,
                             handler::WebSocketHandler,
