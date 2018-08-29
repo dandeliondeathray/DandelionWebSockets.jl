@@ -121,13 +121,16 @@ Connect the client to a WebSocket server at `uri`, and use `handler` for the cal
 The TCP protocol can buffer small messages (1448 bytes and smaller). The reason is that this reduces
 the overhead when sending large amounts of small packets. However, it also means that latency can be
 much higher for small messages. This buffering can be disabled by setting a flag TCP_NODELAY.
+By default, the WebSocket client will now set the TCP_NODELAY flag.
 
 If your application will send and receive primarily small messages (1448 bytes or smaller), and it
-is sensitive to latency, then set `fix_small_message_latency` to true. This sets the TCP_NODELAY
-flag, and latency may be improved.
+is sensitive to latency, then leave `fix_small_message_latency` set to true (now the default).
+This sets the TCP_NODELAY flag. If you are not concerned about latency, but concerned about
+throughput for many small messages, then you can set `fix_small_message_latency = false`. Then you
+may get higher throughput, at the expense of higher latency for small messages.
 """
 function wsconnect(client::WSClient, uri::String, handler::WebSocketHandler;
-                   fix_small_message_latency=false)
+                   fix_small_message_latency=true)
     handler_proxy = WebSocketsHandlerProxy(handler)
 
     # Requirement
