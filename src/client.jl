@@ -41,6 +41,14 @@ mutable struct WSClient <: AbstractWSClient
         new(nothing, handshake)
 end
 
+"""
+    tcpnodelay(::IO)
+
+Sets the TCP_NODELAY flag on a socket. This is a separate function only for testing purposes. It
+can be implemented with a more specific type if the flag makes no sense for another `IO` subtype.
+"""
+tcpnodelay(io::IO) = ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), io, 1)
+
 "Validates a HTTP Upgrade response, and starts all tasks.
 
 Note: As of right now the handshake is not validated, because the response headers aren't set here.
@@ -55,7 +63,7 @@ function connection_result_(client::WSClient,
     # Covered by design, as we only get the network socket if and only if the handshake is done.
 
     if fix_small_message_latency
-        ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), result.io, 1)
+        tcpnodelay(result.io)
     end
 
     connection = client.connection
