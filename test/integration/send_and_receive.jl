@@ -62,7 +62,7 @@ wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)
 
 # TODO Remove this debug code once the test is expected to work
 @async begin
-    sleep(2)
+    sleep(5)
     println("Closing client side connection")
     Stubs.notifyclosed(clienthandler)
     sleep(1)
@@ -74,9 +74,9 @@ end
 waitforclose(server, clienthandler)
 
 @testset "Sent messages" begin
-    @test server.statistics.received_messages == 5
+    @test server.statistics.texts_received == 5
 end
 
 @testset "Received messages" begin
-    @test client.statistics.received_messages == 5
+    @test client.statistics.binaries_received == 5
 end

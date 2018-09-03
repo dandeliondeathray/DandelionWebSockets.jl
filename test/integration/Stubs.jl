@@ -6,7 +6,9 @@ module Stubs
 
 using DandelionWebSockets
 using DandelionWebSockets: HTTPAdapter, HTTPUpgradeResponse, HeaderList
-import DandelionWebSockets: dohandshake
+import DandelionWebSockets: dohandshake, tcpnodelay, on_text, on_binary,
+                            state_connecting, state_open, state_closing, state_closed
+
 using Base64
 using SHA
 
@@ -30,16 +32,14 @@ end
 const ListOfActions = AbstractVector{TestAction}
 
 mutable struct ConnectionStatistics
-    received_messages::Int
+    texts_received::Int
+    binaries_received::Int
 
-    ConnectionStatistics() = new(0)
+    ConnectionStatistics() = new(0, 0)
 end
 
-function receivedframe(s::ConnectionStatistics, frame::Frame)
-    if frame.fin
-        s.received_messages += 1
-    end
-end
+receivedtext(s::ConnectionStatistics) = s.texts_received += 1
+receivedbinary(s::ConnectionStatistics) = s.binaries_received += 1
 
 """
 ScriptedServer is a stub of a WebSocket server, that follows a pre-defined list of actions.
@@ -58,6 +58,12 @@ newconnection(s::ScriptedServer) = s.io
 waitforclose(s::ScriptedServer) = take!(s.chanclose)
 notifyclosed(s::ScriptedServer) = put!(s.chanclose, nothing)
 
+# Override this to make tcpnodelay a no-op for our fake socket
+tcpnodelay(::IOBuffer) = nothing
+
+"""
+ScriptedClientHandler is a WebSocket client implementation that follows a fixed script.
+"""
 struct ScriptedClientHandler <: WebSocketHandler
     wsclient::WSClient
     script::ListOfActions
@@ -70,6 +76,14 @@ end
 waitforclose(c::ScriptedClientHandler) = take!(c.chanclose)
 notifyclosed(c::ScriptedClientHandler) = put!(c.chanclose, nothing)
 
+on_text(t::ScriptedClientHandler, ::String) = receivedtext(t.statistics)
+on_binary(t::ScriptedClientHandler, ::AbstractVector{UInt8}) = receivedbinary(t.statistics)
+state_closed(t::ScriptedClientHandler) = notifyclosed(t)
+state_closing(t::ScriptedClientHandler) = println("ScriptedClientHandler: CLOSING")
+state_connecting(t::ScriptedClientHandler) = println("ScriptedClientHandler: CONNECTING")
+state_open(t::ScriptedClientHandler) = println("ScriptedClientHandler: OPEN")
+
+
 """
 InProcessHandshakeAdapter is a stub for an HTTP upgrade request.
 """
@@ -77,25 +91,25 @@ struct InProcessHandshakeAdapter <: HTTPAdapter
     server::ScriptedServer
 end
 
-function finduniqueheader(headers::HeaderList, name::String)
+function finduniqueheader(headers::HeaderList, name::String) :: String
     vs = [v for (k, v) in headers
           if lowercase(k) == lowercase(name)]
 
     if length(vs) > 1
-        throw(DomainException("Found two occurrences of $name: $vs"))
+        throw(DomainError("Found two occurrences of $name: $vs"))
     end
     if isempty(vs)
-        throw(DomainException("Found no occurrences of $name"))
+        throw(DomainError("Found no occurrences of $name"))
     end
 
     vs[1]
 end
 
-function dohandshake(::HTTPAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
-    io = newclient(server)
+function dohandshake(adapter::InProcessHandshakeAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
+    io = newconnection(adapter.server)
 
-    key = finduniqueheader(headers, "Sec-WebSocket-Accept")
-    responseheaders = HeaderList[
+    key = finduniqueheader(headers, "Sec-WebSocket-Key")
+    responseheaders = [
         "Connection" => "Upgrade",
         "Upgrade" => "websocket",
         "Sec-WebSocket-Accept" => base64encode(sha1(key * "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))]
