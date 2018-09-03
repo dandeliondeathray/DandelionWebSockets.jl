@@ -71,7 +71,7 @@ wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)
 end
 
 # Wait for both client and server to close.
-waitforclose(server, clienthandler)
+waitforscriptdone(server, clienthandler)
 
 @testset "Sent messages" begin
     @test server.statistics.texts_received == 5
