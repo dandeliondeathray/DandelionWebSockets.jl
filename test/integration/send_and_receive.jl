@@ -1,12 +1,16 @@
-"""
-"Send and receive" is an integration test that verifies that the client can send and receive
-messages.
+# "Send and receive" is an integration test that verifies that the client can send and receive
+# messages.
+# 
+# Five messages are sent from the client to the server, and five messages are sent from the server
+# to the client.
 
-Five messages are sent from the client to the server, and five messages are sent from the server
-to the client.
-"""
+include("Stubs.jl")
 
 using DandelionWebSockets
+using DandelionWebSockets: HTTPHandshake
+using .Stubs
+using Test
+using Random
 
 # These are the actions that the server will take.
 serverscript = [
@@ -54,10 +58,20 @@ client = WSClient(; handshake=HTTPHandshake(RandomDevice(), handshakeadapter))
 clienthandler = ScriptedClientHandler(client, clientscript)
 
 # Request that the connection be opened, which starts the scripts for both server and client.
-wsconnect(client, "ws://the/uri/does/not/matter/here", sendandreceiveclient)
+wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)
+
+# TODO Remove this debug code once the test is expected to work
+@async begin
+    sleep(2)
+    println("Closing client side connection")
+    Stubs.notifyclosed(clienthandler)
+    sleep(1)
+    println("Closing server side connection")
+    Stubs.notifyclosed(server)
+end
 
 # Wait for both client and server to close.
-waitforclose(clienthandler, server)
+waitforclose(server, clienthandler)
 
 @testset "Sent messages" begin
     @test server.statistics.received_messages == 5
