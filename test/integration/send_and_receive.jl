@@ -9,6 +9,7 @@ include("Stubs.jl")
 using DandelionWebSockets
 using DandelionWebSockets: HTTPHandshake
 using .Stubs
+using .Stubs: write, read, InProcessIO
 using Test
 using Random
 
@@ -59,16 +60,6 @@ clienthandler = ScriptedClientHandler(client, clientscript)
 
 # Request that the connection be opened, which starts the scripts for both server and client.
 wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)
-
-# TODO Remove this debug code once the test is expected to work
-@async begin
-    sleep(5)
-    println("Closing client side connection")
-    Stubs.notifyclosed(clienthandler)
-    sleep(1)
-    println("Closing server side connection")
-    Stubs.notifyclosed(server)
-end
 
 # Wait for both client and server to close.
 waitforscriptdone(server, clienthandler)

@@ -8,14 +8,81 @@ using DandelionWebSockets
 using DandelionWebSockets:
     HTTPAdapter, HTTPUpgradeResponse, HeaderList, Frame, OPCODE_TEXT, Opcode
 import DandelionWebSockets: dohandshake, tcpnodelay, on_text, on_binary, send_text, send_binary,
-                            state_connecting, state_open, state_closing, state_closed, write
+                            state_connecting, state_open, state_closing, state_closed
+import Base: read, write, eof, close
 
 using Base64
 using SHA
 
 export ScriptedServer, ScriptedClientHandler, InProcessHandshakeAdapter,
     ShortWait, WaitForOpen, WaitForClose, CloseConnection,
-    SendTextFrame, waitforscriptdone
+    SendTextFrame, waitforscriptdone, InProcessIO, InProcessIOPair
+
+"""
+InProcessIO is a fake network socket that uses `Channel`s for asynchronous communication.
+"""
+struct InProcessIO <: IO
+    readbuffer::IOBuffer
+    writechan::Channel{Vector{UInt8}}
+    readchan::Channel{Vector{UInt8}}
+
+    InProcessIO(writechan::Channel{Vector{UInt8}}, readchan::Channel{Vector{UInt8}}) =
+        new(IOBuffer(), writechan, readchan)
+end
+
+eof(io::InProcessIO) = !isopen(io.readchan)
+function close(io::InProcessIO)
+    close(io.writechan)
+end
+
+function _write(io::InProcessIO, v::T) where T
+    b = IOBuffer()
+    write(b, v)
+    data = take!(b)
+    put!(io.writechan, data)
+    yield()
+end
+write(io::InProcessIO, v::UInt8) = _write(io, v)
+
+function _read(io::InProcessIO, ::Type{T}) where T
+    m = mark(io.readbuffer)
+    while true
+        try
+            return read(io.readbuffer, T)
+        catch ex
+            if typeof(ex) != EOFError
+                rethrow()
+            end
+        end
+        try
+            newdata = take!(io.readchan)
+            write(io.readbuffer, newdata)
+            seek(io.readbuffer, m)
+        catch ex
+            if typeof(ex) == InvalidStateException
+                throw(EOFError())
+            end
+            rethrow()
+        end
+    end
+end
+read(io::InProcessIO, v::Type{UInt8}) = _read(io, v)
+
+"""
+InProcessIOPair creates two endpoints, one for a client and one for a server. What is written on
+one endpoint can be read on the other.
+"""
+struct InProcessIOPair
+    endpoint1::InProcessIO
+    endpoint2::InProcessIO
+
+    function InProcessIOPair()
+        c1 = Channel{Vector{UInt8}}(Inf)
+        c2 = Channel{Vector{UInt8}}(Inf)
+        new(InProcessIO(c1, c2), InProcessIO(c2, c1))
+    end
+end
+
 
 """
 TestAction is an abstract type for different actions for a test client or server to take.
