@@ -18,21 +18,52 @@ export ScriptedServer, ScriptedClientHandler, InProcessHandshakeAdapter,
     ShortWait, WaitForOpen, WaitForClose, CloseConnection,
     SendTextFrame, waitforscriptdone, InProcessIO, InProcessIOPair
 
+const DataChannel = Channel{Union{Vector{UInt8}, Nothing}}
+
 """
 InProcessIO is a fake network socket that uses `Channel`s for asynchronous communication.
 """
-struct InProcessIO <: IO
+mutable struct InProcessIO <: IO
     readbuffer::IOBuffer
-    writechan::Channel{Vector{UInt8}}
-    readchan::Channel{Vector{UInt8}}
+    writechan::DataChannel
+    readchan::DataChannel
+    iseof::Threads.Atomic{Bool}
 
-    InProcessIO(writechan::Channel{Vector{UInt8}}, readchan::Channel{Vector{UInt8}}) =
-        new(IOBuffer(), writechan, readchan)
+    InProcessIO(writechan::DataChannel, readchan::DataChannel) =
+        new(IOBuffer(), writechan, readchan, Threads.Atomic{Bool}(false))
 end
 
-eof(io::InProcessIO) = !isopen(io.readchan)
+function eof(io::InProcessIO)
+    iseofalready = io.iseof[]
+    if iseofalready
+        return true
+    end
+
+    # Read a byte and see if it makes us EOF
+    try
+        mark(io.readbuffer)
+        _fetch(io)
+        reset(io.readbuffer)
+    catch ex
+        if typeof(ex) != EOFError
+            rethrow()
+        end
+    end
+    io.iseof[]
+end
+
+function _fetch(io::InProcessIO)
+    newdata = take!(io.readchan)
+    if newdata == nothing
+        Threads.atomic_or!(io.iseof, true)
+        throw(EOFError())
+    else
+        write(io.readbuffer, newdata)
+    end
+end
+
 function close(io::InProcessIO)
-    close(io.writechan)
+    put!(io.writechan, nothing)
 end
 
 function _write(io::InProcessIO, v::T) where T
@@ -55,13 +86,9 @@ function _read(io::InProcessIO, ::Type{T}) where T
             end
         end
         try
-            newdata = take!(io.readchan)
-            write(io.readbuffer, newdata)
-            seek(io.readbuffer, m)
+            _fetch(io)
+            seek(io.readbuffer, m)    
         catch ex
-            if typeof(ex) == InvalidStateException
-                throw(EOFError())
-            end
             rethrow()
         end
     end
@@ -77,8 +104,8 @@ struct InProcessIOPair
     endpoint2::InProcessIO
 
     function InProcessIOPair()
-        c1 = Channel{Vector{UInt8}}(Inf)
-        c2 = Channel{Vector{UInt8}}(Inf)
+        c1 = DataChannel(Inf)
+        c2 = DataChannel(Inf)
         new(InProcessIO(c1, c2), InProcessIO(c2, c1))
     end
 end
