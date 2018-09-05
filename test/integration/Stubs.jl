@@ -6,7 +6,8 @@ module Stubs
 
 using DandelionWebSockets
 using DandelionWebSockets:
-    HTTPAdapter, HTTPUpgradeResponse, HeaderList, Frame, OPCODE_TEXT, Opcode
+    HTTPAdapter, HTTPUpgradeResponse, HeaderList, Frame,
+    OPCODE_TEXT, OPCODE_BINARY, OPCODE_CLOSE, Opcode
 import DandelionWebSockets: dohandshake, tcpnodelay, on_text, on_binary, send_text, send_binary,
                             state_connecting, state_open, state_closing, state_closed
 import Base: read, write, eof, close
@@ -74,10 +75,17 @@ function _write(io::InProcessIO, v::T) where T
     yield()
 end
 write(io::InProcessIO, v::UInt8) = _write(io, v)
+write(io::InProcessIO, v::UInt16) = _write(io, v)
+write(io::InProcessIO, v::UInt64) = _write(io, v)
 function write(io::InProcessIO, cs::Base.CodeUnits{UInt8, String})
     put!(io.writechan, Vector{UInt8}(cs))
     yield()
 end
+function write(io::InProcessIO, cs::Vector{UInt8})
+    put!(io.writechan, Vector{UInt8}(cs))
+    yield()
+end
+
 function _read(io::InProcessIO, ::Type{T}) where T
     m = mark(io.readbuffer)
     while true
@@ -174,6 +182,7 @@ end
 function newconnection(s::ScriptedServer, io::IO)
     s.io = io
     notifyopen(s)
+    @async serverreadloop(s)
 end
 waitforclose(s::ScriptedServer) = take!(s.chanclose)
 notifyclosed(s::ScriptedServer) = put!(s.chanclose, nothing)
@@ -190,21 +199,39 @@ createtextframe(s::String) = createserverframe(OPCODE_TEXT, codeunits(s))
 takeaction(s::ScriptedServer, ::WaitForOpen) = waitforopen(s)
 takeaction(::ScriptedServer, ::ShortWait) = sleep(0.5)
 takeaction(s::ScriptedServer, send::SendTextFrame) = write(s, createtextframe(send.s))
-takeaction(s::ScriptedServer, ::WaitForClose) = waitforclose(s)
-takeaction(s::ScriptedServer, ::CloseConnection) = close(s.io)
+function takeaction(s::ScriptedServer, ::WaitForClose)
+    waitforclose(s)
+end
+function takeaction(s::ScriptedServer, ::CloseConnection)
+    close(s.io)
+end
 
 function runscript(s::ScriptedServer)
     for action in s.script
-        println("Server: $(action)")
+        #println("Server: $(action)")
         try
             takeaction(s, action)
         catch ex
             println("Server: Action $(action) threw an exception: $ex")
             break
         end
-        println("Server: $(action) DONE")
     end
     notifyscriptdone(s)
+end
+
+function serverreadloop(s::ScriptedServer)
+    try
+        while true
+            frame = read(s.io, Frame)
+            if frame.opcode == OPCODE_TEXT
+                receivedtext(s.statistics)
+            elseif frame.opcode == OPCODE_BINARY
+                receivedbinary(s.statistics)
+            end
+        end
+    catch ex
+        println("serverreadloop: Exception $ex")
+    end
 end
 
 # Override this to make tcpnodelay a no-op for our fake socket
@@ -243,14 +270,13 @@ takeaction(c::ScriptedClientHandler, ::CloseConnection) = stop(c.wsclient)
 
 function runscript(c::ScriptedClientHandler)
     for action in c.script
-        println("Client: $(action)")
+        #println("Client: $(action)")
         try
             takeaction(c, action)
         catch ex
             println("Client: Action $(action) threw an exception: $ex")
             break
         end
-        println("Client: $(action) DONE")
     end
     notifyscriptdone(c)
 end
@@ -300,11 +326,8 @@ end
 Wait for both the server and the client to close their connections.
 """
 function waitforscriptdone(server::ScriptedServer, clienthandler::ScriptedClientHandler)
-    println("Waiting for server to finish its script")
     waitforscriptdone(server)
-    println("Server has finished its script")
     waitforscriptdone(clienthandler)
-    println("Client has finished its script")
 end
 
 

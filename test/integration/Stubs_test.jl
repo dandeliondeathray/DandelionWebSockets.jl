@@ -112,4 +112,30 @@ using DandelionWebSockets
 
         @test sentframe.payload == receivedframe.payload
     end
+
+    @testset "Read from empty stream on endpoint 1 and close endpoint 2; Read throws exception" begin
+        eofthrown = false
+        iopair = InProcessIOPair()
+
+        @sync begin
+            @async begin
+                try
+                    read(iopair.endpoint1, UInt64)
+                catch ex
+                    if typeof(ex) == EOFError
+                        eofthrown = true
+                    else
+                        rethrow()
+                    end
+                end
+            end
+
+            @async begin
+                sleep(0.5)
+                close(iopair.endpoint2)
+            end
+        end
+
+        @test eofthrown
+    end
 end

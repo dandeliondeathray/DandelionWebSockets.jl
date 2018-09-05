@@ -20,12 +20,7 @@ serverscript = [
     ShortWait(),
     SendTextFrame("2345"),
     ShortWait(),
-    SendTextFrame("3456"),
-    ShortWait(),
-    SendTextFrame("4567"),
-    ShortWait(),
     SendTextFrame("5678"),
-    WaitForClose()
 ]
 
 clientscript = [
@@ -64,10 +59,10 @@ wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)
 # Wait for both client and server to close.
 waitforscriptdone(server, clienthandler)
 
-@testset "Sent messages" begin
+@testset "Sent messages    " begin
     @test server.statistics.texts_received == 5
 end
 
 @testset "Received messages" begin
-    @test client.statistics.binaries_received == 5
+    @test clienthandler.statistics.texts_received == 3
 end
