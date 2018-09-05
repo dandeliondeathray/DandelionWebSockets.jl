@@ -155,9 +155,9 @@ receivedbinary(s::ConnectionStatistics) = s.binaries_received += 1
 """
 ScriptedServer is a stub of a WebSocket server, that follows a pre-defined list of actions.
 """
-struct ScriptedServer
+mutable struct ScriptedServer
     script::ListOfActions
-    io::IO
+    io::Union{IO, Nothing}
     chanclose::Channel{Nothing}
     chanopen::Channel{Nothing}
     chanscriptdone::Channel{Nothing}
@@ -165,15 +165,15 @@ struct ScriptedServer
 
     # TODO Use a better IO object
     function ScriptedServer(script::ListOfActions)
-        this = new(script, IOBuffer(), Channel{Nothing}(1), Channel{Nothing}(1), Channel{Nothing}(1), ConnectionStatistics())
+        this = new(script, nothing, Channel{Nothing}(1), Channel{Nothing}(1), Channel{Nothing}(1), ConnectionStatistics())
         @async runscript(this)
         this
     end
 end
 
-function newconnection(s::ScriptedServer)
+function newconnection(s::ScriptedServer, io::IO)
+    s.io = io
     notifyopen(s)
-    s.io
 end
 waitforclose(s::ScriptedServer) = take!(s.chanclose)
 notifyclosed(s::ScriptedServer) = put!(s.chanclose, nothing)
@@ -208,7 +208,7 @@ function runscript(s::ScriptedServer)
 end
 
 # Override this to make tcpnodelay a no-op for our fake socket
-tcpnodelay(::IOBuffer) = nothing
+tcpnodelay(::InProcessIO) = nothing
 
 """
 ScriptedClientHandler is a WebSocket client implementation that follows a fixed script.
@@ -285,22 +285,26 @@ function finduniqueheader(headers::HeaderList, name::String) :: String
 end
 
 function dohandshake(adapter::InProcessHandshakeAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
-    io = newconnection(adapter.server)
+    iopair = InProcessIOPair()
+    newconnection(adapter.server, iopair.endpoint1)
 
     key = finduniqueheader(headers, "Sec-WebSocket-Key")
     responseheaders = [
         "Connection" => "Upgrade",
         "Upgrade" => "websocket",
         "Sec-WebSocket-Accept" => base64encode(sha1(key * "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))]
-    HTTPUpgradeResponse(io, 101, responseheaders, b"")
+    HTTPUpgradeResponse(iopair.endpoint2, 101, responseheaders, b"")
 end
 
 """
 Wait for both the server and the client to close their connections.
 """
 function waitforscriptdone(server::ScriptedServer, clienthandler::ScriptedClientHandler)
+    println("Waiting for server to finish its script")
     waitforscriptdone(server)
+    println("Server has finished its script")
     waitforscriptdone(clienthandler)
+    println("Client has finished its script")
 end
 
 
