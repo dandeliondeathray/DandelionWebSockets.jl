@@ -1,5 +1,6 @@
 using Test
 using .Stubs
+using DandelionWebSockets
 
 @testset "InProcessIO" begin
     @testset "Write 1-5 on endpoint 1; Can read 1-5 on endpoint 2" begin
@@ -101,5 +102,14 @@ using .Stubs
             @test !eof(iopair.endpoint2)
             read(iopair.endpoint2, UInt8)
         end
+    end
+
+    @testset "Send a frame on endpoint 1; Received a frame on endpoint 2" begin
+        iopair = InProcessIOPair()
+        sentframe = Stubs.createserverframe(DandelionWebSockets.OPCODE_TEXT, b"Hello")
+        write(iopair.endpoint1, sentframe)
+        receivedframe = read(iopair.endpoint2, DandelionWebSockets.Frame)
+
+        @test sentframe.payload == receivedframe.payload
     end
 end

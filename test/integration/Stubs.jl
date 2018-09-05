@@ -74,7 +74,10 @@ function _write(io::InProcessIO, v::T) where T
     yield()
 end
 write(io::InProcessIO, v::UInt8) = _write(io, v)
-
+function write(io::InProcessIO, cs::Base.CodeUnits{UInt8, String})
+    put!(io.writechan, Vector{UInt8}(cs))
+    yield()
+end
 function _read(io::InProcessIO, ::Type{T}) where T
     m = mark(io.readbuffer)
     while true
@@ -87,13 +90,26 @@ function _read(io::InProcessIO, ::Type{T}) where T
         end
         try
             _fetch(io)
-            seek(io.readbuffer, m)    
+            seek(io.readbuffer, m)
         catch ex
             rethrow()
         end
     end
 end
 read(io::InProcessIO, v::Type{UInt8}) = _read(io, v)
+read(io::InProcessIO, v::Type{UInt16}) = _read(io, v)
+read(io::InProcessIO, v::Type{UInt64}) = _read(io, v)
+function read(io::InProcessIO, n::Integer)
+    m = mark(io.readbuffer)
+    while true
+        if io.readbuffer.size - io.readbuffer.ptr + 1 >= n
+            return read(io.readbuffer, n)
+        else
+            _fetch(io)
+            seek(io.readbuffer, m)
+        end
+    end
+end
 
 """
 InProcessIOPair creates two endpoints, one for a client and one for a server. What is written on
