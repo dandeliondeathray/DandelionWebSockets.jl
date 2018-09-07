@@ -9,6 +9,8 @@ struct WebSocketsHandlerNotification
     payload::Any
 end
 
+struct FakeWebSocketConnection <: WebSocketConnection end
+
 """
 This is a mock WebSocketHandler which is designed to verify that calls are made to the on_*
 and state_* methods in a task separate from the client logic (which is the test in this
@@ -26,7 +28,7 @@ takenotification!(h::MockWebSocketsHandler) = take!(h.notification)
 
 on_text(h::MockWebSocketsHandler, text::String) = put!(h.notification, WebSocketsHandlerNotification("on_text", text))
 on_binary(h::MockWebSocketsHandler, data::AbstractVector{UInt8}) = put!(h.notification, WebSocketsHandlerNotification("on_binary", data))
-state_connecting(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_connecting", ""))
+state_connecting(h::MockWebSocketsHandler, conn::WebSocketConnection) = put!(h.notification, WebSocketsHandlerNotification("state_connecting", ""))
 state_open(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_open", ""))
 state_closing(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_closing", ""))
 state_closed(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerNotification("state_closed", ""))
@@ -67,7 +69,7 @@ state_closed(h::MockWebSocketsHandler) = put!(h.notification, WebSocketsHandlerN
             handlerproxy = WebSocketsHandlerProxy(handler)
 
             # Act
-            state_connecting(handlerproxy)
+            state_connecting(handlerproxy, FakeWebSocketConnection())
 
             # Assert
             notification = takenotification!(handler)

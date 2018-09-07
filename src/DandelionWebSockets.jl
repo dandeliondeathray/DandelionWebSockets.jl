@@ -9,6 +9,7 @@ export AbstractWSClient,
        send_binary
 
 export WebSocketHandler,
+       WebSocketConnection,
        on_text,
        on_binary,
        state_closed,
@@ -24,6 +25,8 @@ abstract type AbstractPinger end
 abstract type AbstractPonger end
 abstract type ClosingBehaviour end
 abstract type AbstractFrameWriter end
+
+abstract type WebSocketConnection end
 
 # This defines the public interface that the user should implement. These are callbacks called when
 # events arrive from this WebSocket library.
@@ -42,7 +45,7 @@ state_closed(t::WebSocketHandler) = nothing
 state_closing(t::WebSocketHandler) = nothing
 
 "The WebSocket is trying to connect."
-state_connecting(t::WebSocketHandler) = nothing
+state_connecting(t::WebSocketHandler, c::WebSocketConnection) = nothing
 
 "The WebSocket is open and ready to send and receive messages."
 state_open(t::WebSocketHandler) = nothing

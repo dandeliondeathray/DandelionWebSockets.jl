@@ -1,7 +1,7 @@
 using DandelionWebSockets.Proxy
 using DandelionWebSockets.Proxy: stopproxy
 
-mutable struct WebSocketsConnection
+mutable struct WebSocketConnectionImpl <: WebSocketConnection
     # `logic_proxy` forwards commands to the `ClientProtocol` object, in its own coroutine.
     logic_proxy::Union{ClientProtocolProxy, Nothing}
     # `reader` reads frames from the server.
@@ -16,14 +16,13 @@ mutable struct WebSocketsConnection
     # Requirement
     # @5_3-2-2 Masking uses strong source of entropy
     #
-    # This is now handled by seeding the MersenneTwister PRNG with a random UInt32 from the
-    # systems entropy.
+    # This is now handled by `RandomDevice`.
 
-    WebSocketsConnection() = new(nothing,
-                                 nothing,
-                                 MersenneTwister(rand(RandomDevice(), UInt32)),
-                                 Ponger(3.0, misses=3),
-                                 Pinger(5.0))
+    WebSocketConnectionImpl() = new(nothing,
+                                    nothing,
+                                    RandomDevice(),
+                                    Ponger(3.0, misses=3),
+                                    Pinger(5.0))
 end
 
 """
@@ -32,8 +31,8 @@ A WebSocket client, used to connect to a server, and send messages.
 Note: The keyword arguments in the constructor are primarily for testing.
 """
 mutable struct WSClient <: AbstractWSClient
-    # WebSocketsConnection maintains the state for a single connection.
-    connection::Union{WebSocketsConnection, Nothing}
+    # WebSocketConnection maintains the state for a single connection.
+    connection::Union{WebSocketConnection, Nothing}
     # `do_handshake` is a function that performs a HTTP Upgrade to a WebSocket connection.
     handshake::WebSocketHandshake
 
@@ -146,10 +145,11 @@ function wsconnect(client::WSClient, uri::String, handler::WebSocketHandler;
     # Requirement
     # @4_1_P1 Initial connection state
 
-    # The first state is always Connecting.
-    state_connecting(handler_proxy)
+    client.connection = WebSocketConnectionImpl()
 
-    client.connection = WebSocketsConnection()
+    # The first state is always Connecting.
+    state_connecting(handler_proxy, client.connection)
+
 
     # Requirement
     # @4_1_EstablishConnection_3-2 Not using a proxy
@@ -164,7 +164,7 @@ end
 # @7_3-2 Clients should not close the WebSocket connection arbitrarily
 
 "Close the WebSocket connection."
-stop(c::WSClient) = handle(c.connection.logic_proxy, CloseRequest())
+stop(connection::WebSocketConnection) = handle(connection.logic_proxy, CloseRequest())
 
 # Requirement
 # @6_1-5 Opcode in the first frame
@@ -172,11 +172,11 @@ stop(c::WSClient) = handle(c.connection.logic_proxy, CloseRequest())
 # Covered by design, by `send_text` and `send_binary`.
 
 "Send a single text frame."
-send_text(c::WSClient, s::String) = handle(c.connection.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
+send_text(connection::WebSocketConnection, s::String) = handle(connection.logic_proxy, SendTextFrame(s, true, OPCODE_TEXT))
 
 "Send a single binary frame."
-send_binary(c::WSClient, data::AbstractVector{UInt8}) =
-    handle(c.connection.logic_proxy, SendBinaryFrame(data, true, OPCODE_BINARY))
+send_binary(connection::WebSocketConnection, data::AbstractVector{UInt8}) =
+    handle(connection.logic_proxy, SendBinaryFrame(data, true, OPCODE_BINARY))
 
-sendmultiframetext(c::WSClient) = TextFrameSender(c.connection.logic_proxy)
-sendmultiframebinary(c::WSClient) = BinaryFrameSender(c.connection.logic_proxy)
+sendmultiframetext(connection::WebSocketConnection) = TextFrameSender(connection.logic_proxy)
+sendmultiframebinary(connection::WebSocketConnection) = BinaryFrameSender(connection.logic_proxy)

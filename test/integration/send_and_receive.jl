@@ -51,7 +51,7 @@ handshakeadapter = InProcessHandshakeAdapter(server)
 client = WSClient(; handshake=HTTPHandshake(RandomDevice(), handshakeadapter))
 
 # Create a client that runs the script above.
-clienthandler = ScriptedClientHandler(client, clientscript)
+clienthandler = ScriptedClientHandler(clientscript)
 
 # Request that the connection be opened, which starts the scripts for both server and client.
 wsconnect(client, "ws://the/uri/does/not/matter/here", clienthandler)

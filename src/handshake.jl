@@ -88,7 +88,6 @@ function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeRes
             BadHandshake()
         end
     catch ex
-        println("Exception: $ex")
         BadHandshake()
     end
 end

@@ -240,16 +240,16 @@ tcpnodelay(::InProcessIO) = nothing
 """
 ScriptedClientHandler is a WebSocket client implementation that follows a fixed script.
 """
-struct ScriptedClientHandler <: WebSocketHandler
-    wsclient::WSClient
+mutable struct ScriptedClientHandler <: WebSocketHandler
+    connection::Union{WebSocketConnection, Nothing}
     script::ListOfActions
     chanclose::Channel{Nothing}
     chanopen::Channel{Nothing}
     chanscriptdone::Channel{Nothing}
     statistics::ConnectionStatistics
 
-    function ScriptedClientHandler(w::WSClient, script::ListOfActions)
-        this = new(w, script, Channel{Nothing}(1), Channel{Nothing}(1), Channel{Nothing}(1), ConnectionStatistics())
+    function ScriptedClientHandler(script::ListOfActions)
+        this = new(nothing, script, Channel{Nothing}(1), Channel{Nothing}(1), Channel{Nothing}(1), ConnectionStatistics())
         @async runscript(this)
         this
     end
@@ -264,9 +264,9 @@ waitforscriptdone(c::ScriptedClientHandler) = take!(c.chanscriptdone)
 
 takeaction(c::ScriptedClientHandler, ::WaitForOpen) = waitforopen(c)
 takeaction(::ScriptedClientHandler, ::ShortWait) = sleep(0.5)
-takeaction(c::ScriptedClientHandler, send::SendTextFrame) = send_text(c.wsclient, send.s)
+takeaction(c::ScriptedClientHandler, send::SendTextFrame) = send_text(c.connection, send.s)
 takeaction(c::ScriptedClientHandler, ::WaitForClose) = waitforclose(c)
-takeaction(c::ScriptedClientHandler, ::CloseConnection) = stop(c.wsclient)
+takeaction(c::ScriptedClientHandler, ::CloseConnection) = stop(c.connection)
 
 function runscript(c::ScriptedClientHandler)
     for action in c.script
@@ -285,7 +285,7 @@ on_text(t::ScriptedClientHandler, ::String) = receivedtext(t.statistics)
 on_binary(t::ScriptedClientHandler, ::AbstractVector{UInt8}) = receivedbinary(t.statistics)
 state_closed(t::ScriptedClientHandler) = notifyclosed(t)
 state_closing(t::ScriptedClientHandler) = nothing
-state_connecting(t::ScriptedClientHandler) = nothing
+state_connecting(t::ScriptedClientHandler, connection::WebSocketConnection) = t.connection = connection
 state_open(t::ScriptedClientHandler) = notifyopen(t)
 
 
