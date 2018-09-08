@@ -3,15 +3,15 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[BinaryProvider]]
 deps = ["Libdl", "Pkg", "SHA", "Test"]
-git-tree-sha1 = "b530fbeb6f41ab5a83fbe3db1fcbe879334bcd2d"
+git-tree-sha1 = "2883bc1b389e3d57a134796c39c788db3f298cef"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.4.2"
+version = "0.4.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "ae262fa91da6a74e8937add6b613f58cd56cdad4"
+git-tree-sha1 = "277d3807440d9793421354b6680911fc95d91a84"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "1.1.0"
+version = "1.0.1"
 
 [[Dates]]
 deps = ["Printf"]
@@ -27,9 +27,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Sockets", "Test"]
-path = "/home/user/.julia/dev/HTTP"
+git-tree-sha1 = "8a0f75e8b09df01d9f1ba9ad3fbf8b4983595d20"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.6.14+"
+version = "0.6.14"
 
 [[IniFile]]
 deps = ["Test"]
