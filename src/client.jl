@@ -164,7 +164,11 @@ end
 # @7_3-2 Clients should not close the WebSocket connection arbitrarily
 
 "Close the WebSocket connection."
-stop(connection::WebSocketConnection) = handle(connection.logic_proxy, CloseRequest())
+function stop(connection::WebSocketConnection)
+    if connection.logic_proxy != nothing
+        handle(connection.logic_proxy, CloseRequest())
+    end
+end
 
 # Requirement
 # @6_1-5 Opcode in the first frame
