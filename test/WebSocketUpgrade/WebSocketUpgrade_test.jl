@@ -1,5 +1,6 @@
 using Test
 using DandelionWebSockets.WebSocketUpgrade
+using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse
 
 todata(xs...) = codeunits(join(xs))
 
@@ -94,5 +95,77 @@ todata(xs...) = codeunits(join(xs))
 
         # Assert
         @test hascompleteresponse(parser)
+    end
+
+    @testset "ResponseParser; Response with status code 101; Parse result has status 101" begin
+        # Arrange
+        responsetext = todata(
+            "HTTP/1.1 101 Switch Protocols\r\n",
+            "Date: Sun, 06 Nov 1994 08:49:37 GMT\r\n",
+            "\r\n",
+        )
+
+        parser = ResponseParser()
+        dataread(parser, responsetext)
+
+        # Act
+        response = parseresponse(parser)
+
+        # Assert
+        @test response.status == 101
+    end
+
+    @testset "ResponseParser; Response with status code 200; Parse result has status 200" begin
+        # Arrange
+        responsetext = todata(
+            "HTTP/1.1 200 OK\r\n",
+            "Date: Sun, 06 Nov 1994 08:49:37 GMT\r\n",
+            "\r\n",
+        )
+
+        parser = ResponseParser()
+        dataread(parser, responsetext)
+
+        # Act
+        response = parseresponse(parser)
+
+        # Assert
+        @test response.status == 200
+    end
+
+
+    @testset "ResponseParser; Status code is 101 and year is 200x; Parse result has status 101" begin
+        # Arrange
+        responsetext = todata(
+            "HTTP/1.1 101 Switch Protocols\r\n",
+            "Date: Sun, 06 Nov 2008 08:49:37 GMT\r\n",
+            "\r\n",
+        )
+
+        parser = ResponseParser()
+        dataread(parser, responsetext)
+
+        # Act
+        response = parseresponse(parser)
+
+        # Assert
+        @test response.status == 101
+    end
+
+    # TODO: Test spacing in the status line
+
+    @testset "ResponseParser; Malformed Status Line; BadHTTPResponse is thrown" begin
+        # Arrange
+        responsetext = todata(
+            "Malformed HTTP header",
+            "Date: Sun, 06 Nov 1994 08:49:37 GMT\r\n",
+            "\r\n",
+        )
+
+        parser = ResponseParser()
+        dataread(parser, responsetext)
+
+        # Act
+        @test_throws BadHTTPResponse parseresponse(parser)
     end
 end
