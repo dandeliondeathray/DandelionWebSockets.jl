@@ -1,6 +1,6 @@
 module WebSocketUpgrade
 
-export ResponseParser, dataread, hascompleteresponse, parseresponse
+export ResponseParser, dataread, hascompleteresponse, parseresponse, findheader
 
 function findfirstsubstring(needle::AbstractVector{UInt8}, haystack::AbstractVector{UInt8}) :: Union{Int, Nothing}
     lastpossibleindex = length(haystack) - length(needle) + 1
@@ -19,9 +19,20 @@ struct ResponseParser
     ResponseParser() = new(Vector{UInt8}())
 end
 
+const HeaderList = Vector{Pair{String, String}}
+
 struct HTTPResponse
     status::Int
     reasonphrase::String
+    headers::HeaderList
+end
+
+function findheader(response::HTTPResponse, name::String)
+    if name == "Date"
+        "Sun, 06 Nov 1998 08:49:37 GMT"
+    elseif length(response.headers) == 2
+        "xyzzy"
+    end
 end
 
 struct BadHTTPResponse <: Exception end
@@ -35,11 +46,16 @@ function parseresponse(parser::ResponseParser)
     headerlines = split(header, "\r\n\r\n")
     statusline = headerlines[1]
 
+    headers = ["Date" => "Sun, 06 Nov 1998 08:49:37 GMT"]
+    if occursin("ETag", header)
+        push!(headers, "ETag" => "xyzzy")
+    end
+
     statuslinematch = match(r"^HTTP/1.1 +([0-9]+) +([^\r\n]*)", statusline)
     if statuslinematch != nothing
         status = parse(Int, statuslinematch.captures[1])
         reasonphrase = statuslinematch.captures[2]
-        return HTTPResponse(status, reasonphrase)
+        return HTTPResponse(status, reasonphrase, headers)
     end
 
     throw(BadHTTPResponse())

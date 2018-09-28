@@ -275,4 +275,61 @@ todata(xs...) = codeunits(join(xs))
             @test_throws BadHTTPResponse parseresponse(parser)
         end
     end
+
+    @testset "Headers" begin
+        @testset "Headers; First header is Date; Response has the header Date with the right date" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "Date") == "Sun, 06 Nov 1998 08:49:37 GMT"
+        end
+
+        @testset "Headers; ETag header has value xyzzy; Response has the header ETag with value xyzzy" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "ETag: xyzzy\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "ETag") == "xyzzy"
+        end
+
+        @testset "Headers; No ETag header; findheader returns nothing" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "ETag") == nothing
+        end
+    end
 end
