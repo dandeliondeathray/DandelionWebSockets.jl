@@ -21,6 +21,7 @@ end
 
 struct HTTPResponse
     status::Int
+    reasonphrase::String
 end
 
 struct BadHTTPResponse <: Exception end
@@ -34,10 +35,11 @@ function parseresponse(parser::ResponseParser)
     headerlines = split(header, "\r\n\r\n")
     statusline = headerlines[1]
 
-    statuslinematch = match(r"HTTP/1.1 ([0-9]+) (.*)", statusline)
+    statuslinematch = match(r"^HTTP/1.1 +([0-9]+) +([^\r\n]*)", statusline)
     if statuslinematch != nothing
         status = parse(Int, statuslinematch.captures[1])
-        return HTTPResponse(status)
+        reasonphrase = statuslinematch.captures[2]
+        return HTTPResponse(status, reasonphrase)
     end
 
     throw(BadHTTPResponse())
