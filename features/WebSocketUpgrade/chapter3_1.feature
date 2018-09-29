@@ -1,5 +1,5 @@
 @wip
-Feature: Chapter 3: Protocol Parameters
+Feature: Chapter 3.1: HTTP Version
 
     @chapter3.1_1 @must
     Scenario: HTTP Version major and minor are separate numbers
