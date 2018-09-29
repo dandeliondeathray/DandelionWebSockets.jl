@@ -58,3 +58,27 @@ Feature: Chapter 3: Protocol Parameters
     Scenario: The version is the highest one for which the applications is at least conditionally compliant
         Given that HTTP/1.1 is the highest version for which the application is at least conditionally compliant
          Then it should use version HTTP/1.1
+
+    @chapter3.1_10 @inapplicable
+    Scenario: A proxy/gateway may not send a message with a higher version
+        Given that the proxy/gateway has some version
+         When a message is received with a higher version
+         Then the proxy/gateway must downgrade, response with an error, or switch to tunnel behaviour
+
+    @chapter3.1_11 @inapplicable
+    Scenario: A caching proxy must upgrade the request to the highest version they support
+        Given that a caching proxy has some version
+         When a message is receive with a lower version
+         Then the caching proxy must upgrade to its highest version
+
+    @chapter3.1_12 @inapplicable
+    Scenario: A gateway may upgrade the request to the highest version they support
+        Given that a gateway has some version
+         When a message is receive with a lower version
+         Then the gateway may upgrade to its highest version
+
+    @chapter3.1_13 @inapplicable
+    Scenario: A tunnel may not upgrade the request to the highest version they support
+        Given that a tunnel has some version
+         When a message is receive with a lower version
+         Then the tunnel may not upgrade to its highest version
