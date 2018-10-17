@@ -228,10 +228,309 @@ that the message was received.
     delta-seconds  = 1*DIGIT
 
 # Chapter 3.4: Character Sets
+## 3.4-1
+HTTP uses the same definition of the term "character set" as that
+described for MIME:
+The term "character set" is used in this document to refer to a
+method used with one or more tables to convert a sequence of octets
+into a sequence of characters. Note that unconditional conversion in
+the other direction is not required, in that not all characters may
+be available in a given character set and a character set may provide
+more than one sequence of octets to represent a particular character.
+This definition is intended to allow various kinds of character
+encoding, from simple single-table mappings such as US-ASCII to
+complex table switching methods such as those that use ISO-2022's
+techniques.
+
+## 3.4-2 MUST
+ However, the definition associated with a MIME character
+set name MUST fully specify the mapping to be performed from octets
+to characters.
+
+## 3.4-3
+In particular, use of external profiling information
+to determine the exact mapping is not permitted.
+
+## 3.4-4
+HTTP character sets are identified by case-insensitive tokens. The
+complete set of tokens is defined by the IANA Character Set registry
+[19].
+
+    charset = token
+
+## 3.4-5 MUST
+Although HTTP allows an arbitrary token to be used as a charset
+value, any token that has a predefined value within the IANA
+Character Set registry [19] MUST represent the character set defined
+by that registry.
+
+## 3.4-6 SHOULD
+Applications SHOULD limit their use of character
+sets to those defined by the IANA registry.
+
+## 3.4-7 MAY
+ Some HTTP/1.0 software has interpreted a Content-Type header without
+   charset parameter incorrectly to mean "recipient should guess."
+   Senders wishing to defeat this behavior MAY include a charset
+   parameter even when the charset is ISO-8859-1 and should do so when
+   it is known that it will not confuse the recipient.
+
+## 3.4-8 SHOULD
+Some HTTP/1.0 software has interpreted a Content-Type header without
+charset parameter incorrectly to mean "recipient should guess."
+Senders wishing to defeat this behavior may include a charset
+parameter even when the charset is ISO-8859-1 and SHOULD do so when
+it is known that it will not confuse the recipient.
+
+## 3.4-9 MUST
+HTTP/1.1 recipients MUST respect the charset label provided by the sender;
+
+## 3.4-10 MUST
+HTTP/1.1 recipients must respect the
+charset label provided by the sender; and those user agents that have
+a provision to "guess" a charset MUST use the charset from the
+content-type field if they support that charset, rather than the
+recipient's preference, when initially displaying a document. See
+section 3.7.1.
+
 # Chapter 3.8: Product Tokens
+## 3.8-1
+Product tokens are used to allow communicating applications to
+identify themselves by software name and version. Most fields using
+product tokens also allow sub-products which form a significant part
+of the application to be listed, separated by white space. By
+convention, the products are listed in order of their significance
+for identifying the application.
+
+    product         = token ["/" product-version]
+    product-version = token
+
+Examples:
+
+    User-Agent: CERN-LineMode/2.15 libwww/2.17b3
+    Server: Apache/0.8.4
+
+## 3.8-2 SHOULD
+Product tokens SHOULD be short and to the point.
+
+## 3.8-3 MUST NOT
+They MUST NOT be used for advertising or other non-essential information.
+
+## 3.8-4 MAY
+Although any token character MAY appear in a product-version...
+
+## 3.8-5 SHOULD
+Although any
+token character may appear in a product-version, this token SHOULD
+only be used for a version identifier (i.e., successive versions of
+the same product SHOULD only differ in the product-version portion of
+the product value).
+
 # Chapter 4.1: Message Types
+## 4.1-1
+HTTP messages consist of requests from client to server and responses
+from server to client.
+
+    HTTP-message   = Request | Response     ; HTTP/1.1 messages
+
+## 4.1-2
+Request (section 5) and Response (section 6) messages use the generic
+message format of RFC 822 [9] for transferring entities (the payload
+of the message). Both types of message consist of a start-line, zero
+or more header fields (also known as "headers"), an empty line (i.e.,
+a line with nothing preceding the CRLF) indicating the end of the
+header fields, and possibly a message-body.
+
+    generic-message = start-line
+                        *(message-header CRLF)
+                        CRLF
+                        [ message-body ]
+    start-line      = Request-Line | Status-Line
+
+## 4.1-3 SHOULD
+In the interest of robustness, servers SHOULD ignore any empty
+line(s) received where a Request-Line is expected. In other words, if
+the server is reading the protocol stream at the beginning of a
+message and receives a CRLF first, it should ignore the CRLF.
+
+## 4.1-4 MUST NOT
+Certain buggy HTTP/1.0 client implementations generate extra CRLF's
+after a POST request. To restate what is explicitly forbidden by the
+BNF, an HTTP/1.1 client MUST NOT preface or follow a request with an
+extra CRLF.
+
 # Chapter 4.2: Message Headers
+
+## 4.2-1
+HTTP header fields, which include general-header (section 4.5),
+request-header (section 5.3), response-header (section 6.2), and
+entity-header (section 7.1) fields, follow the same generic format as
+that given in Section 3.1 of RFC 822 [9].
+
+## 4.2-2
+Each header field consists
+of a name followed by a colon (":") and the field value. Field names
+are case-insensitive.
+
+## 4.2-3 MAY
+The field value MAY be preceded by any amount
+of LWS, though a single SP is preferred.
+
+## 4.2-4
+Header fields can be
+extended over multiple lines by preceding each extra line with at
+least one SP or HT.
+
+## 4.2-5
+Applications ought to follow "common form", where
+one is known or indicated, when generating HTTP constructs, since
+there might exist some implementations that fail to accept anything
+beyond the common forms.
+
+## 4.2-6
+Grammar
+
+    message-header = field-name ":" [ field-value ]
+    field-name     = token
+    field-value    = *( field-content | LWS )
+    field-content  = <the OCTETs making up the field-value
+                    and consisting of either *TEXT or combinations
+                    of token, separators, and quoted-string>
+
+## 4.2-7 MAY
+The field-content does not include any leading or trailing LWS:
+linear white space occurring before the first non-whitespace
+character of the field-value or after the last non-whitespace
+character of the field-value. Such leading or trailing LWS MAY be
+removed without changing the semantics of the field value.
+
+## 4.2-8 MAY
+Any LWS
+that occurs between field-content MAY be replaced with a single SP
+before interpreting the field value or forwarding the message
+downstream.
+
+## 4.2-9
+The order in which header fields with differing field names are
+received is not significant. However, it is "good practice" to send
+general-header fields first, followed by request-header or response-
+header fields, and ending with the entity-header fields.
+
+## 4.2-10 MAY
+Multiple message-header fields with the same field-name MAY be
+present in a message if and only if the entire field-value for that
+header field is defined as a comma-separated list [i.e., #(values)].
+
+## 4.2-11 MUST
+It MUST be possible to combine the multiple header fields into one
+"field-name: field-value" pair, without changing the semantics of the
+message, by appending each subsequent field-value to the first, each
+separated by a comma.
+
+## 4.2-12 MUST NOT
+The order in which header fields with the same
+field-name are received is therefore significant to the
+interpretation of the combined field value, and thus a proxy MUST NOT
+change the order of these field values when a message is forwarded.
+
 # Chapter 4.4: Message Length
+## 4.4-1
+The transfer-length of a message is the length of the message-body as
+it appears in the message; that is, after any transfer-codings have
+been applied. When a message-body is included with a message, the
+transfer-length of that body is determined by one of the following
+(in order of precedence):
+
+## 4.4-2
+1.Any response message which "MUST NOT" include a message-body (such
+as the 1xx, 204, and 304 responses and any response to a HEAD
+request) is always terminated by the first empty line after the
+header fields, regardless of the entity-header fields present in
+the message.
+
+## 4.4-3
+2.If a Transfer-Encoding header field (section 14.41) is present and
+has any value other than "identity", then the transfer-length is
+defined by use of the "chunked" transfer-coding (section 3.6),
+unless the message is terminated by closing the connection.
+
+## 4.4-4 MUST NOT
+3.If a Content-Length header field (section 14.13) is present, its
+decimal value in OCTETs represents both the entity-length and the
+transfer-length. The Content-Length header field MUST NOT be sent
+if these two lengths are different (i.e., if a Transfer-Encoding
+header field is present). If a message is received with both a
+Transfer-Encoding header field and a Content-Length header field,
+the latter must be ignored.
+
+## 4.4-5 MUST
+3.If a Content-Length header field (section 14.13) is present, its
+decimal value in OCTETs represents both the entity-length and the
+transfer-length. The Content-Length header field must not be sent
+if these two lengths are different (i.e., if a Transfer-Encoding
+header field is present). If a message is received with both a
+Transfer-Encoding header field and a Content-Length header field,
+the latter MUST be ignored.
+
+## 4.4-6
+4.If the message uses the media type "multipart/byteranges", and the
+ransfer-length is not otherwise specified, then this self-
+elimiting media type defines the transfer-length. This media type
+UST NOT be used unless the sender knows that the recipient can arse
+it; the presence in a request of a Range header with ultiple byte-
+range specifiers from a 1.1 client implies that the lient can parse
+multipart/byteranges responses.
+
+A range header might be forwarded by a 1.0 proxy that does not
+understand multipart/byteranges; in this case the server MUST
+delimit the message using methods defined in items 1,3 or 5 of
+this section.
+
+## 4.4-7
+5.By the server closing the connection. (Closing the connection
+cannot be used to indicate the end of a request body, since that
+would leave no possibility for the server to send back a response.)
+
+## 4.4-8 MUST
+For compatibility with HTTP/1.0 applications, HTTP/1.1 requests
+containing a message-body MUST include a valid Content-Length header
+field unless the server is known to be HTTP/1.1 compliant.
+
+## 4.4-9 SHOULD
+If a
+request contains a message-body and a Content-Length is not given,
+the server SHOULD respond with 400 (bad request) if it cannot
+determine the length of the message, or with 411 (length required) if
+it wishes to insist on receiving a valid Content-Length.
+
+## 4.4-10 MUST
+All HTTP/1.1 applications that receive entities MUST accept the
+"chunked" transfer-coding (section 3.6), thus allowing this mechanism
+to be used for messages when the message length cannot be determined
+in advance.
+
+## 4.4-11 MUST NOT
+Messages MUST NOT include both a Content-Length header field and a
+non-identity transfer-coding. If the message does include a non-
+identity transfer-coding, the Content-Length must be ignored.
+
+## 4.4-12 MUST
+Messages must not include both a Content-Length header field and a
+non-identity transfer-coding. If the message does include a non-
+identity transfer-coding, the Content-Length MUST be ignored.
+
+## 4.4-13 MUST
+When a Content-Length is given in a message where a message-body is
+allowed, its field value MUST exactly match the number of OCTETs in
+the message-body. HTTP/1.1 user agents must notify the user when an
+invalid length is received and detected.
+
+## 4.4-14 MUST
+When a Content-Length is given in a message where a message-body is
+allowed, its field value must exactly match the number of OCTETs in
+the message-body. HTTP/1.1 user agents MUST notify the user when an
+invalid length is received and detected.
+
 # Chapter 4.5: General Header Fields
 # Chapter 5.1: Request-Line
 # Chapter 5.2: The Resource Identified by a Request
