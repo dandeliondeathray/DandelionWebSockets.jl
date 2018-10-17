@@ -155,6 +155,78 @@ For example, the following three URIs are equivalent:
     http://ABC.com:/%7esmith/home.html
 
 # Chapter 3.3: Date/Time Formats
+HTTP applications have historically allowed three different formats
+for the representation of date/time stamps:
+
+    Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+    Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+    Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+
+## 3.3-1
+The first format is preferred as an Internet standard and represents
+a fixed-length subset of that defined by RFC 1123 [8] (an update to
+RFC 822 [9]).
+
+## 3.3-2 MUST
+HTTP/1.1 clients and servers that parse the date value MUST accept
+all three formats (for compatibility with HTTP/1.0)...
+
+## 3.3-3 MUST
+HTTP/1.1 clients and servers that parse the date value must accept
+all three formats (for compatibility with HTTP/1.0), though they MUST
+only generate the RFC 1123 format for representing HTTP-date values
+in header fields. See section 19.3 for further information.
+
+## 3.3-4 MUST
+All HTTP date/time stamps MUST be represented in Greenwich Mean Time
+(GMT), without exception. For the purposes of HTTP, GMT is exactly
+equal to UTC (Coordinated Universal Time).
+
+## 3.3-5 MUST
+This is indicated in the
+first two formats by the inclusion of "GMT" as the three-letter
+abbreviation for time zone, and MUST be assumed when reading the
+asctime format.
+
+## 3.3-6 MUST NOT
+HTTP-date is case sensitive and MUST NOT include
+additional LWS beyond that specifically included as SP in the
+grammar.
+
+## 3.3-7
+    HTTP-date    = rfc1123-date | rfc850-date | asctime-date
+    rfc1123-date = wkday "," SP date1 SP time SP "GMT"
+    rfc850-date  = weekday "," SP date2 SP time SP "GMT"
+    asctime-date = wkday SP date3 SP time SP 4DIGIT
+    date1        = 2DIGIT SP month SP 4DIGIT
+                    ; day month year (e.g., 02 Jun 1982)
+    date2        = 2DIGIT "-" month "-" 2DIGIT
+                    ; day-month-year (e.g., 02-Jun-82)
+    date3        = month SP ( 2DIGIT | ( SP 1DIGIT ))
+                    ; month day (e.g., Jun  2)
+    time         = 2DIGIT ":" 2DIGIT ":" 2DIGIT
+                    ; 00:00:00 - 23:59:59
+    wkday        = "Mon" | "Tue" | "Wed"
+                | "Thu" | "Fri" | "Sat" | "Sun"
+    weekday      = "Monday" | "Tuesday" | "Wednesday"
+                | "Thursday" | "Friday" | "Saturday" | "Sunday"
+    month        = "Jan" | "Feb" | "Mar" | "Apr"
+                | "May" | "Jun" | "Jul" | "Aug"
+                | "Sep" | "Oct" | "Nov" | "Dec"
+
+## 3.3-8
+    Note: HTTP requirements for the date/time stamp format apply only
+    to their usage within the protocol stream. Clients and servers are
+    not required to use these formats for user presentation, request
+    logging, etc.
+
+## 3.3-9
+Some HTTP header fields allow a time value to be specified as an
+integer number of seconds, represented in decimal, after the time
+that the message was received.
+
+    delta-seconds  = 1*DIGIT
+
 # Chapter 3.4: Character Sets
 # Chapter 3.8: Product Tokens
 # Chapter 4.1: Message Types
