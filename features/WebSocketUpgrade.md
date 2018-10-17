@@ -72,6 +72,88 @@ The proxy/gateway's response to that request MUST be in
 the same major version as the request.
 
 # Chapter 3.2: Uniform Resource Identifiers
+
+## 3.2-1
+For definitive information on
+URL syntax and semantics, see "Uniform Resource Identifiers (URI):
+Generic Syntax and Semantics," RFC 2396 [42] (which replaces RFCs
+1738 [4] and RFC 1808 [11]).
+
+## 3.2-2
+The HTTP protocol does not place any a priori limit on the length of
+a URI.
+
+## 3.2-3 MUST
+Servers MUST be able to handle the URI of any resource they serve.
+
+## 3.2-4 SHOULD
+Servers must be able to handle the URI of any resource they
+serve, and SHOULD be able to handle URIs of unbounded length if they
+provide GET-based forms that could generate such URIs.
+
+## 3.2-5
+The "http" scheme is used to locate network resources via the HTTP
+protocol.
+
+## 3.2-6
+This section defines the scheme-specific syntax and
+semantics for http URLs.
+
+   http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
+
+## 3.2-7
+If the port is empty or not given, port 80 is assumed.
+
+## 3.2-8
+The semantics
+are that the identified resource is located at the server listening
+for TCP connections on that port of that host, and the Request-URI
+for the resource is abs_path (section 5.1.2).
+
+## 3.2-9 SHOULD @inapplicable
+The use of IP addresses in URLs SHOULD be avoided whenever possible
+(see RFC 1900 [24]).
+
+## 3.2-10
+If the abs_path is not present in the URL, it MUST be given as "/" when
+used as a Request-URI for a resource (section 5.1.2).
+
+## 3.2-11 @inapplicable
+If a proxy receives a host name which is not a fully qualified domain name, it
+MAY add its domain to the host name it received.
+
+## 3.2-12 @inapplicable
+If a proxy receives a fully qualified domain name, the proxy MUST NOT change
+the host name.
+
+## 3.2-13 SHOULD
+When comparing two URIs to decide if they match or not, a client
+SHOULD use a case-sensitive octet-by-octet comparison of the entire
+URIs, with these exceptions:
+
+## 3.2-14 SHOULD
+- A port that is empty or not given is equivalent to the default
+port for that URI-reference;
+
+## 3.2-15
+- Comparisons of host names MUST be case-insensitive;
+
+## 3.2-16
+- Comparisons of scheme names MUST be case-insensitive;
+
+## 3.2-17
+- An empty abs_path is equivalent to an abs_path of "/".
+
+## 3.2-18
+Characters other than those in the "reserved" and "unsafe" sets (see
+RFC 2396 [42]) are equivalent to their ""%" HEX HEX" encoding.
+
+For example, the following three URIs are equivalent:
+
+    http://abc.com:80/~smith/home.html
+    http://ABC.com/%7Esmith/home.html
+    http://ABC.com:/%7esmith/home.html
+
 # Chapter 3.3: Date/Time Formats
 # Chapter 3.4: Character Sets
 # Chapter 3.8: Product Tokens
