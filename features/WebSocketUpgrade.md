@@ -532,16 +532,271 @@ the message-body. HTTP/1.1 user agents MUST notify the user when an
 invalid length is received and detected.
 
 # Chapter 4.5: General Header Fields
+## 4.5-1
+There are a few header fields which have general applicability for
+both request and response messages, but which do not apply to the
+entity being transferred. These header fields apply only to the
+message being transmitted.
+
+    general-header = Cache-Control            ; Section 14.9
+                    | Connection               ; Section 14.10
+                    | Date                     ; Section 14.18
+                    | Pragma                   ; Section 14.32
+                    | Trailer                  ; Section 14.40
+                    | Transfer-Encoding        ; Section 14.41
+                    | Upgrade                  ; Section 14.42
+                    | Via                      ; Section 14.45
+                    | Warning                  ; Section 14.46
+
+General-header field names can be extended reliably only in
+combination with a change in the protocol version. However, new or
+experimental header fields may be given the semantics of general
+header fields if all parties in the communication recognize them to
+be general-header fields. Unrecognized header fields are treated as
+entity-header fields.
+
+# Chapter 5: Request
+## 5-1
+A request message from a client to a server includes, within the
+first line of that message, the method to be applied to the resource,
+the identifier of the resource, and the protocol version in use.
+
+    Request       = Request-Line              ; Section 5.1
+                    *(( general-header        ; Section 4.5
+                        | request-header         ; Section 5.3
+                        | entity-header ) CRLF)  ; Section 7.1
+                    CRLF
+                    [ message-body ]          ; Section 4.3
+
 # Chapter 5.1: Request-Line
+
+## 5.1-1
+The Request-Line begins with a method token, followed by the
+Request-URI and the protocol version, and ending with CRLF. The
+elements are separated by SP characters. No CR or LF is allowed
+except in the final CRLF sequence.
+
+    Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+
+An example
+   Request-Line would be:
+
+       GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1
+
+## 5.1-2
+The Method token indicates the method to be performed on the
+resource identified by the Request-URI. The method is case-sensitive.
+
+    Method         = "OPTIONS"                ; Section 9.2
+                    | "GET"                    ; Section 9.3
+                    | "HEAD"                   ; Section 9.4
+                    | "POST"                   ; Section 9.5
+                    | "PUT"                    ; Section 9.6
+                    | "DELETE"                 ; Section 9.7
+                    | "TRACE"                  ; Section 9.8
+                    | "CONNECT"                ; Section 9.9
+                    | extension-method
+    extension-method = token
+
+## 5.1-3
+The list of methods allowed by a resource can be specified in an
+Allow header field (section 14.7). The return code of the response
+always notifies the client whether a method is currently allowed on a
+resource, since the set of allowed methods can change dynamically.
+
+## 5.1-4 SHOULD
+An
+origin server SHOULD return the status code 405 (Method Not Allowed)
+if the method is known by the origin server but not allowed for the
+requested resource, and 501 (Not Implemented) if the method is
+unrecognized or not implemented by the origin server.
+
+## 5.1-5 MUST
+The methods GET
+and HEAD MUST be supported by all general-purpose servers. All other
+methods are OPTIONAL;
+
+## 5.1-6 MUST
+The methods GET
+and HEAD must be supported by all general-purpose servers. All other
+methods are OPTIONAL; however, if the above methods are implemented,
+they MUST be implemented with the same semantics as those specified
+in section 9.
+
+## 5.1-7
+The Request-URI is a Uniform Resource Identifier (section 3.2) and
+identifies the resource upon which to apply the request.
+
+    Request-URI    = "*" | absoluteURI | abs_path | authority
+
+## 5.1-8
+The asterisk "*" means that the request does not apply to a
+particular resource, but to the server itself, and is only allowed
+when the method used does not necessarily apply to a resource. One
+example would be
+
+    OPTIONS * HTTP/1.1
+
+## 5.1-9
+The absoluteURI form is REQUIRED when the request is being made to a
+proxy. The proxy is requested to forward the request or service it
+from a valid cache, and return the response.
+
+## 5.1-10 MAY
+Note that the proxy MAY
+forward the request on to another proxy or directly to the server
+specified by the absoluteURI.
+
+## 5.1-11 MUST
+In order to avoid request loops, a
+proxy MUST be able to recognize all of its server names, including
+any aliases, local variations, and the numeric IP address.
+
+## 5.1-12 MUST
+To allow for transition to absoluteURIs in all requests in future
+versions of HTTP, all HTTP/1.1 servers MUST accept the absoluteURI
+form in requests, even though HTTP/1.1 clients will only generate
+them in requests to proxies.
+
+## 5.1-13
+The authority form is only used by the CONNECT method (section 9.9).
+
+## 5.1-14 MUST
+The most common form of Request-URI is that used to identify a
+resource on an origin server or gateway. In this case the absolute
+path of the URI MUST be transmitted (see section 3.2.1, abs_path) as
+the Request-URI, and the network location of the URI (authority) must
+be transmitted in a Host header field.
+
+## 5.1-15 MUST
+The most common form of Request-URI is that used to identify a
+resource on an origin server or gateway. In this case the absolute
+path of the URI must be transmitted (see section 3.2.1, abs_path) as
+the Request-URI, and the network location of the URI (authority) MUST
+be transmitted in a Host header field.
+
+## 5.1-16
+For example, a client wishing
+to retrieve the resource above directly from the origin server would
+create a TCP connection to port 80 of the host "www.w3.org" and send
+the lines:
+
+    GET /pub/WWW/TheProject.html HTTP/1.1
+    Host: www.w3.org
+
+followed by the remainder of the Request.
+
+## 5.1-17 MUST
+Note that the absolute path
+cannot be empty; if none is present in the original URI, it MUST be
+given as "/" (the server root).
+
+## 5.1-18
+The Request-URI is transmitted in the format specified in section 3.2.1.
+
+## 5.1-19 MUST
+If the Request-URI is encoded using the "% HEX HEX" encoding
+[42], the origin server MUST decode the Request-URI in order to
+properly interpret the request.
+
+## 5.1-20 SHOULD
+Servers SHOULD respond to invalid Request-URIs with an appropriate status code.
+
+## 5.1-21 MUST NOT
+A transparent proxy MUST NOT rewrite the "abs_path" part of the
+received Request-URI when forwarding it to the next inbound server,
+except as noted above to replace a null abs_path with "/".
+
 # Chapter 5.2: The Resource Identified by a Request
+
+## 5.2-1 MAY
+The exact resource identified by an Internet request is determined by
+examining both the Request-URI and the Host header field.
+
+An origin server that does not allow resources to differ by the
+requested host MAY ignore the Host header field value when
+determining the resource identified by an HTTP/1.1 request. (But see
+section 19.6.1.1 for other requirements on Host support in HTTP/1.1.)
+
+## 5.2-2 MUST
+An origin server that does differentiate resources based on the host
+requested (sometimes referred to as virtual hosts or vanity host
+names) MUST use the following rules for determining the requested
+resource on an HTTP/1.1 request:
+
+## 5.2-3
+1. If Request-URI is an absoluteURI, the host is part of the
+Request-URI. Any Host header field value in the request MUST be
+ignored.
+
+## 5.2-4
+2. If the Request-URI is not an absoluteURI, and the request includes
+a Host header field, the host is determined by the Host header
+field value.
+
+## 5.2-5 @must
+3. If the host as determined by rule 1 or 2 is not a valid host on
+the server, the response MUST be a 400 (Bad Request) error message.
+
+## 5.2-6 @may
+Recipients of an HTTP/1.0 request that lacks a Host header field MAY
+attempt to use heuristics (e.g., examination of the URI path for
+something unique to a particular host) in order to determine what
+exact resource is being requested.
+
 # Chapter 5.3: Request Header Fields
+
+## 5.3-1
+The request-header fields allow the client to pass additional
+information about the request, and about the client itself, to the
+server. These fields act as request modifiers, with semantics
+equivalent to the parameters on a programming language method
+invocation.
+
+    request-header = Accept                   ; Section 14.1
+                   | Accept-Charset           ; Section 14.2
+                   | Accept-Encoding          ; Section 14.3
+                   | Accept-Language          ; Section 14.4
+                   | Authorization            ; Section 14.8
+                   | Expect                   ; Section 14.20
+                   | From                     ; Section 14.22
+                   | Host                     ; Section 14.23
+                   | If-Match                 ; Section 14.24
+                   | If-Modified-Since        ; Section 14.25
+                   | If-None-Match            ; Section 14.26
+                   | If-Range                 ; Section 14.27
+                   | If-Unmodified-Since      ; Section 14.28
+                   | Max-Forwards             ; Section 14.31
+                   | Proxy-Authorization      ; Section 14.34
+                   | Range                    ; Section 14.35
+                   | Referer                  ; Section 14.36
+                   | TE                       ; Section 14.39
+                   | User-Agent               ; Section 14.43
+
+## 5.3-2
+Request-header field names can be extended reliably only in
+combination with a change in the protocol version. However, new or
+experimental header fields MAY be given the semantics of request-
+header fields if all parties in the communication recognize them to
+be request-header fields. Unrecognized header fields are treated as
+entity-header fields.
+
 # Chapter 6.1: Status-Line
+
 # Chapter 6.2: Response Header Fields
+
 # Chapter 10.1: Informational 1xx
+
 # Chapter 14.10: Connection
+
 # Chapter 14.18: Date
+
 # Chapter 14.23: Host
+
 # Chapter 14.38: Server
+
 # Chapter 14.42: Upgrade
+
 # Chapter 14.43: User-Agent
+
 # Chapter 15.3: DNS Spoofing
