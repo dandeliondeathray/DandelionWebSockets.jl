@@ -781,15 +781,344 @@ header fields if all parties in the communication recognize them to
 be request-header fields. Unrecognized header fields are treated as
 entity-header fields.
 
+# Chapter 6: Response
+## 6-1
+The first line of a Response message is the Status-Line, consisting
+of the protocol version followed by a numeric status code and its
+associated textual phrase, with each element separated by SP
+characters. No CR or LF is allowed except in the final CRLF sequence.
+
+    Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+
 # Chapter 6.1: Status-Line
 
+## 6.1-1
+The first line of a Response message is the Status-Line, consisting
+of the protocol version followed by a numeric status code and its
+associated textual phrase, with each element separated by SP
+characters. No CR or LF is allowed except in the final CRLF sequence.
+
+    Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+
+## 6.1-2
+The Status-Code element is a 3-digit integer result code of the
+attempt to understand and satisfy the request. These codes are fully
+defined in section 10.
+
+## 6.1-3
+The Reason-Phrase is intended to give a short
+textual description of the Status-Code. The Status-Code is intended
+for use by automata and the Reason-Phrase is intended for the human
+user. The client is not required to examine or display the Reason-
+Phrase.
+
+## 6.1-4
+The first digit of the Status-Code defines the class of response. The
+last two digits do not have any categorization role. There are 5
+values for the first digit:
+
+    - 1xx: Informational - Request received, continuing process
+
+    - 2xx: Success - The action was successfully received,
+    understood, and accepted
+
+    - 3xx: Redirection - Further action must be taken in order to
+    complete the request
+
+    - 4xx: Client Error - The request contains bad syntax or cannot
+    be fulfilled
+
+    - 5xx: Server Error - The server failed to fulfill an apparently
+    valid request
+
+## 6.1-5
+The individual values of the numeric status codes defined for
+HTTP/1.1, and an example set of corresponding Reason-Phrase's, are
+presented below. The reason phrases listed here are only
+recommendations -- they MAY be replaced by local equivalents without
+affecting the protocol.
+
+    Status-Code    =
+        "100"  ; Section 10.1.1: Continue
+        | "101"  ; Section 10.1.2: Switching Protocols
+        | "200"  ; Section 10.2.1: OK
+        | "201"  ; Section 10.2.2: Created
+        | "202"  ; Section 10.2.3: Accepted
+        | "203"  ; Section 10.2.4: Non-Authoritative Information
+        | "204"  ; Section 10.2.5: No Content
+        | "205"  ; Section 10.2.6: Reset Content
+        | "206"  ; Section 10.2.7: Partial Content
+        | "300"  ; Section 10.3.1: Multiple Choices
+        | "301"  ; Section 10.3.2: Moved Permanently
+        | "302"  ; Section 10.3.3: Found
+        | "303"  ; Section 10.3.4: See Other
+        | "304"  ; Section 10.3.5: Not Modified
+        | "305"  ; Section 10.3.6: Use Proxy
+        | "307"  ; Section 10.3.8: Temporary Redirect
+        | "400"  ; Section 10.4.1: Bad Request
+        | "401"  ; Section 10.4.2: Unauthorized
+        | "402"  ; Section 10.4.3: Payment Required
+        | "403"  ; Section 10.4.4: Forbidden
+        | "404"  ; Section 10.4.5: Not Found
+        | "405"  ; Section 10.4.6: Method Not Allowed
+        | "406"  ; Section 10.4.7: Not Acceptable
+        | "407"  ; Section 10.4.8: Proxy Authentication Required
+        | "408"  ; Section 10.4.9: Request Time-out
+        | "409"  ; Section 10.4.10: Conflict
+        | "410"  ; Section 10.4.11: Gone
+        | "411"  ; Section 10.4.12: Length Required
+        | "412"  ; Section 10.4.13: Precondition Failed
+        | "413"  ; Section 10.4.14: Request Entity Too Large
+        | "414"  ; Section 10.4.15: Request-URI Too Large
+        | "415"  ; Section 10.4.16: Unsupported Media Type
+        | "416"  ; Section 10.4.17: Requested range not satisfiable
+        | "417"  ; Section 10.4.18: Expectation Failed
+        | "500"  ; Section 10.5.1: Internal Server Error
+        | "501"  ; Section 10.5.2: Not Implemented
+        | "502"  ; Section 10.5.3: Bad Gateway
+        | "503"  ; Section 10.5.4: Service Unavailable
+        | "504"  ; Section 10.5.5: Gateway Time-out
+        | "505"  ; Section 10.5.6: HTTP Version not supported
+        | extension-code
+
+    extension-code = 3DIGIT
+    Reason-Phrase  = *<TEXT, excluding CR, LF>
+
+## 6.1-6 MUST
+HTTP status codes are extensible. HTTP applications are not required
+to understand the meaning of all registered status codes, though such
+understanding is obviously desirable. However, applications MUST
+understand the class of any status code, as indicated by the first
+digit, and treat any unrecognized response as being equivalent to the
+x00 status code of that class, with the exception that an
+unrecognized response must not be cached.
+
+## 6.1-7 MUST NOT
+HTTP status codes are extensible. HTTP applications are not required
+to understand the meaning of all registered status codes, though such
+understanding is obviously desirable. However, applications must
+understand the class of any status code, as indicated by the first
+digit, and treat any unrecognized response as being equivalent to the
+x00 status code of that class, with the exception that an
+unrecognized response MUST NOT be cached.
+
+## 6.1-8
+For example, if an
+unrecognized status code of 431 is received by the client, it can
+safely assume that there was something wrong with its request and
+treat the response as if it had received a 400 status code. In such
+cases, user agents SHOULD present to the user the entity returned
+with the response, since that entity is likely to include human-
+readable information which will explain the unusual status.
+
 # Chapter 6.2: Response Header Fields
+## 6.2-1
+The response-header fields allow the server to pass additional
+information about the response which cannot be placed in the Status-
+Line. These header fields give information about the server and about
+further access to the resource identified by the Request-URI.
+
+    response-header = Accept-Ranges           ; Section 14.5
+                    | Age                     ; Section 14.6
+                    | ETag                    ; Section 14.19
+                    | Location                ; Section 14.30
+                    | Proxy-Authenticate      ; Section 14.33
+                    | Retry-After             ; Section 14.37
+                    | Server                  ; Section 14.38
+                    | Vary                    ; Section 14.44
+                    | WWW-Authenticate        ; Section 14.47
+
+## 6.2-2
+Response-header field names can be extended reliably only in
+combination with a change in the protocol version. However, new or
+experimental header fields MAY be given the semantics of response-
+header fields if all parties in the communication recognize them to
+be response-header fields.
+
+## 6.2-3
+Unrecognized header fields are treated as entity-header fields.
 
 # Chapter 10.1: Informational 1xx
 
+## 10.1-1
+This class of status code indicates a provisional response,
+consisting only of the Status-Line and optional headers, and is
+terminated by an empty line.
+
+## 10.1-2
+There are no required headers for this class of status code.
+
+## 10.1-3
+Since HTTP/1.0 did not define any 1xx status
+codes, servers MUST NOT send a 1xx response to an HTTP/1.0 client
+except under experimental conditions.
+
+## 10.1-4
+A client MUST be prepared to accept one or more 1xx status responses
+prior to a regular response, even if the client does not expect a 100
+(Continue) status message.
+
+## 10.1-5
+Unexpected 1xx status responses MAY be ignored by a user agent.
+
+## 10.1-6
+Proxies MUST forward 1xx responses, unless the connection between the
+proxy and its client has been closed, or unless the proxy itself
+requested the generation of the 1xx response.
+
+## 10.1.1-1
+The client SHOULD continue with its request.
+
+## 10.1.1-2
+The client SHOULD continue by sending the remainder of the request or, if the
+request has already been completed, ignore this response.
+
+## 10.1.1-3
+The server MUST send a final response after the request has been completed.
+
+# 10.1.2-1
+The server will switch protocols to those defined by the response's
+Upgrade header field immediately after the empty line which
+terminates the 101 response.
+
+# 10.1.2-2
+The protocol SHOULD be switched only when it is advantageous to do so.
+
 # Chapter 14.10: Connection
 
+## 14.10-1
+The Connection general-header field allows the sender to specify
+options that are desired for that particular connection
+
+## 14.10-2
+The Connection general-header field allows the sender to specify
+options that are desired for that particular connection and MUST NOT
+be communicated by proxies over further connections.
+
+## 14.10-3
+The Connection header has the following grammar:
+
+    Connection = "Connection" ":" 1#(connection-token)
+    connection-token  = token
+
+## 14.10-4
+HTTP/1.1 proxies MUST parse the Connection header field before a
+message is forwarded and, for each connection-token in this field,
+remove any header field(s) from the message with the same name as the
+connection-token.
+
+## 14.10-5
+Connection options are signaled by the presence of
+a connection-token in the Connection header field, not by any
+corresponding additional header field(s), since the additional header
+field may not be sent if there are no parameters associated with that
+connection option.
+
+## 14.10-6
+Message headers listed in the Connection header MUST NOT include
+end-to-end headers, such as Cache-Control.
+
+## 14.10-7
+HTTP/1.1 defines the "close" connection option for the sender to
+signal that the connection will be closed after completion of the
+response. For example,
+
+    Connection: close
+
+in either the request or the response header fields indicates that
+the connection SHOULD NOT be considered `persistent' (section 8.1)
+after the current request/response is complete.
+
+## 14.10-8
+HTTP/1.1 applications that do not support persistent connections MUST
+include the "close" connection option in every message.
+
+## 14.10-9
+A system receiving an HTTP/1.0 (or lower-version) message that
+includes a Connection header MUST, for each connection-token in this
+field, remove and ignore any header field(s) from the message with
+the same name as the connection-token. This protects against mistaken
+forwarding of such header fields by pre-HTTP/1.1 proxies.
+
 # Chapter 14.18: Date
+
+## 14.18-1
+The Date general-header field represents the date and time at which
+the message was originated, having the same semantics as orig-date in
+RFC 822. The field value is an HTTP-date, as described in section
+3.3.1; it MUST be sent in RFC 1123 [8]-date format.
+
+    Date  = "Date" ":" HTTP-date
+
+An example is
+
+    Date: Tue, 15 Nov 1994 08:12:31 GMT
+
+## 14.18-1
+Origin servers MUST include a Date header field in all responses,
+except in these cases:
+
+## 14.18-1
+1. If the response status code is 100 (Continue) or 101 (Switching
+    Protocols), the response MAY include a Date header field, at
+    the server's option.
+
+## 14.18-1
+2. If the response status code conveys a server error, e.g. 500
+    (Internal Server Error) or 503 (Service Unavailable), and it is
+    inconvenient or impossible to generate a valid Date.
+
+## 14.18-1
+3. If the server does not have a clock that can provide a
+    reasonable approximation of the current time, its responses
+    MUST NOT include a Date header field. In this case, the rules
+    in section 14.18.1 MUST be followed.
+
+## 14.18-1
+A received message that does not have a Date header field MUST be
+assigned one by the recipient if the message will be cached by that
+recipient or gatewayed via a protocol which requires a Date.
+
+## 14.18-1
+An HTTP implementation without a clock MUST NOT cache responses without
+revalidating them on every use.
+
+## 14.18-1
+An HTTP cache, especially a shared
+cache, SHOULD use a mechanism, such as NTP [28], to synchronize its
+clock with a reliable external standard.
+
+## 14.18-1
+Clients SHOULD only send a Date header field in messages that include
+an entity-body, as in the case of the PUT and POST requests, and even
+then it is optional.
+
+## 14.18-1
+A client without a clock MUST NOT send a Date
+header field in a request.
+
+## 14.18-1
+The HTTP-date sent in a Date header SHOULD NOT represent a date and
+time subsequent to the generation of the message.
+
+## 14.18-1
+It SHOULD represent
+the best available approximation of the date and time of message
+generation, unless the implementation has no means of generating a
+reasonably accurate date and time.
+
+## 14.18-1
+Some origin server implementations might not have a clock available.
+An origin server without a clock MUST NOT assign Expires or Last-
+Modified values to a response, unless these values were associated
+with the resource by a system or user with a reliable clock.
+
+## 14.18-1
+It MAY
+assign an Expires value that is known, at or before server
+configuration time, to be in the past (this allows "pre-expiration"
+of responses without storing separate Expires values for each
+resource).
 
 # Chapter 14.23: Host
 
