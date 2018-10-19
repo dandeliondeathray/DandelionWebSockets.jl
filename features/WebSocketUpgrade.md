@@ -1179,6 +1179,90 @@ SHOULD include a Via field (as described in section 14.45).
 
 # Chapter 14.42: Upgrade
 
+## 14.42-1
+The server
+MUST use the Upgrade header field within a 101 (Switching Protocols)
+response to indicate which protocol(s) are being switched.
+
+## 14.42-2
+Grammar
+
+    Upgrade        = "Upgrade" ":" 1#product
+
+For example,
+
+    Upgrade: HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11
+
+## 14.42-3
+The Upgrade header field only applies to switching application-layer
+protocols upon the existing transport-layer connection. Upgrade
+cannot be used to insist on a protocol change; its acceptance and use
+by the server is optional.
+
+## 14.42-4
+The capabilities and nature of the
+application-layer communication after the protocol change is entirely
+dependent upon the new protocol chosen, although the first action
+after changing the protocol MUST be a response to the initial HTTP
+request containing the Upgrade header field.
+
+## 14.42-5
+The Upgrade header field only applies to the immediate connection.
+Therefore, the upgrade keyword MUST be supplied within a Connection
+header field (section 14.10) whenever Upgrade is present in an
+HTTP/1.1 message.
+
+## 14.42-6
+This specification only defines the protocol name "HTTP" for use by
+the family of Hypertext Transfer Protocols, as defined by the HTTP
+version rules of section 3.1 and future updates to this
+specification. Any token can be used as a protocol name; however, it
+will only be useful if both the client and server associate the name
+with the same protocol.
+
 # Chapter 14.43: User-Agent
 
+## 14.43-1
+User agents SHOULD include this field with
+requests.
+
+## 14.43-2
+The field can contain multiple product tokens (section 3.8)
+and comments identifying the agent and any subproducts which form a
+significant part of the user agent.
+
+## 14.43-3
+By convention, the product tokens
+are listed in order of their significance for identifying the
+application.
+
+## 14.43-4
+Grammar
+    User-Agent     = "User-Agent" ":" 1*( product | comment )
+
+Example:
+
+    User-Agent: CERN-LineMode/2.15 libwww/2.17b3
+
 # Chapter 15.3: DNS Spoofing
+
+## 15.3-1
+Clients using HTTP rely heavily on the Domain Name Service, and are
+thus generally prone to security attacks based on the deliberate
+mis-association of IP addresses and DNS names. Clients need to be
+cautious in assuming the continuing validity of an IP number/DNS name
+association.
+
+In particular, HTTP clients SHOULD rely on their name resolver for
+confirmation of an IP number/DNS name association, rather than
+caching the result of previous host name lookups.
+
+## 15.3-2
+Many platforms
+already can cache host name lookups locally when appropriate, and
+they SHOULD be configured to do so.
+
+## 15.3-3
+If HTTP clients cache the results of host name lookups in order to
+achieve a performance improvement, they MUST observe the TTL
+information reported by DNS.
