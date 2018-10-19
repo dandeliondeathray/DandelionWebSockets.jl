@@ -1122,7 +1122,60 @@ resource).
 
 # Chapter 14.23: Host
 
+## 14.23-1
+The Host field value MUST represent
+the naming authority of the origin server or gateway given by the
+original URL. This allows the origin server or gateway to
+differentiate between internally-ambiguous URLs, such as the root "/"
+URL of a server for multiple host names on a single IP address.
+
+## 14.23-2
+    Host = "Host" ":" host [ ":" port ] ; Section 3.2.2
+
+A "host" without any trailing port information implies the default
+port for the service requested (e.g., "80" for an HTTP URL).
+
+## 14.23-3
+A client MUST include a Host header field in all HTTP/1.1 request messages.
+
+## 14.23-4
+If the requested URI does not include an Internet host
+name for the service being requested, then the Host header field MUST
+be given with an empty value.
+
+## 14.23-5
+An HTTP/1.1 proxy MUST ensure that any
+request message it forwards does contain an appropriate Host header
+field that identifies the service being requested by the proxy.
+
+## 14.23-6
+All Internet-based HTTP/1.1 servers MUST respond with a 400 (Bad Request)
+status code to any HTTP/1.1 request message which lacks a Host header
+field.
+
 # Chapter 14.38: Server
+
+## 14.38-1
+The field
+can contain multiple product tokens (section 3.8) and comments
+identifying the server and any significant subproducts. The product
+tokens are listed in order of their significance for identifying the
+application.
+
+## 14.38-2
+    Server         = "Server" ":" 1*( product | comment )
+
+Example:
+
+    Server: CERN/3.0 libwww/2.17
+
+## 14.38-3
+If the response is being forwarded through a proxy, the proxy
+application MUST NOT modify the Server response-header.
+
+## 14.38-4
+Instead, it
+SHOULD include a Via field (as described in section 14.45).
 
 # Chapter 14.42: Upgrade
 
