@@ -5,6 +5,126 @@ using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse
 todata(xs...) = codeunits(join(xs))
 
 @testset "WebSocketUpgrade       " begin
+    @testset "Requirement 3.1-1" begin
+        # ## 3.1-1 MUST
+        # The version of an HTTP message is indicated by an HTTP-Version field
+        # in the first line of the message.
+        # HTTP-Version   = "HTTP" "/" 1*DIGIT "." 1*DIGIT
+
+        @testset "HTTP Version; The HTTP-Version field is not the first line; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "HTTP/1.1    101 Switch Protocols\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "HTTP Version; Version is HTTP/1.1; Major is 1 and minor is 1" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 1
+            @test response.httpversion.minor == 1
+        end
+
+        @testset "HTTP Version; Version is HTTP/1.1; Major is 12 and minor is 34" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/12.34 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 12
+            @test response.httpversion.minor == 34
+        end
+
+        @testset "HTTP Version; The major version is not digits; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1abc2.34 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "HTTP Version; The minor version is not digits; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/12.3abc4 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "HTTP Version; The line does not start with HTTP; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "NOTHTTP/1.1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "HTTP Version; The period is whitespace; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "NOTHTTP/1 1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+    end
+
     @testset "Header boundary" begin
         @testset "ResponseParser; A complete HTTP response without excess; The parser has a complete HTTP response" begin
             # Arrange
@@ -245,20 +365,7 @@ todata(xs...) = codeunits(join(xs))
             @test_throws BadHTTPResponse parseresponse(parser)
         end
 
-        @testset "Malformed Status Line; Status Line is not on the first row; BadHTTPResponse is thrown" begin
-            # Arrange
-            responsetext = todata(
-                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-                "HTTP/1.1    101 Switch Protocols\r\n",
-                "\r\n",
-            )
 
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            @test_throws BadHTTPResponse parseresponse(parser)
-        end
 
         @testset "Malformed Status Line; Status code is not an integer; BadHTTPResponse is thrown" begin
             # Arrange

@@ -21,10 +21,15 @@ end
 
 const HeaderList = Vector{Pair{String, String}}
 
+struct HTTPVersion
+    major::Int
+    minor::Int
+end
 struct HTTPResponse
     status::Int
     reasonphrase::String
     headers::HeaderList
+    httpversion::HTTPVersion
 end
 
 function findheader(response::HTTPResponse, name::String)
@@ -51,11 +56,13 @@ function parseresponse(parser::ResponseParser)
         push!(headers, "ETag" => "xyzzy")
     end
 
-    statuslinematch = match(r"^HTTP/1.1 +([0-9]+) +([^\r\n]*)", statusline)
+    statuslinematch = match(r"^HTTP/([0-9]+).([0-9]+) +([0-9]+) +([^\r\n]*)", statusline)
     if statuslinematch != nothing
-        status = parse(Int, statuslinematch.captures[1])
-        reasonphrase = statuslinematch.captures[2]
-        return HTTPResponse(status, reasonphrase, headers)
+        status = parse(Int, statuslinematch.captures[3])
+        reasonphrase = statuslinematch.captures[4]
+        major = parse(Int, statuslinematch.captures[1])
+        minor = parse(Int, statuslinematch.captures[2])
+        return HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor))
     end
 
     throw(BadHTTPResponse())
