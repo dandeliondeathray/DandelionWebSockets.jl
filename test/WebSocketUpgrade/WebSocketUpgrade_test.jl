@@ -125,6 +125,27 @@ todata(xs...) = codeunits(join(xs))
         end
     end
 
+    @testset "Requirement 3.1-2" begin
+        @testset "HTTP Version; Version numbers are separate; Major is 1 and minor is 1" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 1
+            @test response.httpversion.minor == 1
+        end
+    end
+
     @testset "Header boundary" begin
         @testset "ResponseParser; A complete HTTP response without excess; The parser has a complete HTTP response" begin
             # Arrange
