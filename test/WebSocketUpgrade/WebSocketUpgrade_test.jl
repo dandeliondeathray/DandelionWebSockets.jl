@@ -317,6 +317,76 @@ todata(xs...) = codeunits(join(xs))
         end
     end
 
+    @testset "Requirement 6-1" begin
+        # Requirement 6-1
+        # After receiving and interpreting a request message, a server responds
+        # with an HTTP response message.
+        #
+        #     Response      = Status-Line               ; Section 6.1
+        #                     *(( general-header        ; Section 4.5
+        #                     | response-header        ; Section 6.2
+        #                     | entity-header ) CRLF)  ; Section 7.1
+        #                     CRLF
+        #                     [ message-body ]          ; Section 7.2
+        # This section tests the validity of the Response grammar, including reading all headers.
+        # Finding the boundary is tested by requirement 4.1-2.
+
+        @testset "Headers; First header is Date; Response has the header Date with the right date" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "Date") == "Sun, 06 Nov 1998 08:49:37 GMT"
+        end
+
+        @testset "Headers; ETag header has value xyzzy; Response has the header ETag with value xyzzy" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "ETag: xyzzy\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "ETag") == "xyzzy"
+        end
+
+        @testset "Headers; No ETag header; findheader returns nothing" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "ETag") == nothing
+        end
+    end
+
     @testset "Requirement 6.1-1" begin
         # Requirement 6.1-1
         # The first line of a Response message is the Status-Line, consisting
@@ -395,7 +465,7 @@ todata(xs...) = codeunits(join(xs))
             @test_throws BadHTTPResponse parseresponse(parser)
         end
 
-        # I believe is is syntactically correct to have zero headers in the response.
+        # I believe it is syntactically correct to have zero headers in the response.
         @testset "Validation; Status is 200 and no headers; Response is ok and status is 200" begin
             # Arrange
             responsetext = todata(
@@ -412,8 +482,6 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test response.status == 200
         end
-
-        # TODO: Tests for more headers
     end
 
     @testset "Requirement 6.1-2" begin
@@ -549,59 +617,5 @@ todata(xs...) = codeunits(join(xs))
     end
 
     @testset "Requirement 6.2-1" begin
-        @testset "Headers; First header is Date; Response has the header Date with the right date" begin
-            # Arrange
-            responsetext = todata(
-                "HTTP/1.1 200 OK\r\n",
-                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-                "\r\n",
-            )
-
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            response = parseresponse(parser)
-
-            # Assert
-            @test findheader(response, "Date") == "Sun, 06 Nov 1998 08:49:37 GMT"
-        end
-
-        @testset "Headers; ETag header has value xyzzy; Response has the header ETag with value xyzzy" begin
-            # Arrange
-            responsetext = todata(
-                "HTTP/1.1 200 OK\r\n",
-                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-                "ETag: xyzzy\r\n",
-                "\r\n",
-            )
-
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            response = parseresponse(parser)
-
-            # Assert
-            @test findheader(response, "ETag") == "xyzzy"
-        end
-
-        @testset "Headers; No ETag header; findheader returns nothing" begin
-            # Arrange
-            responsetext = todata(
-                "HTTP/1.1 200 OK\r\n",
-                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-                "\r\n",
-            )
-
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            response = parseresponse(parser)
-
-            # Assert
-            @test findheader(response, "ETag") == nothing
-        end
     end
 end
