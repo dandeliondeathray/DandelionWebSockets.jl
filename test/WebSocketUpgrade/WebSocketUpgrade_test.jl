@@ -223,7 +223,7 @@ todata(xs...) = codeunits(join(xs))
         end
     end
 
-    @testset "Header boundary" begin
+    @testset "Requirement 4.1-2" begin
         @testset "ResponseParser; A complete HTTP response without excess; The parser has a complete HTTP response" begin
             # Arrange
             response = todata(
@@ -317,7 +317,39 @@ todata(xs...) = codeunits(join(xs))
         end
     end
 
-    @testset "Status Line" begin
+    @testset "Requirement 6.1-1" begin
+        @testset "Malformed Status Line; Malformed Status Line; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "Malformed HTTP header",
+                "Date: Sun, 06 Nov 1994 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "Malformed Status Line; Status code is not an integer; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 ABC OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+    end
+
+    @testset "Requirement 6.1-2" begin
         @testset "ResponseParser; Response with status code 101; Parse result has status 101" begin
             # Arrange
             responsetext = todata(
@@ -354,7 +386,6 @@ todata(xs...) = codeunits(join(xs))
             @test response.status == 200
         end
 
-
         @testset "ResponseParser; Status code is 101 and year is 200x; Parse result has status 101" begin
             # Arrange
             responsetext = todata(
@@ -390,7 +421,9 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test response.status == 101
         end
+    end
 
+    @testset "Requirement 6.1-3" begin
         @testset "Status Line; Reason Phrase is 'Switch Protocols' in header; Response has Reason Phrase 'Switch Protocols'" begin
             # Arrange
             responsetext = todata(
@@ -408,7 +441,6 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test response.reasonphrase == "Switch Protocols"
         end
-
 
         @testset "Status Line; Reason Phrase is 'OK' in header; Response has Reason Phrase 'OK'" begin
             # Arrange
@@ -447,41 +479,7 @@ todata(xs...) = codeunits(join(xs))
         end
     end
 
-    @testset "Malformed Status line" begin
-        @testset "Malformed Status Line; Malformed Status Line; BadHTTPResponse is thrown" begin
-            # Arrange
-            responsetext = todata(
-                "Malformed HTTP header",
-                "Date: Sun, 06 Nov 1994 08:49:37 GMT\r\n",
-                "\r\n",
-            )
-
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            @test_throws BadHTTPResponse parseresponse(parser)
-        end
-
-
-
-        @testset "Malformed Status Line; Status code is not an integer; BadHTTPResponse is thrown" begin
-            # Arrange
-            responsetext = todata(
-                "HTTP/1.1 ABC OK\r\n",
-                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-                "\r\n",
-            )
-
-            parser = ResponseParser()
-            dataread(parser, responsetext)
-
-            # Act
-            @test_throws BadHTTPResponse parseresponse(parser)
-        end
-    end
-
-    @testset "Headers" begin
+    @testset "Requirement 6.2-1" begin
         @testset "Headers; First header is Date; Response has the header Date with the right date" begin
             # Arrange
             responsetext = todata(
