@@ -56,7 +56,7 @@ function parseresponse(parser::ResponseParser)
         push!(headers, "ETag" => "xyzzy")
     end
 
-    statuslinematch = match(r"^HTTP/([0-9]+).([0-9]+) +([0-9]+) +([^\r\n]*)", statusline)
+    statuslinematch = match(r"^HTTP/([0-9]+)\.([0-9]+) +([0-9]+) +([^\r\n]*)", statusline)
     if statuslinematch != nothing
         status = parse(Int, statuslinematch.captures[3])
         reasonphrase = statuslinematch.captures[4]

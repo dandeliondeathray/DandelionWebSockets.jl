@@ -112,7 +112,7 @@ todata(xs...) = codeunits(join(xs))
         @testset "HTTP Version; The period is whitespace; BadHTTPResponse is thrown" begin
             # Arrange
             responsetext = todata(
-                "NOTHTTP/1 1 101 Switch Protocols\r\n",
+                "HTTP/1 1 101 Switch Protocols\r\n",
                 "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
                 "\r\n",
             )
