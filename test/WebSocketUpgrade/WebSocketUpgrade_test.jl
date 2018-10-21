@@ -618,4 +618,16 @@ todata(xs...) = codeunits(join(xs))
 
     @testset "Requirement 6.2-1" begin
     end
+
+    @testset "Requirement 14.10-3" begin
+        # TODO Mark some requirements 14.10-* as inapplicable.
+    end
+
+    @testset "Requirement 14.42-5" begin
+        # TODO Test that an Upgrade field without a Connection field containing "upgrade" fails
+        # TODO Even when the Connection field has more than one token?
+        # TODO Test that an Upgrade field with a Connection field works
+        # TODO Test that an Upgrade field can have more than one token
+        # TODO Test that the order between tokens is maintained
+    end
 end
