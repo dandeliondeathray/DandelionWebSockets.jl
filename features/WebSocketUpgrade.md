@@ -976,12 +976,12 @@ request has already been completed, ignore this response.
 ## 10.1.1-3
 The server MUST send a final response after the request has been completed.
 
-# 10.1.2-1
+## 10.1.2-1
 The server will switch protocols to those defined by the response's
 Upgrade header field immediately after the empty line which
 terminates the 101 response.
 
-# 10.1.2-2
+## 10.1.2-2
 The protocol SHOULD be switched only when it is advantageous to do so.
 
 # Chapter 14.10: Connection
@@ -1054,66 +1054,66 @@ An example is
 
     Date: Tue, 15 Nov 1994 08:12:31 GMT
 
-## 14.18-1
+## 14.18-2
 Origin servers MUST include a Date header field in all responses,
 except in these cases:
 
-## 14.18-1
+## 14.18-3
 1. If the response status code is 100 (Continue) or 101 (Switching
     Protocols), the response MAY include a Date header field, at
     the server's option.
 
-## 14.18-1
+## 14.18-4
 2. If the response status code conveys a server error, e.g. 500
     (Internal Server Error) or 503 (Service Unavailable), and it is
     inconvenient or impossible to generate a valid Date.
 
-## 14.18-1
+## 14.18-5
 3. If the server does not have a clock that can provide a
     reasonable approximation of the current time, its responses
     MUST NOT include a Date header field. In this case, the rules
     in section 14.18.1 MUST be followed.
 
-## 14.18-1
+## 14.18-6
 A received message that does not have a Date header field MUST be
 assigned one by the recipient if the message will be cached by that
 recipient or gatewayed via a protocol which requires a Date.
 
-## 14.18-1
+## 14.18-7
 An HTTP implementation without a clock MUST NOT cache responses without
 revalidating them on every use.
 
-## 14.18-1
+## 14.18-8
 An HTTP cache, especially a shared
 cache, SHOULD use a mechanism, such as NTP [28], to synchronize its
 clock with a reliable external standard.
 
-## 14.18-1
+## 14.18-9
 Clients SHOULD only send a Date header field in messages that include
 an entity-body, as in the case of the PUT and POST requests, and even
 then it is optional.
 
-## 14.18-1
+## 14.18-10
 A client without a clock MUST NOT send a Date
 header field in a request.
 
-## 14.18-1
+## 14.18-11
 The HTTP-date sent in a Date header SHOULD NOT represent a date and
 time subsequent to the generation of the message.
 
-## 14.18-1
+## 14.18-12
 It SHOULD represent
 the best available approximation of the date and time of message
 generation, unless the implementation has no means of generating a
 reasonably accurate date and time.
 
-## 14.18-1
+## 14.18-13
 Some origin server implementations might not have a clock available.
 An origin server without a clock MUST NOT assign Expires or Last-
 Modified values to a response, unless these values were associated
 with the resource by a system or user with a reliable clock.
 
-## 14.18-1
+## 14.18-14
 It MAY
 assign an Expires value that is known, at or before server
 configuration time, to be in the past (this allows "pre-expiration"
