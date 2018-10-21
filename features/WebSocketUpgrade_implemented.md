@@ -76,7 +76,7 @@ These tables keep track of which requirements are implemented.
 | Requirement | Implemented  | Keyword  | Comment
 | ----------- | ------------ | -------- | -------
 | 4.1-1       |              |          |
-| 4.1-2       | In progress  |          |
+| 4.1-2       | In progress  |          | Depends on chapter 5.1 and 6.1.
 | 4.1-3       |              | SHOULD   |
 | 4.1-4       |              | MUST NOT |
 

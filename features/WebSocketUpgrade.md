@@ -783,12 +783,15 @@ entity-header fields.
 
 # Chapter 6: Response
 ## 6-1
-The first line of a Response message is the Status-Line, consisting
-of the protocol version followed by a numeric status code and its
-associated textual phrase, with each element separated by SP
-characters. No CR or LF is allowed except in the final CRLF sequence.
+After receiving and interpreting a request message, a server responds
+with an HTTP response message.
 
-    Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+    Response      = Status-Line               ; Section 6.1
+                    *(( general-header        ; Section 4.5
+                    | response-header        ; Section 6.2
+                    | entity-header ) CRLF)  ; Section 7.1
+                    CRLF
+                    [ message-body ]          ; Section 7.2
 
 # Chapter 6.1: Status-Line
 

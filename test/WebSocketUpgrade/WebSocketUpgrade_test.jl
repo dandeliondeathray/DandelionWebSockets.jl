@@ -318,7 +318,24 @@ todata(xs...) = codeunits(join(xs))
     end
 
     @testset "Requirement 6.1-1" begin
-        @testset "Malformed Status Line; Malformed Status Line; BadHTTPResponse is thrown" begin
+        # Requirement 6.1-1
+        # The first line of a Response message is the Status-Line, consisting
+        # of the protocol version followed by a numeric status code and its
+        # associated textual phrase, with each element separated by SP
+        # characters. No CR or LF is allowed except in the final CRLF sequence.
+        #
+        #     Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+        #
+        # This section tests the validation of the Status-Line as a whole.
+        # Requirement 6.1-2 tests the Status-Code.
+        # Requirement 6.1-3 tests the Reason-Phrase.
+        # Requirement 3.1-1 tests the HTTP Version field.
+        # Requirement 4.1-2 tests the boundary between the message header and the body.
+        #
+        # NOTE: Requirement 3.1-1 deals only with the HTTP-Version field, both for requests and
+        #       responses. The tests however deal only with responses. This should perhaps be
+        #       restructured later on.
+        @testset "Validation; Malformed Status Line; BadHTTPResponse is thrown" begin
             # Arrange
             responsetext = todata(
                 "Malformed HTTP header",
@@ -333,7 +350,7 @@ todata(xs...) = codeunits(join(xs))
             @test_throws BadHTTPResponse parseresponse(parser)
         end
 
-        @testset "Malformed Status Line; Status code is not an integer; BadHTTPResponse is thrown" begin
+        @testset "Validation; Status code is not an integer; BadHTTPResponse is thrown" begin
             # Arrange
             responsetext = todata(
                 "HTTP/1.1 ABC OK\r\n",
@@ -347,6 +364,56 @@ todata(xs...) = codeunits(join(xs))
             # Act
             @test_throws BadHTTPResponse parseresponse(parser)
         end
+
+        @testset "Validation; Reason Phrase is missing; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        @testset "Validation; HTTP Version is missing; BadHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws BadHTTPResponse parseresponse(parser)
+        end
+
+        # I believe is is syntactically correct to have zero headers in the response.
+        @testset "Validation; Status is 200 and no headers; Response is ok and status is 200" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.status == 200
+        end
+
+        # TODO: Tests for more headers
     end
 
     @testset "Requirement 6.1-2" begin
@@ -421,6 +488,8 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test response.status == 101
         end
+
+        # TODO: Test that the status is exactly three digits
     end
 
     @testset "Requirement 6.1-3" begin
