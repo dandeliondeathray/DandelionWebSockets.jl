@@ -5,8 +5,8 @@ These tables keep track of which requirements are implemented.
 | ----------- | ------------ | -------- | -------
 | 3.1-1       | Yes          | MUST     |
 | 3.1-2       | Yes          | MUST     |
-| 3.1-3       |              | MAY      |
-| 3.1-4       |              | MUST     |
+| 3.1-3       | Yes          | MAY      |
+| 3.1-4       | Yes          | MUST     |
 | 3.1-5       |              | MUST NOT |
 | 3.1-6       | Inapplicable | MUST     |
 | 3.1-7       |              | SHOULD   |

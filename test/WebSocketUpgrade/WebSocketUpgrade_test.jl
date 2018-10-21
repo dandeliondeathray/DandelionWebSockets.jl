@@ -45,7 +45,7 @@ todata(xs...) = codeunits(join(xs))
             @test response.httpversion.minor == 1
         end
 
-        @testset "HTTP Version; Version is HTTP/1.1; Major is 12 and minor is 34" begin
+        @testset "HTTP Version; Version is HTTP/12.34; Major is 12 and minor is 34" begin
             # Arrange
             responsetext = todata(
                 "HTTP/12.34 101 Switch Protocols\r\n",
@@ -143,6 +143,83 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test response.httpversion.major == 1
             @test response.httpversion.minor == 1
+        end
+    end
+
+    @testset "Requirement 3.1-3" begin
+        @testset "HTTP Version; Version is HTTP/12.34; Major is 12 and minor is 34" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/12.34 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 12
+            @test response.httpversion.minor == 34
+        end
+    end
+
+    @testset "Requirement 3.1-4" begin
+        @testset "HTTP Version; Version is HTTP/012.1; Major is 12" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/012.1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 12
+        end
+
+        @testset "HTTP Version; Version is HTTP/000012.1; Major is 12" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/000012.1 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.major == 12
+        end
+
+        @testset "HTTP Version; Version is HTTP/1.0000012; Minor is 12" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.0000012 101 Switch Protocols\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test response.httpversion.minor == 12
         end
     end
 
