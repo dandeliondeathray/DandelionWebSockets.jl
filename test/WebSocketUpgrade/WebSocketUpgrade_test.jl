@@ -1,6 +1,6 @@
 using Test
 using DandelionWebSockets.WebSocketUpgrade
-using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse
+using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse, InvalidHTTPResponse
 
 todata(xs...) = codeunits(join(xs))
 
@@ -644,26 +644,79 @@ todata(xs...) = codeunits(join(xs))
     end
 
     @testset "Requirement 14.42-5" begin
-        # TODO Even when the Connection field has more than one token?
-        # TODO Test that an Upgrade field with a Connection field works
         # TODO Test that an Upgrade field can have more than one token
         # TODO Test that the order between tokens is maintained
 
-        # TODO Test that an Upgrade field without a Connection field containing "upgrade" fails
-        # @testset "Upgrade field; No Connection field; InvalidHTTPResponse is thrown" begin
-        #     # Arrange
-        #     responsetext = todata(
-        #         "HTTP/1.1 200        OK\r\n",
-        #         "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
-        #         "Upgrade: websocket"
-        #         "\r\n",
-        #     )
+        @testset "Upgrade field; No Connection field; InvalidHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200        OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "Upgrade: websocket\r\n",
+                "\r\n",
+            )
 
-        #     parser = ResponseParser()
-        #     dataread(parser, responsetext)
+            parser = ResponseParser()
+            dataread(parser, responsetext)
 
-        #     # Act
-        #     @test_throws InvalidHTTPResponse parseresponse(parser)
-        # end
+            # Act
+            @test_throws InvalidHTTPResponse parseresponse(parser)
+        end
+
+        @testset "Upgrade field; Connection field with value upgrade; InvalidHTTPResponse is not thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200        OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "Upgrade: websocket\r\n",
+                "Connection: upgrade\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            # Tests that is does not throw an InvalidHTTPResponse
+            parseresponse(parser)
+        end
+
+        @testset "Upgrade field; Connection field does not have token 'upgrade'; InvalidHTTPResponse is thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200        OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "Upgrade: websocket\r\n",
+                "Connection: keep-alive\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            @test_throws InvalidHTTPResponse parseresponse(parser)
+        end
+
+        @testset "Upgrade field; Connection field with tokens upgrade and keep-alive; InvalidHTTPResponse is not thrown" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200        OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "Upgrade: websocket\r\n",
+                "Connection: keep-alive, upgrade\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            # Tests that is does not throw an InvalidHTTPResponse
+            parseresponse(parser)
+        end
+
+        # TODO Even when the Connection field has more than one token?
+        # TODO Fail when the Connection field is missing the upgrade token
     end
 end

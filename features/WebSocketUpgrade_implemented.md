@@ -234,12 +234,12 @@ These tables keep track of which requirements are implemented.
 
 | Requirement | Implemented  | Keyword  | Comment
 | ----------- | ------------ | -------- | -------
-| 14.42-1     |              |          |
+| 14.42-1     | Inapplicable |          | Server side requirement.
 | 14.42-2     |              |          |
-| 14.42-3     |              |          |
-| 14.42-4     |              |          |
-| 14.42-5     |              |          |
-| 14.42-6     |              |          |
+| 14.42-3     | Inapplicable |          | The WebSocket protocol will fail if the upgrade is not accepted by the server.
+| 14.42-4     | Inapplicable |          | Server side requirement.
+| 14.42-5     | In progress  |          |
+| 14.42-6     | Inapplicable |          | The "websocket" protocol name is defined in the WebSocket protocol.
 
 | Requirement | Implemented  | Keyword  | Comment
 | ----------- | ------------ | -------- | -------

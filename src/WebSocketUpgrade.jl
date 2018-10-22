@@ -41,6 +41,26 @@ function findheaderfield(response::HTTPResponse, name::String) :: Union{String, 
 end
 
 struct BadHTTPResponse <: Exception end
+struct InvalidHTTPResponse <: Exception end
+
+hastoken(response::HTTPResponse, fieldname::String, token::String) = occursin(token, findheaderfield(response, fieldname))
+
+function validateresponse(response::HTTPResponse) :: HTTPResponse
+    hasupgrade = findheaderfield(response, "Upgrade") != nothing
+    hasconnection = findheaderfield(response, "Connection") != nothing
+    if hasupgrade && !hasconnection
+        throw(InvalidHTTPResponse())
+    end
+
+    if hasupgrade && hasconnection
+        hasconnectionupgrade = hastoken(response, "Connection", "upgrade")
+        if !hasconnectionupgrade
+            throw(InvalidHTTPResponse())
+        end
+    end
+
+    response
+end
 
 dataread(parser::ResponseParser, data::AbstractVector{UInt8}) = append!(parser.data, data)
 hascompleteresponse(parser::ResponseParser) = findfirstsubstring(b"\r\n\r\n", parser.data) != nothing
@@ -65,7 +85,7 @@ function parseresponse(parser::ResponseParser)
             push!(headers, m.captures[1] => m.captures[2])
         end
 
-        return HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor))
+        return validateresponse(HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor)))
     end
 
     throw(BadHTTPResponse())
