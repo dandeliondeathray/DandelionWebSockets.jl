@@ -32,11 +32,11 @@ struct HTTPResponse
     httpversion::HTTPVersion
 end
 
-function findheader(response::HTTPResponse, name::String)
-    if name == "Date"
-        "Sun, 06 Nov 1998 08:49:37 GMT"
-    elseif length(response.headers) == 2
-        "xyzzy"
+function findheader(response::HTTPResponse, name::String) :: Union{String, Nothing}
+    for h in response.headers
+        if h[1] == name
+            return h[2]
+        end
     end
 end
 
@@ -46,15 +46,10 @@ dataread(parser::ResponseParser, data::AbstractVector{UInt8}) = append!(parser.d
 hascompleteresponse(parser::ResponseParser) = findfirstsubstring(b"\r\n\r\n", parser.data) != nothing
 function parseresponse(parser::ResponseParser)
     endofheader = findfirstsubstring(b"\r\n\r\n", parser.data)
-    headerbytes = parser.data[1:endofheader]
+    headerbytes = parser.data[1:endofheader-1]
     header = String(headerbytes)
-    headerlines = split(header, "\r\n\r\n")
+    headerlines = split(header, "\r\n")
     statusline = headerlines[1]
-
-    headers = ["Date" => "Sun, 06 Nov 1998 08:49:37 GMT"]
-    if occursin("ETag", header)
-        push!(headers, "ETag" => "xyzzy")
-    end
 
     statuslinematch = match(r"^HTTP/([0-9]+)\.([0-9]+) +([0-9]+) +([^\r\n]*)", statusline)
     if statuslinematch != nothing
@@ -62,6 +57,14 @@ function parseresponse(parser::ResponseParser)
         reasonphrase = statuslinematch.captures[4]
         major = parse(Int, statuslinematch.captures[1])
         minor = parse(Int, statuslinematch.captures[2])
+
+        headers = []
+        headerregex = r"([^:]+): (.*)"
+        for line in headerlines[2:end]
+            m = match(headerregex, line)
+            push!(headers, m.captures[1] => m.captures[2])
+        end
+
         return HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor))
     end
 

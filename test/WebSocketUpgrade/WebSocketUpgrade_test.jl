@@ -385,6 +385,26 @@ todata(xs...) = codeunits(join(xs))
             # Assert
             @test findheader(response, "ETag") == nothing
         end
+
+        @testset "Headers; X-MyHeader with value Foo; Response has the header X-MyHeader with value Foo" begin
+            # Arrange
+            responsetext = todata(
+                "HTTP/1.1 200 OK\r\n",
+                "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+                "ETag: xyzzy\r\n",
+                "X-MyHeader: Foo\r\n",
+                "\r\n",
+            )
+
+            parser = ResponseParser()
+            dataread(parser, responsetext)
+
+            # Act
+            response = parseresponse(parser)
+
+            # Assert
+            @test findheader(response, "X-MyHeader") == "Foo"
+        end
     end
 
     @testset "Requirement 6.1-1" begin
@@ -624,10 +644,26 @@ todata(xs...) = codeunits(join(xs))
     end
 
     @testset "Requirement 14.42-5" begin
-        # TODO Test that an Upgrade field without a Connection field containing "upgrade" fails
         # TODO Even when the Connection field has more than one token?
         # TODO Test that an Upgrade field with a Connection field works
         # TODO Test that an Upgrade field can have more than one token
         # TODO Test that the order between tokens is maintained
+
+        # TODO Test that an Upgrade field without a Connection field containing "upgrade" fails
+        # @testset "Upgrade field; No Connection field; InvalidHTTPResponse is thrown" begin
+        #     # Arrange
+        #     responsetext = todata(
+        #         "HTTP/1.1 200        OK\r\n",
+        #         "Date: Sun, 06 Nov 1998 08:49:37 GMT\r\n",
+        #         "Upgrade: websocket"
+        #         "\r\n",
+        #     )
+
+        #     parser = ResponseParser()
+        #     dataread(parser, responsetext)
+
+        #     # Act
+        #     @test_throws InvalidHTTPResponse parseresponse(parser)
+        # end
     end
 end
