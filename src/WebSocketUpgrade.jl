@@ -1,6 +1,6 @@
 module WebSocketUpgrade
 
-export ResponseParser, dataread, hascompleteresponse, parseresponse, findheader
+export ResponseParser, dataread, hascompleteresponse, parseresponse, findheaderfield
 
 function findfirstsubstring(needle::AbstractVector{UInt8}, haystack::AbstractVector{UInt8}) :: Union{Int, Nothing}
     lastpossibleindex = length(haystack) - length(needle) + 1
@@ -32,7 +32,7 @@ struct HTTPResponse
     httpversion::HTTPVersion
 end
 
-function findheader(response::HTTPResponse, name::String) :: Union{String, Nothing}
+function findheaderfield(response::HTTPResponse, name::String) :: Union{String, Nothing}
     for h in response.headers
         if h[1] == name
             return h[2]

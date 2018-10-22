@@ -331,7 +331,7 @@ todata(xs...) = codeunits(join(xs))
         # This section tests the validity of the Response grammar, including reading all headers.
         # Finding the boundary is tested by requirement 4.1-2.
 
-        @testset "Headers; First header is Date; Response has the header Date with the right date" begin
+        @testset "Header fields; First field is Date; Response has the field Date with the right date" begin
             # Arrange
             responsetext = todata(
                 "HTTP/1.1 200 OK\r\n",
@@ -346,10 +346,10 @@ todata(xs...) = codeunits(join(xs))
             response = parseresponse(parser)
 
             # Assert
-            @test findheader(response, "Date") == "Sun, 06 Nov 1998 08:49:37 GMT"
+            @test findheaderfield(response, "Date") == "Sun, 06 Nov 1998 08:49:37 GMT"
         end
 
-        @testset "Headers; ETag header has value xyzzy; Response has the header ETag with value xyzzy" begin
+        @testset "Header fields; ETag field has value xyzzy; Response has the field ETag with value xyzzy" begin
             # Arrange
             responsetext = todata(
                 "HTTP/1.1 200 OK\r\n",
@@ -365,10 +365,10 @@ todata(xs...) = codeunits(join(xs))
             response = parseresponse(parser)
 
             # Assert
-            @test findheader(response, "ETag") == "xyzzy"
+            @test findheaderfield(response, "ETag") == "xyzzy"
         end
 
-        @testset "Headers; No ETag header; findheader returns nothing" begin
+        @testset "Header fields; No ETag field; findheaderfield returns nothing" begin
             # Arrange
             responsetext = todata(
                 "HTTP/1.1 200 OK\r\n",
@@ -383,10 +383,10 @@ todata(xs...) = codeunits(join(xs))
             response = parseresponse(parser)
 
             # Assert
-            @test findheader(response, "ETag") == nothing
+            @test findheaderfield(response, "ETag") == nothing
         end
 
-        @testset "Headers; X-MyHeader with value Foo; Response has the header X-MyHeader with value Foo" begin
+        @testset "Header fields; X-MyHeader with value Foo; Response has the field X-MyHeader with value Foo" begin
             # Arrange
             responsetext = todata(
                 "HTTP/1.1 200 OK\r\n",
@@ -403,7 +403,7 @@ todata(xs...) = codeunits(join(xs))
             response = parseresponse(parser)
 
             # Assert
-            @test findheader(response, "X-MyHeader") == "Foo"
+            @test findheaderfield(response, "X-MyHeader") == "Foo"
         end
     end
 
