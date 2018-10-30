@@ -40,4 +40,23 @@ using DandelionWebSockets.UniformResourceIdentifiers
         # Assert
         @test uri.port == 443
     end
+
+    @testset "Good enough URI; Scheme is ws; Parse is correct" begin
+        # Act
+        uri = URI("ws://hostname:42/abs/path")
+
+        # Assert
+        @test uri.scheme == "ws"
+        @test uri.host == "hostname"
+        @test uri.port == 42
+        @test uri.abs_path == "/abs/path"
+    end
+
+    @testset "Good enough URI; No abs_path; abs_path is /" begin
+        # Act
+        uri = URI("ws://hostname:42")
+
+        # Assert
+        @test uri.abs_path == "/"
+    end
 end
