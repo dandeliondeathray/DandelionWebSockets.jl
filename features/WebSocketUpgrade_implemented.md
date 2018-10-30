@@ -21,13 +21,13 @@ These tables keep track of which requirements are implemented.
 
 | Requirement | Implemented  | Keyword  | Comment
 | ----------- | ------------ | -------- | -------
-| 3.2-1       |              |          |
+| 3.2-1       | In progress  |          | RFC 2396 should be a source for further requirements.
 | 3.2-2       |              |          |
-| 3.2-3       |              | MUST     |
-| 3.2-4       |              | SHOULD   |
-| 3.2-5       |              |          |
+| 3.2-3       | Inapplicable | MUST     |
+| 3.2-4       | Inapplicable | SHOULD   |
+| 3.2-5       | Inapplicable |          |
 | 3.2-6       |              |          |
-| 3.2-7       |              |          |
+| 3.2-7       | Implemented  |          |
 | 3.2-8       |              |          |
 | 3.2-9       | Inapplicable | SHOULD   |
 | 3.2-10      |              |          |

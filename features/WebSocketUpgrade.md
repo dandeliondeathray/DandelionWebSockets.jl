@@ -83,15 +83,15 @@ Generic Syntax and Semantics," RFC 2396 [42] (which replaces RFCs
 The HTTP protocol does not place any a priori limit on the length of
 a URI.
 
-## 3.2-3 MUST
+## 3.2-3 MUST @inapplicable
 Servers MUST be able to handle the URI of any resource they serve.
 
-## 3.2-4 SHOULD
+## 3.2-4 SHOULD @inapplicable
 Servers must be able to handle the URI of any resource they
 serve, and SHOULD be able to handle URIs of unbounded length if they
 provide GET-based forms that could generate such URIs.
 
-## 3.2-5
+## 3.2-5 @inapplicable
 The "http" scheme is used to locate network resources via the HTTP
 protocol.
 

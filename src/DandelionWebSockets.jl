@@ -50,6 +50,7 @@ state_connecting(t::WebSocketHandler, c::WebSocketConnection) = nothing
 "The WebSocket is open and ready to send and receive messages."
 state_open(t::WebSocketHandler) = nothing
 
+include("UniformResourceIdentifiers.jl")
 include("WebSocketUpgrade.jl")
 include("core.jl")
 include("protocol_types.jl")

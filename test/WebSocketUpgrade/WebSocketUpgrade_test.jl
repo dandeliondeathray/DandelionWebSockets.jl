@@ -719,4 +719,6 @@ todata(xs...) = codeunits(join(xs))
         # TODO Even when the Connection field has more than one token?
         # TODO Fail when the Connection field is missing the upgrade token
     end
+
+    include("chapter3_2_test.jl")
 end
