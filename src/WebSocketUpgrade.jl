@@ -1,6 +1,9 @@
 module WebSocketUpgrade
 
+using DandelionWebSockets.UniformResourceIdentifiers
+
 export ResponseParser, dataread, hascompleteresponse, parseresponse, findheaderfield
+export websocketupgrade
 
 function findfirstsubstring(needle::AbstractVector{UInt8}, haystack::AbstractVector{UInt8}) :: Union{Int, Nothing}
     lastpossibleindex = length(haystack) - length(needle) + 1
@@ -89,6 +92,23 @@ function parseresponse(parser::ResponseParser)
     end
 
     throw(BadHTTPResponse())
+end
+
+function websocketupgrade(suri::String, headers::HeaderList) :: (HTTPResponse, IO)
+    uri = URI(suri)
+    socket = connect(uri.host, uri.port)
+    upgraderequest = Request(uri.abs_path, headers)
+    write(socket, upgraderequest)
+    isheadercomplete = false
+    parser = ResponseParser()
+    while !isheadercomplete
+        data = readavailable(socket)
+        dataread(parser, data)
+        isheadercomplete = hascompleteresponse(parser)
+    end
+    # TODO: No excess returned
+    response = parseresponse(parser)
+    response, socket
 end
 
 end
