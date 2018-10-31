@@ -93,6 +93,18 @@ function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeRes
 end
 
 #
+# Integration with the WebSocketUpgrade module.
+#
+
+struct WebSocketUpgradeAdapter <: HTTPAdapter end
+
+function dohandshake(::WebSocketUpgradeAdapter, uri::String, headers::HeaderList) :: HTTPUpgradeResponse
+    response, socket = WebSocketUpgrade.websocketupgrade(uri, headers)
+    # TODO: Handle excess when available
+    HTTPUpgradeResponse(socket, response.status, response.headers, b"")
+end
+
+#
 # Integration with HTTP.jl
 #
 # This implements the handshake HTTP request using the HTTP.jl package.

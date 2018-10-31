@@ -1,6 +1,7 @@
 module WebSocketUpgrade
 
 using DandelionWebSockets.UniformResourceIdentifiers
+using Sockets
 
 export ResponseParser, dataread, hascompleteresponse, parseresponse, findheaderfield
 export websocketupgrade
