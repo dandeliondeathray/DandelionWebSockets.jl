@@ -9,12 +9,14 @@ export websocketupgrade
 const HeaderList = Vector{Pair{String, String}}
 
 struct Request
+    host::String
     abs_path::String
     headers::HeaderList
 end
 
 function Base.write(io::IO, req::Request)
     write(io, "GET $(req.abs_path) HTTP/1.1\r\n")
+    write(io, "Host: $(req.host)\r\n")
     for (k, v) in req.headers
         write(io, "$(k): $(v)\r\n")
     end
@@ -66,12 +68,14 @@ function validateresponse(response::HTTPResponse) :: HTTPResponse
     hasupgrade = findheaderfield(response, "Upgrade") != nothing
     hasconnection = findheaderfield(response, "Connection") != nothing
     if hasupgrade && !hasconnection
+        @error "Found Upgrade header, but not Connection header."
         throw(InvalidHTTPResponse())
     end
 
     if hasupgrade && hasconnection
-        hasconnectionupgrade = hastoken(response, "Connection", "upgrade")
+        hasconnectionupgrade = hastoken(response, "Connection", "Upgrade")
         if !hasconnectionupgrade
+            @error "Connection header does not have the token 'upgrade'"
             throw(InvalidHTTPResponse())
         end
     end
@@ -108,21 +112,24 @@ function parseresponse(parser::ResponseParser)
     throw(BadHTTPResponse())
 end
 
-function websocketupgrade(suri::String, headers::HeaderList) :: (HTTPResponse, IO)
+function websocketupgrade(suri::String, headers::HeaderList)
     uri = URI(suri)
     socket = connect(uri.host, uri.port)
-    upgraderequest = Request(uri.abs_path, headers)
+    upgraderequest = Request(uri.host, uri.abs_path, headers)
     write(socket, upgraderequest)
     isheadercomplete = false
     parser = ResponseParser()
     while !isheadercomplete
+        if eof(socket)
+            throw(EOFError())
+        end
         data = readavailable(socket)
         dataread(parser, data)
         isheadercomplete = hascompleteresponse(parser)
     end
     # TODO: No excess returned
     response = parseresponse(parser)
-    response, socket
+    (response, socket)
 end
 
 end

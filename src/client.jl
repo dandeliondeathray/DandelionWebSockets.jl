@@ -36,7 +36,7 @@ mutable struct WSClient <: AbstractWSClient
     # `do_handshake` is a function that performs a HTTP Upgrade to a WebSocket connection.
     handshake::WebSocketHandshake
 
-    WSClient(; handshake::WebSocketHandshake = HTTPHandshake(RandomDevice(), HTTPjlAdapter())) = 
+    WSClient(; handshake::WebSocketHandshake = HTTPHandshake(RandomDevice(), WebSocketUpgradeAdapter())) = 
         new(nothing, handshake)
 end
 

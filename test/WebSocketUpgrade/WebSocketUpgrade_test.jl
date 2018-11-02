@@ -725,7 +725,7 @@ todata(xs...) = codeunits(join(xs))
     @testset "Good enough Request serialization" begin
         @testset "Request serialization; abs_path is /some/path; HTTP request has correct abs_path" begin
             # Arrange
-            request = Request("/some/path", [])
+            request = Request("example.org", "/some/path", [])
             io = IOBuffer()
 
             # Act
@@ -737,7 +737,7 @@ todata(xs...) = codeunits(join(xs))
         
         @testset "Request serialization; Path is /; Serialized path is /" begin
             # Arrange
-            request = Request("/", [])
+            request = Request("example.org", "/", [])
             io = IOBuffer()
 
             # Act
@@ -749,7 +749,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Path is /; Line is ended by \\r\\n" begin
             # Arrange
-            request = Request("/", [])
+            request = Request("example.org", "/", [])
             io = IOBuffer()
 
             # Act
@@ -761,7 +761,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Connection header is Upgrade; Header is listed in the request" begin
             # Arrange
-            request = Request("/", ["Connection" => "Upgrade"])
+            request = Request("example.org", "/", ["Connection" => "Upgrade"])
             io = IOBuffer()
 
             # Act
@@ -773,7 +773,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Sec-WebSocket-Key is abc; Header is listed in the request" begin
             # Arrange
-            request = Request("/", ["Sec-WebSocket-Key" => "abc"])
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "abc"])
             io = IOBuffer()
 
             # Act
@@ -785,7 +785,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Sec-WebSocket-Key is def; Header is listed in the request" begin
             # Arrange
-            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "def"])
             io = IOBuffer()
 
             # Act
@@ -797,7 +797,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Sec-WebSocket-Key is def; Sec-WebSocket-Key is not abc" begin
             # Arrange
-            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "def"])
             io = IOBuffer()
 
             # Act
@@ -809,7 +809,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Sec-WebSocket-Key is def; Request ends with \\r\\n\\r\\n" begin
             # Arrange
-            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "def"])
             io = IOBuffer()
 
             # Act
@@ -821,7 +821,7 @@ todata(xs...) = codeunits(join(xs))
 
         @testset "Request serialization; Sec-WebSocket-Key is def; Request _only_ ends in two newlines" begin
             # Arrange
-            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "def"])
             io = IOBuffer()
 
             # Act
@@ -829,6 +829,18 @@ todata(xs...) = codeunits(join(xs))
 
             # Assert
             @test match(r"[^\r\n]\r\n\r\n$", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; No Host header provided; Host is written" begin
+            # Arrange
+            request = Request("example.org", "/", ["Sec-WebSocket-Key" => "def"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"Host: example.org\r\n", String(take!(io))) !== nothing
         end
     end
 end

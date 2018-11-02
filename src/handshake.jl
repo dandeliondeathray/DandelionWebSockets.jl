@@ -88,6 +88,7 @@ function performhandshake(h::HTTPHandshake, uri::String) :: AbstractHandshakeRes
             BadHandshake()
         end
     catch ex
+        @error "Exception during WebSocket handshake:", ex
         BadHandshake()
     end
 end
