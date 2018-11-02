@@ -1,6 +1,6 @@
 using Test
 using DandelionWebSockets.WebSocketUpgrade
-using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse, InvalidHTTPResponse
+using DandelionWebSockets.WebSocketUpgrade: BadHTTPResponse, InvalidHTTPResponse, Request
 
 todata(xs...) = codeunits(join(xs))
 
@@ -721,4 +721,114 @@ todata(xs...) = codeunits(join(xs))
     end
 
     include("chapter3_2_test.jl")
+
+    @testset "Good enough Request serialization" begin
+        @testset "Request serialization; abs_path is /some/path; HTTP request has correct abs_path" begin
+            # Arrange
+            request = Request("/some/path", [])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"^GET /some/path HTTP/1.1", String(take!(io))) != nothing 
+        end
+        
+        @testset "Request serialization; Path is /; Serialized path is /" begin
+            # Arrange
+            request = Request("/", [])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"^GET / HTTP/1.1", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Path is /; Line is ended by \\r\\n" begin
+            # Arrange
+            request = Request("/", [])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"^GET / HTTP/1.1\r\n", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Connection header is Upgrade; Header is listed in the request" begin
+            # Arrange
+            request = Request("/", ["Connection" => "Upgrade"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"Connection: Upgrade\r\n", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Sec-WebSocket-Key is abc; Header is listed in the request" begin
+            # Arrange
+            request = Request("/", ["Sec-WebSocket-Key" => "abc"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"Sec-WebSocket-Key: abc\r\n", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Sec-WebSocket-Key is def; Header is listed in the request" begin
+            # Arrange
+            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"Sec-WebSocket-Key: def\r\n", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Sec-WebSocket-Key is def; Sec-WebSocket-Key is not abc" begin
+            # Arrange
+            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"Sec-WebSocket-Key: abc\r\n", String(take!(io))) === nothing
+        end
+
+        @testset "Request serialization; Sec-WebSocket-Key is def; Request ends with \\r\\n\\r\\n" begin
+            # Arrange
+            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"\r\n\r\n$", String(take!(io))) !== nothing
+        end
+
+        @testset "Request serialization; Sec-WebSocket-Key is def; Request _only_ ends in two newlines" begin
+            # Arrange
+            request = Request("/", ["Sec-WebSocket-Key" => "def"])
+            io = IOBuffer()
+
+            # Act
+            write(io, request)
+
+            # Assert
+            @test match(r"[^\r\n]\r\n\r\n$", String(take!(io))) !== nothing
+        end
+    end
 end

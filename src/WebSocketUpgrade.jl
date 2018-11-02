@@ -6,6 +6,21 @@ using Sockets
 export ResponseParser, dataread, hascompleteresponse, parseresponse, findheaderfield
 export websocketupgrade
 
+const HeaderList = Vector{Pair{String, String}}
+
+struct Request
+    abs_path::String
+    headers::HeaderList
+end
+
+function Base.write(io::IO, req::Request)
+    write(io, "GET $(req.abs_path) HTTP/1.1\r\n")
+    for (k, v) in req.headers
+        write(io, "$(k): $(v)\r\n")
+    end
+    write(io, "\r\n")
+end
+
 function findfirstsubstring(needle::AbstractVector{UInt8}, haystack::AbstractVector{UInt8}) :: Union{Int, Nothing}
     lastpossibleindex = length(haystack) - length(needle) + 1
     for i = 1:lastpossibleindex
@@ -22,8 +37,6 @@ struct ResponseParser
 
     ResponseParser() = new(Vector{UInt8}())
 end
-
-const HeaderList = Vector{Pair{String, String}}
 
 struct HTTPVersion
     major::Int
