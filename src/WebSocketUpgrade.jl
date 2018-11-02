@@ -106,7 +106,9 @@ function parseresponse(parser::ResponseParser)
             push!(headers, m.captures[1] => m.captures[2])
         end
 
-        return validateresponse(HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor)))
+        #return validateresponse(HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor)))
+        # Skip the validation until it conforms to requirements.
+        return HTTPResponse(status, reasonphrase, headers, HTTPVersion(major, minor))
     end
 
     throw(BadHTTPResponse())
