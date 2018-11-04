@@ -1,4 +1,5 @@
 using DandelionWebSockets
+using Logging
 
 # As part of improving the tests in this package, I feel the need to differentiate between the
 # different types of tests I have here.
@@ -29,6 +30,8 @@ using DandelionWebSockets
 # ====================================================================
 #
 # NOTE: Speed applies to _all_ tests in that category, not a single test case.
+
+disable_logging(Logging.AboveMaxLevel)
 
 # TODO Remove dependency on FactCheck
 #include("mock_test.jl")
