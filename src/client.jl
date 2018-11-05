@@ -1,5 +1,7 @@
 using DandelionWebSockets.Proxy
 using DandelionWebSockets.Proxy: stopproxy
+using Sockets: TCPSocket
+using MbedTLS
 
 mutable struct WebSocketConnectionImpl <: WebSocketConnection
     # `logic_proxy` forwards commands to the `ClientProtocol` object, in its own coroutine.
@@ -46,7 +48,11 @@ end
 Sets the TCP_NODELAY flag on a socket. This is a separate function only for testing purposes. It
 can be implemented with a more specific type if the flag makes no sense for another `IO` subtype.
 """
-tcpnodelay(io::IO) = ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), io, 1)
+tcpnodelay(io::TCPSocket) = ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), io, 1)
+tcpnodelay(io::MbedTLS.SSLContext) = ccall(:uv_tcp_nodelay, Cint, (Ptr{Nothing}, Cint), io.bio, 1)
+
+maybewrapio(io::TCPSocket) :: IO = io
+maybewrapio(io::MbedTLS.SSLContext) :: IO = TLSBufferedIO(io)
 
 """
     connection_result(::WSClient, ::GoodHandshake, ::WebSocketHandler, fix_small_message_latency::Bool)
@@ -69,8 +75,10 @@ function connection_result_(client::WSClient,
 
     connection = client.connection
 
+    io = maybewrapio(result.io)
+
     # For `writer` the target object is the IO stream for the WebSocket connection.
-    writer = WriterProxy(result.io)
+    writer = WriterProxy(io)
 
     # Requirement
     # @4_1_8 Handshake response is valid
@@ -102,7 +110,7 @@ function connection_result_(client::WSClient,
     attach(connection.pinger, connection.logic_proxy)
 
     # The target for `reader` is the same stream we're writing to.
-    connection.reader = start_reader(result.io, connection.logic_proxy)
+    connection.reader = start_reader(io, connection.logic_proxy)
     true
 end
 
