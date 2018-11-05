@@ -59,4 +59,36 @@ using DandelionWebSockets.UniformResourceIdentifiers
         # Assert
         @test uri.abs_path == "/"
     end
+
+    @testset "Good enough URI: Scheme is wss; issecure is true" begin
+        # Act
+        uri = URI("wss://hostname:42/abs/path")
+
+        # Assert
+        @test uri.issecure
+    end
+
+    @testset "Good enough URI: Scheme is ws; issecure is false" begin
+        # Act
+        uri = URI("ws://hostname:42/abs/path")
+
+        # Assert
+        @test !uri.issecure
+    end
+
+    @testset "Good enough URI: Scheme is http; issecure is false" begin
+        # Act
+        uri = URI("http://hostname:42/abs/path")
+
+        # Assert
+        @test !uri.issecure
+    end
+
+    @testset "Good enough URI: Scheme is https; issecure is true" begin
+        # Act
+        uri = URI("https://hostname:42/abs/path")
+
+        # Assert
+        @test uri.issecure
+    end
 end

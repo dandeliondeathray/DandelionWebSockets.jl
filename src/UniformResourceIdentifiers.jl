@@ -7,8 +7,10 @@ struct URI
     host::String
     port::Int
     abs_path::String
+    issecure::Bool
 
     function URI(uri::String)
+        secureschemes = ["wss", "https"]
         defaultports = Dict{String, Int}(
             "http" => 80,
             "https" => 443,
@@ -30,7 +32,8 @@ struct URI
         else
             "/"
         end
-        new(scheme, host, port, abs_path)
+        issecure = scheme in secureschemes
+        new(scheme, host, port, abs_path, issecure)
     end
 end
 

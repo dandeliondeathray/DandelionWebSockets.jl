@@ -2,6 +2,7 @@ module WebSocketUpgrade
 
 using DandelionWebSockets.UniformResourceIdentifiers
 using Sockets
+using MbedTLS
 
 export ResponseParser, dataread, hascompleteresponse, parseresponse, findheaderfield
 export websocketupgrade
@@ -114,9 +115,40 @@ function parseresponse(parser::ResponseParser)
     throw(BadHTTPResponse())
 end
 
+function tlshandshake(socket::TCPSocket)
+    entropy = MbedTLS.Entropy()
+    rng = MbedTLS.CtrDrbg()
+    MbedTLS.seed!(rng, entropy)
+
+    ctx = MbedTLS.SSLContext()
+    conf = MbedTLS.SSLConfig()
+
+    MbedTLS.config_defaults!(conf)
+    MbedTLS.authmode!(conf, MbedTLS.MBEDTLS_SSL_VERIFY_REQUIRED)
+    MbedTLS.rng!(conf, rng)
+
+    function show_debug(level, filename, number, msg)
+        @show level, filename, number, msg
+    end
+
+    MbedTLS.dbg!(conf, show_debug)
+
+    MbedTLS.ca_chain!(conf)
+
+    MbedTLS.setup!(ctx, conf)
+    MbedTLS.set_bio!(ctx, socket)
+
+    MbedTLS.handshake(ctx)
+
+    ctx
+end
+
 function websocketupgrade(suri::String, headers::HeaderList)
     uri = URI(suri)
     socket = connect(uri.host, uri.port)
+    if uri.issecure
+        socket = tlshandshake(socket)
+    end
     upgraderequest = Request(uri.host, uri.abs_path, headers)
     write(socket, upgraderequest)
     isheadercomplete = false
