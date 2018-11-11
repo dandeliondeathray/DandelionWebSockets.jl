@@ -91,4 +91,13 @@ using DandelionWebSockets.UniformResourceIdentifiers
         # Assert
         @test uri.issecure
     end
+
+    @testset "Good enough URI; URL is http://hostname/abs/path; Host name is hostname" begin
+        # Act
+        uri = URI("http://hostname/abs/path")
+
+        # Assert
+        @test uri.host == "hostname"
+        @test uri.abs_path == "/abs/path"
+    end
 end

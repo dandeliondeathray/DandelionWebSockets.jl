@@ -16,7 +16,7 @@ struct URI
             "https" => 443,
             "ws" => 80,
             "wss" => 443)
-        m = match(r"(?<scheme>[^:]+)://(?<host>[^:]+)(?::(?<port>\d*))?(?<abs_path>/.*)?", uri)
+        m = match(r"(?<scheme>[^:]+)://(?<host>[^:/]+)(?::(?<port>\d*))?(?<abs_path>/.*)?", uri)
         if m == nothing
             throw(RuntimeException())
         end
