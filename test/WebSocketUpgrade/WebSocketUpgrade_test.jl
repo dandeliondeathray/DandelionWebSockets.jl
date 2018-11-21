@@ -720,8 +720,6 @@ todata(xs...) = codeunits(join(xs))
         # TODO Fail when the Connection field is missing the upgrade token
     end
 
-    include("chapter3_2_test.jl")
-
     @testset "Good enough Request serialization" begin
         @testset "Request serialization; abs_path is /some/path; HTTP request has correct abs_path" begin
             # Arrange
